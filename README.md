@@ -18,7 +18,7 @@ Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G
 - **10 Census Lenses:** Household Income, Personal Income, Weekly Rent, Monthly Mortgage, Median Age, Born Overseas (%), Religion (% Affiliated), Education (% Uni Degree + hover qualification breakdown table), Citizenship (% Aus Citizen), and Population Density.
 - **Crime Lens (`LGA` layer):** 12-month Crime Rate (`/100k` residents) across 278 LGAs in NSW, VIC, QLD, and NT.
 - **Election Lenses:** `2025 Winner` & `2025 ALP 2PP` (Federal), `State Winner` (State Seats), with actual 2CP Winner vs Runner-up cards in the sidebar.
-- **Interactive Dossier:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), state/territory quick-zoom (`NSW`, `VIC`, `QLD`, `WA`, `SA`, `TAS`, `NT`, `ACT`), search result, or leaderboard item to view benchmarks against Australian medians, age structure, Top 5 overseas countries of birth, and Top 5 religions.
+- **Interactive Dossier:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), state/territory quick-zoom (`NSW`, `VIC`, `QLD`, `WA`, `SA`, `TAS`, `NT`, `ACT` — includes ABS June 2026 Mean Dwelling Price), search result, or leaderboard item to view benchmarks against Australian medians, age structure, Top 5 overseas countries of birth, and Top 5 religions.
 - **Dynamic Map Labels:** Zoom-responsive region names with boundary-fit and 2D collision avoidance so labels appear cleanly as you zoom in without overlapping text or borders.
 - **Dark / Light Mode:** Persisted in `localStorage`.
 
@@ -44,7 +44,7 @@ python3 scripts/build_census_data.py
 
 ## Sources
 
-- Australian Bureau of Statistics (ABS) 2021 Census General Community Profile (GCP) & ASGS Edition 3 Digital Boundary Files
+- Australian Bureau of Statistics (ABS) 2021 Census General Community Profile (GCP), ASGS Edition 3 Digital Boundary Files, and *Total Value of Dwellings* (June Quarter 2026)
 - Australian Electoral Commission (AEC) 2025 Federal Election Tally Room (`Event 31496`)
 - State/Territory Legislative Assembly & House of Assembly election results (NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
 - State/Territory Crime Data: NSW BOCSAR, Crime Statistics Agency Victoria (CSA), Queensland Police Service (QPS), and NT Police

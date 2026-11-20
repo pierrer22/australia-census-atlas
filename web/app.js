@@ -187,7 +187,7 @@ function availableMetrics() {
   return [...CENSUS_METRICS, ...CRIME_METRICS];
 }
 
-const DATA_VERSION = "20261121";
+const DATA_VERSION = "20261121b";
 
 async function loadLayer(key) {
   if (state.cache[key]) return state.cache[key];
@@ -1108,6 +1108,9 @@ function renderDossier() {
     { k: "Year 12+", v: p.pct_yr12 != null ? `${p.pct_yr12}%` : "N/A" },
     { k: "Uni Degree", v: p.pct_uni != null ? `${p.pct_uni}%` : "N/A" },
     { k: "Avg Household Size", v: p.avg_hhd_size != null ? `${p.avg_hhd_size}` : "N/A" },
+    ...(p.mean_dwelling_price != null
+      ? [{ k: "Mean Dwelling (Jun 26)", v: `$${(p.mean_dwelling_price / 1e6).toFixed(2)}M` }]
+      : []),
     ...(p.crime_rate_100k != null
       ? [{ k: `Crime Rate (${p.crime_period || "12 mo"})`, v: `${Math.round(p.crime_rate_100k).toLocaleString()}/100k` }]
       : []),

@@ -455,9 +455,42 @@ def load_state_elections() -> dict[str, dict]:
     return out
 
 
+def load_abs_dwelling_prices() -> dict[str, int]:
+    """Load ABS Total Value of Dwellings (Jun 2026) mean residential dwelling price ($)."""
+    path = BASE / "housing" / "abs_643201_jun2026.xlsx"
+    if not path.exists():
+        return {}
+    import openpyxl
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    ws = wb["Data1"]
+    rows = list(ws.iter_rows(values_only=True))
+    header = rows[0]
+    latest = rows[-1]
+    name_map = {
+        "New South Wales": "NSW",
+        "Victoria": "VIC",
+        "Queensland": "QLD",
+        "South Australia": "SA",
+        "Western Australia": "WA",
+        "Tasmania": "TAS",
+        "Northern Territory": "NT",
+        "Australian Capital Territory": "ACT",
+        "Australia": "AUS",
+    }
+    out: dict[str, int] = {}
+    for i, col in enumerate(header):
+        if not col or "Mean price of residential dwellings" not in str(col):
+            continue
+        for full_name, code in name_map.items():
+            if f";  {full_name} ;" in str(col) and latest[i] is not None:
+                out[code] = int(round(float(latest[i]) * 1000))
+    return out
+
+
 def main() -> None:
     aec_2025 = load_aec_2025()
     state_elec = load_state_elections()
+    abs_prices = load_abs_dwelling_prices()
     crime_path = BASE / "crime" / "lga_crime.json"
     lga_crime = json.loads(crime_path.read_text(encoding="utf-8")) if crime_path.exists() else {}
     ced21_geo = json.loads((WEB_DATA / "ced_2021.geojson").read_text(encoding="utf-8"))
@@ -553,6 +586,8 @@ def main() -> None:
     aus_uni, aus_edu_bd = load_uni_pct(csv_aus, "AUS_AUS", "AUS_CODE_2021", {"AUS": aus_pop15}, {"AUS": g01_aus})
     national["pct_uni"] = aus_uni.get("AUS", 0.0)
     national["edu_bd"] = aus_edu_bd.get("AUS", [])
+    if "AUS" in abs_prices:
+        national["mean_dwelling_price"] = abs_prices["AUS"]
     aus_age_g = load_age_by_gender(csv_aus, "AUS_AUS", "AUS_CODE_2021").get("AUS", (None, None))
     aus_inc_g = load_income_by_gender(csv_aus, "AUS_AUS", "AUS_CODE_2021").get("AUS", (None, None))
     national["median_age_m"], national["median_age_f"] = aus_age_g
@@ -645,6 +680,8 @@ def main() -> None:
         m["top_rel"] = ste_top_rel.get(ste_code, [])
         m["pct_uni"] = ste_uni.get(ste_code, 0.0)
         m["edu_bd"] = ste_edu_bd.get(ste_code, [])
+        if abbr in abs_prices:
+            m["mean_dwelling_price"] = abs_prices[abbr]
         states_out[abbr] = m
     (WEB_DATA / "states_2021.json").write_text(
         json.dumps(states_out, indent=2), encoding="utf-8"
