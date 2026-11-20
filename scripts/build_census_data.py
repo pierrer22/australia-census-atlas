@@ -293,8 +293,29 @@ def fix_winding(geom: dict) -> None:
                 ring.reverse()
 
 
+def load_state_elections() -> dict[str, dict]:
+    path = AEC_ROOT / "state_elections.json"
+    if not path.exists():
+        return {}
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    out: dict[str, dict] = {}
+    for k, v in raw.items():
+        out[k] = {
+            "st_year": v["year"],
+            "st_party": v["party"],
+            "st_party_name": v["party_name"],
+            "st_member": v["member"],
+            "st_tcp_pct": v["tcp_pct"],
+            "st_swing": v["swing"],
+            "st_runner_up_party": v["runner_up_party"],
+            "st_runner_up_pct": v["runner_up_pct"],
+        }
+    return out
+
+
 def main() -> None:
     aec_2025 = load_aec_2025()
+    state_elec = load_state_elections()
     ced21_geo = json.loads((WEB_DATA / "ced_2021.geojson").read_text(encoding="utf-8"))
     ced21_name_to_code = {
         f["properties"]["CED_NAME21"].strip().lower(): f"CED{f['properties']['CED_CODE21']}"
@@ -337,6 +358,12 @@ def main() -> None:
             if cfg["key"] == "ced":
                 elec = aec_2025.get(name.strip().lower(), {})
                 out_props.update(elec)
+            elif cfg["key"] == "sed":
+                import re as _re
+                clean_sed = _re.sub(r"\s*\([^)]*\)$", "", name).strip().lower()
+                st_key = f"{props['STE_NAME21'].strip().lower()}::{clean_sed}"
+                st_elec = state_elec.get(st_key, {})
+                out_props.update(st_elec)
             feat["properties"] = out_props
 
         (WEB_DATA / cfg["out_geo"]).write_text(

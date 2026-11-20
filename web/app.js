@@ -15,6 +15,7 @@ const PARTY_COLORS = {
   GRN: "#16a34a",
   IND: "#0d9488",
   KAP: "#b45309",
+  SFF: "#b45309",
   XEN: "#b45309",
 };
 
@@ -92,7 +93,7 @@ const ELECTION_METRICS = [
     unit: "AEC",
     format: (v) => v || "Abolished 2025",
     scale: "party",
-    cedOnly: true,
+    layerOnly: "ced",
   },
   {
     key: "aec_alp_pct",
@@ -101,7 +102,18 @@ const ELECTION_METRICS = [
     format: (v) => (v != null ? `${v.toFixed(1)}%` : "N/A"),
     colors: ["#1d4ed8", "#93c5fd", "#f1f5f9", "#fda4af", "#e11d48"],
     scale: "diverging",
-    cedOnly: true,
+    layerOnly: "ced",
+  },
+];
+
+const STATE_ELECTION_METRICS = [
+  {
+    key: "st_party",
+    label: "State Winner",
+    unit: "NSW/VIC/QLD/WA",
+    format: (v) => v || "Not loaded",
+    scale: "party",
+    layerOnly: "sed",
   },
 ];
 
@@ -135,9 +147,9 @@ function currentGeo() {
 }
 
 function availableMetrics() {
-  return state.layerKey === "ced"
-    ? [...ELECTION_METRICS, ...CENSUS_METRICS]
-    : CENSUS_METRICS;
+  if (state.layerKey === "ced") return [...ELECTION_METRICS, ...CENSUS_METRICS];
+  if (state.layerKey === "sed") return [...STATE_ELECTION_METRICS, ...CENSUS_METRICS];
+  return CENSUS_METRICS;
 }
 
 async function loadLayer(key) {
@@ -211,7 +223,7 @@ function buildLayerSwitch() {
       document.getElementById("subtitle").textContent = `ABS 2021 · ${l.desc}`;
 
       await loadLayer(l.key);
-      if (l.key !== "ced" && state.metric.cedOnly) {
+      if (state.metric.layerOnly && state.metric.layerOnly !== l.key) {
         state.metric = CENSUS_METRICS[0];
       }
       buildMetricTabs();
@@ -491,7 +503,11 @@ function handleHover(event, d) {
 
   let extra = "";
   if (m.scale === "party") {
-    extra = p.aec_member ? `${p.aec_member} (${p.aec_alp_pct ?? "—"}% ALP 2PP)` : "Abolished 2025";
+    if (m.key === "st_party") {
+      extra = p.st_member ? `${p.st_member} (${p.st_year} · ${p.st_tcp_pct ?? "—"}%)` : "NSW/VIC/QLD/WA only";
+    } else {
+      extra = p.aec_member ? `${p.aec_member} (${p.aec_alp_pct ?? "—"}% ALP 2PP)` : "Abolished 2025";
+    }
   } else if (val != null) {
     const { rank, total } = getRank(p.code, m);
     extra = rank ? `#${rank}/${total}` : "pop < 500";
@@ -538,6 +554,8 @@ function renderDossier() {
     document.getElementById("hero-kpi-value").textContent = p[m.key] != null ? m.format(p[m.key]) : "N/A";
   } else if (cityProfile) {
     document.getElementById("hero-kpi-value").textContent = p[m.key] != null ? m.format(p[m.key]) : "N/A";
+  } else if (m.key === "st_party") {
+    document.getElementById("hero-kpi-value").textContent = "333 Seats";
   } else if (m.scale === "party") {
     document.getElementById("hero-kpi-value").textContent = "ALP 94 · LNP 43";
   } else if (m.key === "aec_alp_pct") {
@@ -558,6 +576,7 @@ function renderDossier() {
   const elecPanel = document.getElementById("election-panel");
   if (state.layerKey === "ced" && feat && p.aec_party) {
     elecPanel.hidden = false;
+    elecPanel.querySelector("h3").textContent = "2025 Federal Election (AEC)";
     const partyColor = PARTY_COLORS[p.aec_party] || "#475569";
     const swingSign = p.aec_swing > 0 ? "+" : "";
     document.getElementById("election-card").innerHTML = `
@@ -572,6 +591,26 @@ function renderDossier() {
       <div class="tpp-labels mono">
         <span>ALP ${p.aec_alp_pct}% (${swingSign}${p.aec_swing}%)</span>
         <span>COA ${p.aec_coa_pct}%</span>
+      </div>
+    `;
+  } else if (state.layerKey === "sed" && feat && p.st_party) {
+    elecPanel.hidden = false;
+    elecPanel.querySelector("h3").textContent = `${p.st_year} ${p.ste_name} Election`;
+    const winColor = PARTY_COLORS[p.st_party] || "#475569";
+    const runColor = PARTY_COLORS[p.st_runner_up_party] || "#64748b";
+    const swingStr = p.st_swing != null ? ` (${p.st_swing > 0 ? "+" : ""}${p.st_swing}%)` : "";
+    document.getElementById("election-card").innerHTML = `
+      <div class="elec-top">
+        <span class="elec-mp">${p.st_member}</span>
+        <span class="party-pill" style="background:${winColor}">${p.st_party}</span>
+      </div>
+      <div class="tpp-bar">
+        <div style="width:${p.st_tcp_pct}%;background:${winColor}"></div>
+        <div style="width:${p.st_runner_up_pct}%;background:${runColor}"></div>
+      </div>
+      <div class="tpp-labels mono">
+        <span>${p.st_party} ${p.st_tcp_pct}%${swingStr}</span>
+        <span>${p.st_runner_up_party || "Runner-up"} ${p.st_runner_up_pct ?? "—"}%</span>
       </div>
     `;
   } else {
