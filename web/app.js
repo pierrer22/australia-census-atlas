@@ -1,10 +1,10 @@
 const LAYERS = [
-  { key: "sa4", label: "SA4", file: "data/sa4_census_2021.geojson", desc: "89 SA4 regions" },
-  { key: "ced", label: "Federal", file: "data/ced_census_2021.geojson", desc: "150 divisions (2025 AEC)" },
-  { key: "sa3", label: "SA3", file: "data/sa3_census_2021.geojson", desc: "340 SA3 regions" },
-  { key: "sed", label: "State Seats", file: "data/sed_census_2021.geojson", desc: "433 state electorates" },
-  { key: "lga", label: "LGA", file: "data/lga_census_2021.geojson", desc: "547 councils" },
-  { key: "sa2", label: "Suburbs", file: "data/sa2_census_2021.geojson", desc: "2,454 suburbs/areas (SA2)" },
+  { key: "sa4", label: "SA4", file: "data/sa4_census_2021.geojson", desc: "89 SA4 regions", tip: "Statistical Area Level 4 — 89 broad labour-market regions (~100k–500k people)" },
+  { key: "ced", label: "Federal", file: "data/ced_census_2021.geojson", desc: "150 divisions (2025 AEC)", tip: "Commonwealth Electoral Divisions — 150 federal seats + 2025 AEC results" },
+  { key: "sa3", label: "SA3", file: "data/sa3_census_2021.geojson", desc: "340 SA3 regions", tip: "Statistical Area Level 3 — 340 regional districts (~30k–130k people)" },
+  { key: "sed", label: "State Seats", file: "data/sed_census_2021.geojson", desc: "433 state electorates", tip: "State Electoral Divisions — 433 state & territory electorates" },
+  { key: "lga", label: "LGA", file: "data/lga_census_2021.geojson", desc: "547 councils", tip: "Local Government Areas — 547 local councils (includes Crime Rate)" },
+  { key: "sa2", label: "Suburbs", file: "data/sa2_census_2021.geojson", desc: "2,454 suburbs/areas (SA2)", tip: "Statistical Area Level 2 (SA2) — 2,454 suburb-level areas (~3k–25k people)" },
 ];
 
 const PARTY_COLORS = {
@@ -255,6 +255,8 @@ function buildLayerSwitch() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.dataset.layer = l.key;
+    btn.dataset.tip = l.tip;
+    btn.title = l.tip;
     btn.className = "layer-btn" + (l.key === state.layerKey ? " active" : "");
     btn.textContent = l.label;
     btn.addEventListener("click", async () => {

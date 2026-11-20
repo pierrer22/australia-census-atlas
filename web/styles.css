@@ -113,6 +113,7 @@ body {
 }
 
 .layer-btn {
+  position: relative;
   appearance: none;
   border: 0;
   background: transparent;
@@ -123,6 +124,30 @@ body {
   padding: 5px 9px;
   border-radius: 6px;
   cursor: pointer;
+}
+
+@media (hover: hover) and (min-width: 961px) {
+  .layer-btn[data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 240px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    background: var(--tooltip-bg);
+    color: var(--tooltip-fg);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
+    font-size: 0.7rem;
+    font-weight: 500;
+    line-height: 1.35;
+    text-align: left;
+    white-space: normal;
+    pointer-events: none;
+    z-index: 40;
+  }
 }
 
 .layer-btn:hover {
