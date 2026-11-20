@@ -187,10 +187,12 @@ function availableMetrics() {
   return [...CENSUS_METRICS, ...CRIME_METRICS];
 }
 
+const DATA_VERSION = "20261121";
+
 async function loadLayer(key) {
   if (state.cache[key]) return state.cache[key];
   const cfg = LAYERS.find((l) => l.key === key);
-  const data = await d3.json(cfg.file);
+  const data = await d3.json(`${cfg.file}?v=${DATA_VERSION}`);
   state.cache[key] = data;
   return data;
 }
@@ -199,10 +201,10 @@ async function init() {
   initTheme();
   const [sa4, ste, national, cities, states] = await Promise.all([
     loadLayer("sa4"),
-    d3.json("data/ste_2021.geojson"),
-    d3.json("data/national_2021.json"),
-    d3.json("data/cities_2021.json"),
-    d3.json("data/states_2021.json"),
+    d3.json(`data/ste_2021.geojson?v=${DATA_VERSION}`),
+    d3.json(`data/national_2021.json?v=${DATA_VERSION}`),
+    d3.json(`data/cities_2021.json?v=${DATA_VERSION}`),
+    d3.json(`data/states_2021.json?v=${DATA_VERSION}`),
   ]);
   state.ste = ste;
   state.national = national;
