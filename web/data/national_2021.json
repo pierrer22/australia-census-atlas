@@ -1,5 +1,7 @@
 {
   "pop": 25422788,
+  "pop_m": 12545154,
+  "pop_f": 12877635,
   "median_hhd_inc_wk": 1746,
   "median_prsnl_inc_wk": 805,
   "median_rent_wk": 375,
@@ -68,5 +70,10 @@
       688440,
       2.7
     ]
-  ]
+  ],
+  "pct_uni": 26.3,
+  "median_age_m": 37,
+  "median_age_f": 39,
+  "median_prsnl_inc_m": 992,
+  "median_prsnl_inc_f": 672
 }

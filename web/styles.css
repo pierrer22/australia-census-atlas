@@ -442,7 +442,8 @@ body {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
   border: 1px solid var(--border);
   z-index: 25;
-  max-width: 250px;
+  min-width: 210px;
+  max-width: 290px;
 }
 
 .tooltip-title {
@@ -460,6 +461,71 @@ body {
   font-size: 0.84rem;
   font-weight: 600;
   color: #5eead4;
+}
+
+.tooltip-details {
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.71rem;
+}
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.tooltip-row .tk {
+  opacity: 0.76;
+}
+
+.tooltip-row .tv {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tooltip-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+}
+
+.tooltip-table th {
+  text-align: left;
+  font-weight: 600;
+  opacity: 0.65;
+  padding: 0 0 3px;
+  font-size: 0.66rem;
+}
+
+.tooltip-table th:not(:first-child),
+.tooltip-table td:not(:first-child) {
+  text-align: right;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  padding-left: 8px;
+}
+
+.tooltip-table td {
+  padding: 1.5px 0;
+}
+
+.tooltip-table td:first-child {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tooltip-table td.muted {
+  opacity: 0.7;
 }
 
 .dossier {

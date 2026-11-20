@@ -79,6 +79,14 @@ const CENSUS_METRICS = [
     scale: "linear",
   },
   {
+    key: "pct_uni",
+    label: "Education",
+    unit: "% Uni Degree",
+    format: (v) => `${v.toFixed(1)}%`,
+    colors: ["#eff6ff", "#93c5fd", "#2563eb", "#1e3a8a"],
+    scale: "linear",
+  },
+  {
     key: "density_sqkm",
     label: "Pop. Density",
     unit: "/km²",
@@ -525,6 +533,100 @@ function getRank(code, metric) {
   return { rank: idx >= 0 ? idx + 1 : null, total: sorted.length };
 }
 
+function fmtMoney(v, suffix) {
+  return v != null && v > 0 ? `$${v.toLocaleString()}${suffix}` : "—";
+}
+
+function tooltipRows(rows) {
+  return rows
+    .map(([k, v]) => `<div class="tooltip-row"><span class="tk">${k}</span><span class="tv">${v}</span></div>`)
+    .join("");
+}
+
+function tooltipTop5Table(items, colLabel) {
+  if (!items || !items.length) return "";
+  const body = items
+    .slice(0, 5)
+    .map(
+      ([name, cnt, pct]) =>
+        `<tr><td>${name}</td><td>${pct}%</td><td class="muted">${cnt.toLocaleString()}</td></tr>`
+    )
+    .join("");
+  return `<table class="tooltip-table"><thead><tr><th>Top 5 ${colLabel}</th><th>%</th><th>Pop</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function buildTooltipDetails(p, metricKey) {
+  if (p.pop == null) return "";
+  const hhdSize = p.avg_hhd_size != null ? `${p.avg_hhd_size}` : "—";
+  const mortgage = fmtMoney(p.median_mortgage_mo, "/mo");
+  const rent = fmtMoney(p.median_rent_wk, "/wk");
+  const hhdInc = fmtMoney(p.median_hhd_inc_wk, "/wk");
+  const prsnlInc = fmtMoney(p.median_prsnl_inc_wk, "/wk");
+
+  let inner = "";
+  switch (metricKey) {
+    case "median_hhd_inc_wk":
+      inner = tooltipRows([
+        ["Avg Household Size", hhdSize],
+        ["Monthly Mortgage", mortgage],
+        ["Weekly Rent", rent],
+        ["Personal Income", prsnlInc],
+      ]);
+      break;
+    case "median_prsnl_inc_wk":
+      inner = tooltipRows([
+        ["Male Income", fmtMoney(p.median_prsnl_inc_m, "/wk")],
+        ["Female Income", fmtMoney(p.median_prsnl_inc_f, "/wk")],
+        ["Avg Household Size", hhdSize],
+        ["Monthly Mortgage", mortgage],
+        ["Weekly Rent", rent],
+        ["Household Income", hhdInc],
+      ]);
+      break;
+    case "median_rent_wk":
+      inner = tooltipRows([
+        ["Avg Household Size", hhdSize],
+        ["Monthly Mortgage", mortgage],
+        ["Household Income", hhdInc],
+        ["Personal Income", prsnlInc],
+      ]);
+      break;
+    case "median_mortgage_mo":
+      inner = tooltipRows([
+        ["Avg Household Size", hhdSize],
+        ["Weekly Rent", rent],
+        ["Household Income", hhdInc],
+        ["Personal Income", prsnlInc],
+      ]);
+      break;
+    case "median_age":
+      inner = tooltipRows([
+        ["Male", p.median_age_m != null ? `${p.median_age_m} yrs` : "—"],
+        ["Female", p.median_age_f != null ? `${p.median_age_f} yrs` : "—"],
+      ]);
+      break;
+    case "pct_born_overseas":
+      inner = tooltipTop5Table(p.top_cob, "Countries");
+      break;
+    case "pct_no_religion":
+      inner = tooltipTop5Table(p.top_rel, "Religions");
+      break;
+    case "density_sqkm": {
+      const tot = p.pop || 1;
+      const mStr = p.pop_m != null ? `${p.pop_m.toLocaleString()} (${((100 * p.pop_m) / tot).toFixed(1)}%)` : "—";
+      const fStr = p.pop_f != null ? `${p.pop_f.toLocaleString()} (${((100 * p.pop_f) / tot).toFixed(1)}%)` : "—";
+      inner = tooltipRows([
+        ["Male", mStr],
+        ["Female", fStr],
+      ]);
+      break;
+    }
+    default:
+      return "";
+  }
+  return inner ? `<div class="tooltip-details">${inner}</div>` : "";
+}
+
 function handleHover(event, d) {
   const tip = document.getElementById("tooltip");
   const p = d.properties;
@@ -544,17 +646,23 @@ function handleHover(event, d) {
   }
 
   const valStr = val != null ? m.format(val) : "N/A";
+  const details = buildTooltipDetails(p, m.key);
   tip.innerHTML = `
     <div class="tooltip-title">${p.name}</div>
     <div class="tooltip-meta">${p.ste_name} · Pop ${p.pop != null ? p.pop.toLocaleString() : "New 2025"}</div>
     <div class="tooltip-val">${valStr} <span style="opacity:0.75;font-weight:400">${extra}</span></div>
+    ${details}
   `;
-  const stageRect = document.querySelector(".map-stage").getBoundingClientRect();
-  const x = Math.min(stageRect.width - 260, event.clientX - stageRect.left + 14);
-  const y = Math.min(stageRect.height - 95, event.clientY - stageRect.top + 14);
-  tip.style.left = `${Math.max(10, x)}px`;
-  tip.style.top = `${Math.max(10, y)}px`;
   tip.hidden = false;
+  const stageRect = document.querySelector(".map-stage").getBoundingClientRect();
+  const tipW = tip.offsetWidth || 260;
+  const tipH = tip.offsetHeight || 120;
+  const rawX = event.clientX - stageRect.left + 14;
+  const rawY = event.clientY - stageRect.top + 14;
+  const x = rawX + tipW > stageRect.width - 10 ? Math.max(10, event.clientX - stageRect.left - tipW - 14) : rawX;
+  const y = rawY + tipH > stageRect.height - 10 ? Math.max(10, stageRect.height - tipH - 10) : rawY;
+  tip.style.left = `${x}px`;
+  tip.style.top = `${y}px`;
 }
 
 function renderDossier() {
@@ -696,6 +804,7 @@ function renderDossier() {
     { k: "Born Overseas", v: p.pct_born_overseas != null ? `${p.pct_born_overseas}%` : "N/A" },
     { k: "Non-English Home", v: p.pct_other_lang != null ? `${p.pct_other_lang}%` : "N/A" },
     { k: "Year 12+ (15+ yrs)", v: p.pct_yr12 != null ? `${p.pct_yr12}%` : "N/A" },
+    { k: "Uni Degree (15+ yrs)", v: p.pct_uni != null ? `${p.pct_uni}%` : "N/A" },
     { k: "Avg Household Size", v: p.avg_hhd_size != null ? `${p.avg_hhd_size}` : "N/A" },
     ...(p.crime_rate_100k != null
       ? [{ k: `Crime Rate (${p.crime_period || "12 mo"})`, v: `${Math.round(p.crime_rate_100k).toLocaleString()}/100k` }]

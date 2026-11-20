@@ -170,6 +170,23 @@ def load_religion(csv_dir: Path, prefix: str, code_col: str) -> tuple[dict[str, 
     return pct_no_rel, top_rel
 
 
+def load_uni_pct(csv_dir: Path, prefix: str, code_col: str, pop15_by_code: dict[str, int]) -> dict[str, float]:
+    out: dict[str, float] = {}
+    path = csv_dir / f"2021Census_G49B_{prefix}.csv"
+    with path.open(newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            code = row[code_col].strip()
+            pop15 = max(1, pop15_by_code.get(code, 1))
+            uni = 0
+            for col in ("P_PGrad_Deg_Total", "P_GradDip_and_GradCert_Total", "P_BachDeg_Total"):
+                try:
+                    uni += int(row.get(col, 0) or 0)
+                except ValueError:
+                    pass
+            out[code] = round(100.0 * uni / pop15, 1)
+    return out
+
+
 def load_top_cob(csv_dir: Path, prefix: str, code_col: str, pop_by_code: dict[str, int]) -> dict[str, list]:
     merged: dict[str, dict[str, int]] = {}
     for part in ("G09F", "G09G", "G09H"):
@@ -193,6 +210,79 @@ def load_top_cob(csv_dir: Path, prefix: str, code_col: str, pop_by_code: dict[st
         pop = max(1, pop_by_code.get(code, 1))
         top5 = sorted(counts.items(), key=lambda x: x[1], reverse=True)[:5]
         out[code] = [[name, cnt, round(100.0 * cnt / pop, 1)] for name, cnt in top5]
+    return out
+
+
+AGE_BUCKETS = [(f"Age_yr_{i}", i, i + 1) for i in range(80)] + [
+    ("Age_yr_80_84", 80, 85),
+    ("Age_yr_85_89", 85, 90),
+    ("Age_yr_90_94", 90, 95),
+    ("Age_yr_95_99", 95, 100),
+    ("Age_yr_100_yr_over", 100, 105),
+]
+
+INC_BUCKETS = [
+    ("Neg_Nil_income", 0, 1),
+    ("1_149", 1, 150),
+    ("150_299", 150, 300),
+    ("300_399", 300, 400),
+    ("400_499", 400, 500),
+    ("500_649", 500, 650),
+    ("650_799", 650, 800),
+    ("800_999", 800, 1000),
+    ("1000_1249", 1000, 1250),
+    ("1250_1499", 1250, 1500),
+    ("1500_1749", 1500, 1750),
+    ("1750_1999", 1750, 2000),
+    ("2000_2999", 2000, 3000),
+    ("3000_3499", 3000, 3500),
+    ("3500_more", 3500, 4000),
+]
+
+
+def _interp_median(counts: list[tuple[int, int, int]], as_int_floor: bool = False) -> int | None:
+    tot = sum(c for c, _, _ in counts)
+    if tot <= 0:
+        return None
+    half = tot / 2.0
+    cum = 0
+    for c, lo, hi in counts:
+        if cum + c >= half:
+            val = lo + (half - cum) / max(1, c) * (hi - lo)
+            return int(val) if as_int_floor else round(val)
+        cum += c
+    return counts[-1][1]
+
+
+def load_age_by_gender(csv_dir: Path, prefix: str, code_col: str) -> dict[str, tuple[int | None, int | None]]:
+    merged: dict[str, dict[str, str]] = {}
+    for part in ("G04A", "G04B"):
+        path = csv_dir / f"2021Census_{part}_{prefix}.csv"
+        with path.open(newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                code = row[code_col].strip()
+                merged.setdefault(code, {}).update(row)
+    out: dict[str, tuple[int | None, int | None]] = {}
+    for code, row in merged.items():
+        m_counts = [(int(row.get(f"{col}_M", 0) or 0), lo, hi) for col, lo, hi in AGE_BUCKETS]
+        f_counts = [(int(row.get(f"{col}_F", 0) or 0), lo, hi) for col, lo, hi in AGE_BUCKETS]
+        out[code] = (_interp_median(m_counts, as_int_floor=True), _interp_median(f_counts, as_int_floor=True))
+    return out
+
+
+def load_income_by_gender(csv_dir: Path, prefix: str, code_col: str) -> dict[str, tuple[int | None, int | None]]:
+    merged: dict[str, dict[str, str]] = {}
+    for part in ("G17A", "G17B"):
+        path = csv_dir / f"2021Census_{part}_{prefix}.csv"
+        with path.open(newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                code = row[code_col].strip()
+                merged.setdefault(code, {}).update(row)
+    out: dict[str, tuple[int | None, int | None]] = {}
+    for code, row in merged.items():
+        m_counts = [(int(row.get(f"M_{col}_Tot", 0) or 0), lo, hi) for col, lo, hi in INC_BUCKETS]
+        f_counts = [(int(row.get(f"F_{col}_Tot", 0) or 0), lo, hi) for col, lo, hi in INC_BUCKETS]
+        out[code] = (_interp_median(m_counts), _interp_median(f_counts))
     return out
 
 
@@ -272,6 +362,8 @@ def extract_metrics(g1: dict, g2: dict, area_sqkm: float | None = None) -> dict:
 
     metrics = {
         "pop": int(g1.get("Tot_P_P", 0)),
+        "pop_m": int(g1.get("Tot_P_M", 0)),
+        "pop_f": int(g1.get("Tot_P_F", 0)),
         "median_hhd_inc_wk": int(g2.get("Median_tot_hhd_inc_weekly", 0)),
         "median_prsnl_inc_wk": int(g2.get("Median_tot_prsnl_inc_weekly", 0)),
         "median_rent_wk": int(g2.get("Median_rent_weekly", 0)),
@@ -351,9 +443,16 @@ def main() -> None:
         g01 = load_csv_by_code(cfg["csv_dir"] / cfg["g01"], cfg["csv_code_col"])
         g02 = load_csv_by_code(cfg["csv_dir"] / cfg["g02"], cfg["csv_code_col"])
         pop_map = {k: int(v.get("Tot_P_P", 0) or 0) for k, v in g01.items()}
+        pop15_map = {
+            k: max(1, int(v.get("Tot_P_P", 0) or 0) - int(v.get("Age_0_4_yr_P", 0) or 0) - int(v.get("Age_5_14_yr_P", 0) or 0))
+            for k, v in g01.items()
+        }
         cob_prefix = f"AUST_{cfg['key'].upper()}"
         top_cob = load_top_cob(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"], pop_map)
         pct_no_rel, top_rel = load_religion(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"])
+        pct_uni = load_uni_pct(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"], pop15_map)
+        age_gender = load_age_by_gender(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"])
+        inc_gender = load_income_by_gender(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"])
 
         geo = json.loads((WEB_DATA / cfg["in_geo"]).read_text(encoding="utf-8"))
         for feat in geo["features"]:
@@ -380,6 +479,20 @@ def main() -> None:
             if csv_key in pct_no_rel:
                 out_props["pct_no_religion"] = pct_no_rel[csv_key]
                 out_props["top_rel"] = top_rel[csv_key]
+            if csv_key in pct_uni:
+                out_props["pct_uni"] = pct_uni[csv_key]
+            if csv_key in age_gender:
+                ag_m, ag_f = age_gender[csv_key]
+                if ag_m is not None:
+                    out_props["median_age_m"] = ag_m
+                if ag_f is not None:
+                    out_props["median_age_f"] = ag_f
+            if csv_key in inc_gender:
+                in_m, in_f = inc_gender[csv_key]
+                if in_m is not None:
+                    out_props["median_prsnl_inc_m"] = in_m
+                if in_f is not None:
+                    out_props["median_prsnl_inc_f"] = in_f
             if cfg["key"] == "ced":
                 elec = aec_2025.get(name.strip().lower(), {})
                 out_props.update(elec)
@@ -408,6 +521,12 @@ def main() -> None:
     aus_no_rel, aus_top_rel = load_religion(csv_aus, "AUS_AUS", "AUS_CODE_2021")
     national["pct_no_religion"] = aus_no_rel.get("AUS", 0.0)
     national["top_rel"] = aus_top_rel.get("AUS", [])
+    aus_pop15 = max(1, national["pop"] - int(g01_aus.get("Age_0_4_yr_P", 0) or 0) - int(g01_aus.get("Age_5_14_yr_P", 0) or 0))
+    national["pct_uni"] = load_uni_pct(csv_aus, "AUS_AUS", "AUS_CODE_2021", {"AUS": aus_pop15}).get("AUS", 0.0)
+    aus_age_g = load_age_by_gender(csv_aus, "AUS_AUS", "AUS_CODE_2021").get("AUS", (None, None))
+    aus_inc_g = load_income_by_gender(csv_aus, "AUS_AUS", "AUS_CODE_2021").get("AUS", (None, None))
+    national["median_age_m"], national["median_age_f"] = aus_age_g
+    national["median_prsnl_inc_m"], national["median_prsnl_inc_f"] = aus_inc_g
     (WEB_DATA / "national_2021.json").write_text(
         json.dumps(national, indent=2), encoding="utf-8"
     )
@@ -416,8 +535,15 @@ def main() -> None:
     g01_gcc = load_csv_by_code(csv_gcc / "2021Census_G01_AUST_GCCSA.csv", "GCCSA_CODE_2021")
     g02_gcc = load_csv_by_code(csv_gcc / "2021Census_G02_AUST_GCCSA.csv", "GCCSA_CODE_2021")
     pop_gcc = {k: int(v.get("Tot_P_P", 0) or 0) for k, v in g01_gcc.items()}
+    pop15_gcc = {
+        k: max(1, int(v.get("Tot_P_P", 0) or 0) - int(v.get("Age_0_4_yr_P", 0) or 0) - int(v.get("Age_5_14_yr_P", 0) or 0))
+        for k, v in g01_gcc.items()
+    }
     cob_gcc = load_top_cob(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021", pop_gcc)
     gcc_no_rel, gcc_top_rel = load_religion(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021")
+    gcc_uni = load_uni_pct(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021", pop15_gcc)
+    gcc_age_g = load_age_by_gender(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021")
+    gcc_inc_g = load_income_by_gender(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021")
     city_map = {
         "Sydney": ("1GSYD", "Greater Sydney", "New South Wales", 12368.7),
         "Melbourne": ("2GMEL", "Greater Melbourne", "Victoria", 9992.5),
@@ -435,6 +561,9 @@ def main() -> None:
         m["top_cob"] = cob_gcc.get(gcc_code, [])
         m["pct_no_religion"] = gcc_no_rel.get(gcc_code, 0.0)
         m["top_rel"] = gcc_top_rel.get(gcc_code, [])
+        m["pct_uni"] = gcc_uni.get(gcc_code, 0.0)
+        m["median_age_m"], m["median_age_f"] = gcc_age_g.get(gcc_code, (None, None))
+        m["median_prsnl_inc_m"], m["median_prsnl_inc_f"] = gcc_inc_g.get(gcc_code, (None, None))
         cities_out[city_key] = m
     (WEB_DATA / "cities_2021.json").write_text(
         json.dumps(cities_out, indent=2), encoding="utf-8"

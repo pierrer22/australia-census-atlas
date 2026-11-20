@@ -1,6 +1,8 @@
 {
   "Sydney": {
     "pop": 5231147,
+    "pop_m": 2585238,
+    "pop_f": 2645912,
     "median_hhd_inc_wk": 2077,
     "median_prsnl_inc_wk": 881,
     "median_rent_wk": 470,
@@ -72,10 +74,17 @@
         253210,
         4.8
       ]
-    ]
+    ],
+    "pct_uni": 33.3,
+    "median_age_m": 36,
+    "median_age_f": 38,
+    "median_prsnl_inc_m": 1073,
+    "median_prsnl_inc_f": 724
   },
   "Melbourne": {
     "pop": 4917750,
+    "pop_m": 2420718,
+    "pop_f": 2497033,
     "median_hhd_inc_wk": 1901,
     "median_prsnl_inc_wk": 841,
     "median_rent_wk": 390,
@@ -147,10 +156,17 @@
         206077,
         4.2
       ]
-    ]
+    ],
+    "pct_uni": 32.8,
+    "median_age_m": 36,
+    "median_age_f": 38,
+    "median_prsnl_inc_m": 1035,
+    "median_prsnl_inc_f": 684
   },
   "Brisbane": {
     "pop": 2526238,
+    "pop_m": 1242349,
+    "pop_f": 1283890,
     "median_hhd_inc_wk": 1849,
     "median_prsnl_inc_wk": 842,
     "median_rent_wk": 380,
@@ -222,10 +238,17 @@
         80065,
         3.2
       ]
-    ]
+    ],
+    "pct_uni": 27.0,
+    "median_age_m": 36,
+    "median_age_f": 37,
+    "median_prsnl_inc_m": 1015,
+    "median_prsnl_inc_f": 710
   },
   "Perth": {
     "pop": 2116647,
+    "pop_m": 1045169,
+    "pop_f": 1071480,
     "median_hhd_inc_wk": 1865,
     "median_prsnl_inc_wk": 859,
     "median_rent_wk": 350,
@@ -297,10 +320,17 @@
         62899,
         3.0
       ]
-    ]
+    ],
+    "pct_uni": 26.5,
+    "median_age_m": 37,
+    "median_age_f": 38,
+    "median_prsnl_inc_m": 1144,
+    "median_prsnl_inc_f": 666
   },
   "Adelaide": {
     "pop": 1387290,
+    "pop_m": 680323,
+    "pop_f": 706967,
     "median_hhd_inc_wk": 1548,
     "median_prsnl_inc_wk": 762,
     "median_rent_wk": 320,
@@ -372,10 +402,17 @@
         40041,
         2.9
       ]
-    ]
+    ],
+    "pct_uni": 25.9,
+    "median_age_m": 38,
+    "median_age_f": 40,
+    "median_prsnl_inc_m": 925,
+    "median_prsnl_inc_f": 643
   },
   "Canberra": {
     "pop": 453890,
+    "pop_m": 224022,
+    "pop_f": 229869,
     "median_hhd_inc_wk": 2373,
     "median_prsnl_inc_wk": 1204,
     "median_rent_wk": 450,
@@ -447,6 +484,11 @@
         14602,
         3.2
       ]
-    ]
+    ],
+    "pct_uni": 43.0,
+    "median_age_m": 35,
+    "median_age_f": 36,
+    "median_prsnl_inc_m": 1363,
+    "median_prsnl_inc_f": 1053
   }
 }
