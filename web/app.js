@@ -662,6 +662,23 @@ function tooltipTop5Table(items, colLabel) {
 }
 
 function buildTooltipDetails(p, metricKey) {
+  if (metricKey === "aec_party" || metricKey === "aec_alp_pct") {
+    if (!p.aec_party) return "";
+    const rows = [];
+    if (metricKey === "aec_alp_pct" && p.aec_member) {
+      rows.push(["Winner", `${p.aec_member} (${p.aec_party})`]);
+    }
+    if (p.aec_tcp_pct != null && p.aec_runner_up_party) {
+      rows.push(["2CP", `${p.aec_party} ${p.aec_tcp_pct}% vs ${p.aec_runner_up_party} ${p.aec_runner_up_pct}%`]);
+    }
+    if (p.aec_alp_pct != null && p.aec_coa_pct != null) {
+      rows.push(["2PP (ALP/COA)", `${p.aec_alp_pct}% / ${p.aec_coa_pct}%`]);
+    }
+    if (p.aec_swing != null) {
+      rows.push(["Swing", `${p.aec_swing > 0 ? "+" : ""}${p.aec_swing}%`]);
+    }
+    return rows.length ? `<div class="tooltip-details">${tooltipRows(rows)}</div>` : "";
+  }
   if (p.pop == null) return "";
   const hhdSize = p.avg_hhd_size != null ? `${p.avg_hhd_size}` : "—";
   const mortgage = fmtMoney(p.median_mortgage_mo, "/mo");
@@ -762,7 +779,9 @@ function handleHover(event, d) {
     if (m.key === "st_party") {
       extra = p.st_member ? `${p.st_member} (${p.st_year} · ${p.st_tcp_pct ?? "—"}%)` : "ACT multi-member";
     } else {
-      extra = p.aec_member ? `${p.aec_member} (${p.aec_alp_pct ?? "—"}% ALP 2PP)` : "Abolished 2025";
+      extra = p.aec_member
+        ? `${p.aec_member} (${p.aec_tcp_pct ?? p.aec_alp_pct ?? "—"}% 2CP)`
+        : "Abolished 2025";
     }
   } else if (val != null) {
     const { rank, total } = getRank(p.code, m);
