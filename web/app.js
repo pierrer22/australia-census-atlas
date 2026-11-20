@@ -403,6 +403,18 @@ function initMap(initialGeo) {
     });
 
   svg.call(zoomBehavior);
+  svg.on("click", (event) => {
+    if (event.defaultPrevented || event.target !== svg.node()) return;
+    if (!state.selectedCode && !state.activeState && state.activeCity === "Australia") return;
+    state.selectedCode = null;
+    state.activeState = null;
+    state.activeCity = "Australia";
+    document.querySelectorAll(".quick-bars .city-btn").forEach((b) => {
+      b.classList.toggle("active", b.textContent === "Australia");
+    });
+    updateSelectionHighlight();
+    renderDossier();
+  });
   svg.on("mouseenter", () => {
     if (document.activeElement !== document.getElementById("region-search")) {
       svg.node().focus({ preventScroll: true });
