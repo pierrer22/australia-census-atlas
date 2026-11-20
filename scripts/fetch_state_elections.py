@@ -34,6 +34,8 @@ def norm_party(raw: str) -> str:
         return "LP"
     if "green" in p:
         return "GRN"
+    if "one nation" in p or "onp" in p:
+        return "ONP"
     if "katter" in p or "kap" in p:
         return "KAP"
     if "shooter" in p:

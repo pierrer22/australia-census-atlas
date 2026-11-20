@@ -14,7 +14,8 @@ const PARTY_COLORS = {
   CLP: "#1d4ed8",
   NP: "#1e40af",
   GRN: "#16a34a",
-  IND: "#0d9488",
+  ONP: "#f97316",
+  IND: "#64748b",
   KAP: "#b45309",
   SFF: "#b45309",
   XEN: "#b45309",
@@ -457,8 +458,9 @@ function renderChoropleth() {
     partiesEl.innerHTML = [
       { label: "Labor (ALP)", color: "#e11d48" },
       { label: "Coalition", color: "#1d4ed8" },
-      { label: "Ind / Teal", color: "#0d9488" },
       { label: "Greens", color: "#16a34a" },
+      { label: "One Nation", color: "#f97316" },
+      { label: "Independent", color: "#64748b" },
       { label: "Other (KAP/CA)", color: "#b45309" },
     ]
       .map(
