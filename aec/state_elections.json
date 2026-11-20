@@ -3092,7 +3092,7 @@
     "member": "James Lister",
     "tcp_pct": 68.55,
     "swing": 4.45,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 31.45
   },
   "queensland::southport": {
@@ -4016,7 +4016,7 @@
     "member": "Jayne Stinson",
     "tcp_pct": 71.2,
     "swing": 6.4,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 28.8
   },
   "south australia::black": {
@@ -4028,7 +4028,7 @@
     "member": "Alex Dighton",
     "tcp_pct": 65.4,
     "swing": 18.1,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 34.6
   },
   "south australia::bragg": {
@@ -4064,7 +4064,7 @@
     "member": "Joe Szakacs",
     "tcp_pct": 67.0,
     "swing": -2.0,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 33.0
   },
   "south australia::colton": {
@@ -4088,7 +4088,7 @@
     "member": "Peter Malinauskas",
     "tcp_pct": 79.7,
     "swing": 4.9,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 20.3
   },
   "south australia::davenport": {
@@ -4100,7 +4100,7 @@
     "member": "Erin Thompson",
     "tcp_pct": 66.4,
     "swing": 13.0,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 33.6
   },
   "south australia::dunstan": {
@@ -4136,7 +4136,7 @@
     "member": "Ella Shaw",
     "tcp_pct": 54.5,
     "swing": -17.2,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 45.5
   },
   "south australia::enfield": {
@@ -4148,7 +4148,7 @@
     "member": "Lawrence Ben",
     "tcp_pct": 68.8,
     "swing": 4.2,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 31.2
   },
   "south australia::finniss": {
@@ -4184,7 +4184,7 @@
     "member": "Michael Brown",
     "tcp_pct": 66.1,
     "swing": 3.3,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 33.9
   },
   "south australia::gibson": {
@@ -4208,14 +4208,14 @@
     "member": "Eddie Hughes",
     "tcp_pct": 58.5,
     "swing": -12.5,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 41.5
   },
   "south australia::hammond": {
     "state": "South Australia",
     "year": 2026,
     "district": "Hammond",
-    "party": "ONE NA",
+    "party": "ONP",
     "party_name": "One Nation",
     "member": "Robert Roylance",
     "tcp_pct": 54.9,
@@ -4256,7 +4256,7 @@
     "member": "Nat Cook",
     "tcp_pct": 60.8,
     "swing": -4.7,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 39.2
   },
   "south australia::kaurna": {
@@ -4268,7 +4268,7 @@
     "member": "Chris Picton",
     "tcp_pct": 62.0,
     "swing": -8.1,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 38.0
   },
   "south australia::kavel": {
@@ -4292,7 +4292,7 @@
     "member": "Rhiannon Pearce",
     "tcp_pct": 55.2,
     "swing": 2.3,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 44.8
   },
   "south australia::lee": {
@@ -4304,7 +4304,7 @@
     "member": "David Wilkins",
     "tcp_pct": 59.4,
     "swing": -1.8,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 40.6
   },
   "south australia::light": {
@@ -4316,14 +4316,14 @@
     "member": "James Agness",
     "tcp_pct": 51.6,
     "swing": -17.9,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 48.4
   },
   "south australia::mackillop": {
     "state": "South Australia",
     "year": 2026,
     "district": "MacKillop",
-    "party": "ONE NA",
+    "party": "ONP",
     "party_name": "One Nation",
     "member": "Jason Virgo",
     "tcp_pct": 50.8,
@@ -4340,7 +4340,7 @@
     "member": "Jenni Mitton",
     "tcp_pct": 56.6,
     "swing": -7.2,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 43.4
   },
   "south australia::morialta": {
@@ -4376,14 +4376,14 @@
     "member": "Travis Fatchen",
     "tcp_pct": 60.4,
     "swing": 60.4,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 39.6
   },
   "south australia::narungga": {
     "state": "South Australia",
     "year": 2026,
     "district": "Narungga",
-    "party": "ONE NA",
+    "party": "ONP",
     "party_name": "One Nation",
     "member": "Chantelle Thomas",
     "tcp_pct": 50.1,
@@ -4400,14 +4400,14 @@
     "member": "Olivia Savvas",
     "tcp_pct": 60.3,
     "swing": 4.9,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 39.7
   },
   "south australia::ngadjuri": {
     "state": "South Australia",
     "year": 2026,
     "district": "Ngadjuri",
-    "party": "ONE NA",
+    "party": "ONP",
     "party_name": "One Nation",
     "member": "David Paton",
     "tcp_pct": 57.1,
@@ -4424,7 +4424,7 @@
     "member": "John Fulbrook",
     "tcp_pct": 67.2,
     "swing": 0.9,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 32.8
   },
   "south australia::port adelaide": {
@@ -4436,7 +4436,7 @@
     "member": "Cheyne Rich",
     "tcp_pct": 64.4,
     "swing": -7.4,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 35.6
   },
   "south australia::ramsay": {
@@ -4448,7 +4448,7 @@
     "member": "Zoe Bettison",
     "tcp_pct": 62.9,
     "swing": -7.0,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 37.1
   },
   "south australia::reynell": {
@@ -4460,7 +4460,7 @@
     "member": "Katrine Hildyard",
     "tcp_pct": 60.1,
     "swing": -6.6,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 39.9
   },
   "south australia::schubert": {
@@ -4484,7 +4484,7 @@
     "member": "Geoff Brock",
     "tcp_pct": 56.9,
     "swing": -10.2,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 43.1
   },
   "south australia::taylor": {
@@ -4496,7 +4496,7 @@
     "member": "Nick Champion",
     "tcp_pct": 54.2,
     "swing": -15.5,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 45.8
   },
   "south australia::torrens": {
@@ -4508,7 +4508,7 @@
     "member": "Meagan Spencer",
     "tcp_pct": 65.6,
     "swing": 5.6,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 34.4
   },
   "south australia::unley": {
@@ -4544,7 +4544,7 @@
     "member": "Tom Koutsantonis",
     "tcp_pct": 73.2,
     "swing": 4.4,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 26.8
   },
   "south australia::wright": {
@@ -4556,7 +4556,7 @@
     "member": "Blair Boyer",
     "tcp_pct": 62.5,
     "swing": 0.6,
-    "runner_up_party": "ONE NA",
+    "runner_up_party": "ONP",
     "runner_up_pct": 37.5
   },
   "northern territory::arafura": {

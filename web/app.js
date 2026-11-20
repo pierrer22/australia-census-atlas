@@ -459,7 +459,7 @@ function renderChoropleth() {
       { label: "Labor (ALP)", color: "#e11d48" },
       { label: "Coalition", color: "#1d4ed8" },
       { label: "Greens", color: "#16a34a" },
-      { label: "One Nation", color: "#f97316" },
+      { label: "One Nation (ONP)", color: "#f97316" },
       { label: "Independent", color: "#64748b" },
       { label: "Other (KAP/CA)", color: "#b45309" },
     ]
