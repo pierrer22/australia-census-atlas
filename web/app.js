@@ -70,11 +70,10 @@ const CENSUS_METRICS = [
   {
     key: "pct_no_religion",
     label: "Religion",
-    unit: "% No Religion",
+    unit: "% Affiliated",
     format: (v) => `${v.toFixed(1)}%`,
-    colors: ["#3b0764", "#7e22ce", "#c084fc", "#f3e8ff"],
+    colors: ["#f3e8ff", "#c084fc", "#7e22ce", "#3b0764"],
     scale: "linear",
-    invertRank: true,
   },
   {
     key: "density_sqkm",

@@ -156,7 +156,7 @@ def load_religion(csv_dir: Path, prefix: str, code_col: str) -> tuple[dict[str, 
                 no_rel = int(row.get("SB_OSB_NRA_NR_P", 0) or 0)
             except ValueError:
                 no_rel = 0
-            pct_no_rel[code] = round(100.0 * no_rel / tot, 1)
+            pct_no_rel[code] = round(100.0 - (100.0 * no_rel / tot), 1)
             counts = []
             for col, label in RELIGION_COLS:
                 try:
