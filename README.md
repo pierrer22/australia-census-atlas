@@ -19,6 +19,7 @@ Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G
 - **Crime Lens (`LGA` layer):** 12-month Crime Rate (`/100k` residents) across 278 LGAs in NSW, VIC, QLD, and NT.
 - **Election Lenses:** `2025 Winner` & `2025 ALP 2PP` (Federal), `State Winner` (State Seats), with actual 2CP Winner vs Runner-up cards in the sidebar.
 - **Interactive Dossier:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), state/territory quick-zoom (`NSW`, `VIC`, `QLD`, `WA`, `SA`, `TAS`, `NT`, `ACT`), search result, or leaderboard item to view benchmarks against Australian medians, age structure, Top 5 overseas countries of birth, and Top 5 religions.
+- **Dynamic Map Labels:** Zoom-responsive region names with boundary-fit and 2D collision avoidance so labels appear cleanly as you zoom in without overlapping text or borders.
 - **Dark / Light Mode:** Persisted in `localStorage`.
 
 ## Quick Start

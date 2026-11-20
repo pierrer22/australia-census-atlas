@@ -162,7 +162,10 @@ const state = {
   activeState: null,
 };
 
-let svg, mapGroup, regionLayer, pathGen, projection, zoomBehavior;
+let svg, mapGroup, regionLayer, labelLayer, pathGen, projection, zoomBehavior;
+let currentTransform = d3.zoomIdentity;
+let labelCandidates = [];
+let labelRaf = null;
 let width = 900;
 let height = 650;
 
@@ -392,9 +395,12 @@ function initMap(initialGeo) {
     .zoom()
     .scaleExtent([0.75, 120])
     .on("zoom", (event) => {
+      currentTransform = event.transform;
       mapGroup.attr("transform", event.transform);
+      scheduleLabels();
     })
     .on("end", () => {
+      scheduleLabels();
       clearTimeout(repaintTimer);
       repaintTimer = setTimeout(() => {
         mapGroup.style("opacity", "0.999");
@@ -431,6 +437,8 @@ function initMap(initialGeo) {
     .join("path")
     .attr("class", "ste-border")
     .attr("d", pathGen);
+
+  labelLayer = svg.append("g").attr("class", "label-layer");
 
   document.getElementById("zoom-in").addEventListener("click", () => {
     svg.transition().duration(250).call(zoomBehavior.scaleBy, 1.6);
@@ -475,6 +483,119 @@ function showToast(msg) {
   el._t = setTimeout(() => (el.hidden = true), 3800);
 }
 
+function largestPolygonGeo(feature) {
+  if (feature.geometry.type === "MultiPolygon" && feature.geometry.coordinates.length > 1) {
+    let bestPoly = feature.geometry.coordinates[0];
+    let bestArea = 0;
+    for (const poly of feature.geometry.coordinates) {
+      const area = pathGen.area({ type: "Polygon", coordinates: poly });
+      if (area > bestArea) {
+        bestArea = area;
+        bestPoly = poly;
+      }
+    }
+    return { type: "Polygon", coordinates: bestPoly };
+  }
+  return feature;
+}
+
+function shortLabelName(name) {
+  return name
+    .replace(/\s*\([^)]*\)$/, "")
+    .replace(/^(Sydney|Melbourne|Brisbane|Perth|Adelaide)\s*-\s*/i, "")
+    .trim();
+}
+
+function buildLabelCandidates() {
+  labelCandidates = currentGeo()
+    .features.map((f) => {
+      const geom = largestPolygonGeo(f);
+      const area = pathGen.area(geom);
+      const [[x0, y0], [x1, y1]] = pathGen.bounds(geom);
+      const [cx, cy] = pathGen.centroid(geom);
+      const label = shortLabelName(f.properties.name);
+      return {
+        code: f.properties.code,
+        label,
+        cx,
+        cy,
+        bw: x1 - x0,
+        bh: y1 - y0,
+        area,
+        pop: f.properties.pop || 0,
+        estW: label.length * 6.3 + 10,
+        estH: 14,
+      };
+    })
+    .filter((c) => Number.isFinite(c.cx) && Number.isFinite(c.cy) && c.area > 0);
+}
+
+function scheduleLabels() {
+  if (labelRaf) return;
+  labelRaf = requestAnimationFrame(() => {
+    labelRaf = null;
+    renderLabels();
+  });
+}
+
+function renderLabels() {
+  if (!labelLayer) return;
+  const { x: tx, y: ty, k } = currentTransform;
+  const placed = [];
+  const visible = [];
+  const padX = 5;
+  const padY = 3;
+
+  // Priority: selected region first, then larger projected area & population
+  const ordered = [...labelCandidates].sort((a, b) => {
+    if (a.code === state.selectedCode) return -1;
+    if (b.code === state.selectedCode) return 1;
+    return b.area * Math.log10(b.pop + 10) - a.area * Math.log10(a.pop + 10);
+  });
+
+  for (const c of ordered) {
+    const sx = c.cx * k + tx;
+    const sy = c.cy * k + ty;
+    if (sx < 18 || sx > width - 18 || sy < 56 || sy > height - 48) continue;
+
+    const screenW = c.bw * k;
+    const screenH = c.bh * k;
+    const isSel = c.code === state.selectedCode;
+
+    // Require label to fit inside the polygon's screen bounding box (prevents spilling over boundaries)
+    if (!isSel && (screenW < c.estW * 0.95 || screenH < c.estH * 1.25)) continue;
+
+    const box = {
+      x0: sx - c.estW / 2 - padX,
+      y0: sy - c.estH / 2 - padY,
+      x1: sx + c.estW / 2 + padX,
+      y1: sy + c.estH / 2 + padY,
+    };
+
+    let overlaps = false;
+    for (const p of placed) {
+      if (box.x0 < p.x1 && box.x1 > p.x0 && box.y0 < p.y1 && box.y1 > p.y0) {
+        overlaps = true;
+        break;
+      }
+    }
+    if (overlaps) continue;
+
+    placed.push(box);
+    visible.push({ code: c.code, label: c.label, sx, sy, isSel });
+    if (visible.length >= 65) break;
+  }
+
+  labelLayer
+    .selectAll("text")
+    .data(visible, (d) => d.code)
+    .join("text")
+    .attr("class", (d) => (d.isSel ? "map-label selected" : "map-label"))
+    .attr("x", (d) => d.sx)
+    .attr("y", (d) => d.sy)
+    .text((d) => d.label);
+}
+
 function renderLayerPaths() {
   regionLayer
     .selectAll("path")
@@ -491,6 +612,8 @@ function renderLayerPaths() {
       updateSelectionHighlight();
       renderDossier();
     });
+  buildLabelCandidates();
+  renderLabels();
 }
 
 function zoomToCity(city) {
@@ -626,6 +749,7 @@ function updateSelectionHighlight() {
   regionLayer
     .selectAll(".sa4-region")
     .classed("selected", (d) => d.properties.code === state.selectedCode);
+  scheduleLabels();
 }
 
 function getRank(code, metric) {

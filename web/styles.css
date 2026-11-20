@@ -350,6 +350,28 @@ body {
   pointer-events: none;
 }
 
+.map-label {
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 600;
+  fill: var(--ink);
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.92;
+}
+
+.map-label.selected {
+  font-weight: 800;
+  font-size: 11.5px;
+  opacity: 1;
+}
+
 .quick-bars {
   position: absolute;
   top: 14px;
