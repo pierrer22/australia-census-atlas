@@ -1,7 +1,8 @@
 const LAYERS = [
   { key: "sa4", label: "SA4", file: "data/sa4_census_2021.geojson", desc: "89 SA4 regions" },
-  { key: "ced", label: "Electorates", file: "data/ced_census_2021.geojson", desc: "150 divisions (2025 AEC)" },
+  { key: "ced", label: "Federal", file: "data/ced_census_2021.geojson", desc: "150 divisions (2025 AEC)" },
   { key: "sa3", label: "SA3", file: "data/sa3_census_2021.geojson", desc: "340 SA3 regions" },
+  { key: "sed", label: "State Seats", file: "data/sed_census_2021.geojson", desc: "433 state electorates" },
   { key: "lga", label: "LGA", file: "data/lga_census_2021.geojson", desc: "547 councils" },
   { key: "sa2", label: "SA2", file: "data/sa2_census_2021.geojson", desc: "2,454 suburbs/areas" },
 ];

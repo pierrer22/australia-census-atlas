@@ -72,6 +72,19 @@ LAYERS = [
         "csv_code_col": "CED_CODE_2021",
         "code_prefix": "CED",
     },
+    {
+        "key": "sed",
+        "in_geo": "sed_2025.geojson",
+        "out_geo": "sed_census_2021.geojson",
+        "code_prop": "SED_CODE25",
+        "name_prop": "SED_NAME25",
+        "area_prop": "AREASQKM",
+        "csv_dir": CSV_ROOT / "SED" / "AUS",
+        "g01": "2021Census_G01_AUST_SED.csv",
+        "g02": "2021Census_G02_AUST_SED.csv",
+        "csv_code_col": "SED_CODE_2021",
+        "code_prefix": "SED",
+    },
 ]
 
 
