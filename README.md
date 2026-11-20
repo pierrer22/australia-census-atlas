@@ -1,22 +1,28 @@
 # Australia Census & Election Atlas
 
-Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G01`, `G02`) with **2025 AEC Federal Election** results across four geographic layers.
+**Live Demo:** https://pierrer22.github.io/australia-census-atlas/
+
+Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G01`, `G02`, `G09`, `G14`) with **2025 AEC Federal** and **410 State/Territory** election results across six geographic layers.
+
+![Australia Census & Election Atlas](docs/preview.png)
 
 ## Features
 
-- **4 Geography Layers:**
+- **6 Geography Layers (sorted by granularity):**
   - `SA4` (89 Statistical Areas Level 4)
+  - `Federal` (150 Commonwealth Electoral Divisions + 2025 AEC 2CP/2PP results)
   - `SA3` (340 Statistical Areas Level 3)
+  - `State Seats` (433 State Electoral Divisions + 410 results across NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
   - `LGA` (547 Local Government Areas)
-  - `Electorates` (151 Commonwealth Electoral Divisions + 2025 AEC results)
-- **6 Census Lenses:** Median Household Income, Weekly Rent, Monthly Mortgage, Median Age, Born Overseas (%), and Population Density.
-- **2025 AEC Election Lenses (Electorates layer):** 2025 Winner by party and 2025 ALP Two-Party Preferred (2PP) %.
-- **Interactive Dossier:** Click any region, search by name, or pick from the Highest/Lowest leaderboard to compare against Australian national benchmarks.
+  - `SA2` (2,454 suburb-level areas)
+- **8 Census Lenses:** Household Income, Personal Income, Weekly Rent, Monthly Mortgage, Median Age, Born Overseas (%), Religion (% Affiliated), and Population Density.
+- **Election Lenses:** `2025 Winner` & `2025 ALP 2PP` (Federal), `State Winner` (State Seats), with actual 2CP Winner vs Runner-up cards in the sidebar.
+- **Interactive Dossier:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), search result, or leaderboard item to view benchmarks against Australian medians, age structure, Top 5 overseas countries of birth, and Top 5 religions.
 - **Dark / Light Mode:** Persisted in `localStorage`.
 
 ## Quick Start
 
-Serve the static site from `web/`:
+All processed GeoJSONs (`web/data/`) and election datasets (`aec/`) are committed in the repository. Serve `web/` locally with any static HTTP server:
 
 ```bash
 python3 -m http.server 8765 --directory web
@@ -24,11 +30,12 @@ python3 -m http.server 8765 --directory web
 
 Then open `http://localhost:8765/`.
 
-## Data Pipeline
+## Rebuilding from Raw Sources
 
-Pre-merged, simplified GeoJSONs live in `web/data/`. To rebuild them from raw ABS 2021 DataPacks, ASGS Edition 3 shapefiles, and AEC Tally Room CSVs (`aec/`):
+To re-fetch state election data and rebuild `web/data/*.geojson` from raw ABS 2021 DataPacks and ASGS Edition 3 shapefiles:
 
 ```bash
+python3 scripts/fetch_state_elections.py
 python3 scripts/build_census_data.py
 ```
 
@@ -36,3 +43,4 @@ python3 scripts/build_census_data.py
 
 - Australian Bureau of Statistics (ABS) 2021 Census General Community Profile (GCP) & ASGS Edition 3 Digital Boundary Files
 - Australian Electoral Commission (AEC) 2025 Federal Election Tally Room (`Event 31496`)
+- State/Territory Legislative Assembly & House of Assembly election results (NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
