@@ -582,6 +582,10 @@ function renderDossier() {
     elecPanel.hidden = false;
     elecPanel.querySelector("h3").textContent = "2025 Federal Election (AEC)";
     const partyColor = PARTY_COLORS[p.aec_party] || "#475569";
+    const runParty = p.aec_runner_up_party || "COA";
+    const runColor = PARTY_COLORS[runParty] || "#64748b";
+    const winPct = p.aec_tcp_pct ?? p.aec_alp_pct;
+    const runPct = p.aec_runner_up_pct ?? p.aec_coa_pct;
     const swingSign = p.aec_swing > 0 ? "+" : "";
     document.getElementById("election-card").innerHTML = `
       <div class="elec-top">
@@ -589,12 +593,12 @@ function renderDossier() {
         <span class="party-pill" style="background:${partyColor}">${p.aec_party}</span>
       </div>
       <div class="tpp-bar">
-        <div class="tpp-alp" style="width:${p.aec_alp_pct}%"></div>
-        <div class="tpp-coa" style="width:${p.aec_coa_pct}%"></div>
+        <div style="width:${winPct}%;background:${partyColor}"></div>
+        <div style="width:${runPct}%;background:${runColor}"></div>
       </div>
       <div class="tpp-labels mono">
-        <span>ALP ${p.aec_alp_pct}% (${swingSign}${p.aec_swing}%)</span>
-        <span>COA ${p.aec_coa_pct}%</span>
+        <span>${p.aec_party} ${winPct}% (${swingSign}${p.aec_swing}%)</span>
+        <span>${runParty} ${runPct}%</span>
       </div>
     `;
   } else if (state.layerKey === "sed" && feat && p.st_party) {

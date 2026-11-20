@@ -208,6 +208,21 @@ def load_aec_2025() -> dict[str, dict]:
                 "total_votes": int(r["TotalVotes"]),
             }
 
+    tcp_by_div: dict[str, list[dict]] = {}
+    with (AEC_ROOT / "HouseTcpByCandidateByVoteTypeDownload-31496.csv").open(newline="", encoding="utf-8") as f:
+        next(f)
+        for r in csv.DictReader(f):
+            raw_ab = r["PartyAb"].strip()
+            party_ab = "NAT" if raw_ab == "NP" else raw_ab
+            div_key = r["DivisionNm"].strip().lower()
+            tcp_by_div.setdefault(div_key, []).append({
+                "elected": r["Elected"].strip() == "Y",
+                "party": party_ab,
+                "name": f"{r['GivenNm'].strip()} {r['Surname'].strip().title()}",
+                "votes": int(r["TotalVotes"]),
+                "swing": float(r["Swing"]),
+            })
+
     elected: dict[str, dict] = {}
     with (AEC_ROOT / "HouseMembersElectedDownload-31496.csv").open(newline="", encoding="utf-8") as f:
         next(f)
@@ -215,13 +230,20 @@ def load_aec_2025() -> dict[str, dict]:
             key = r["DivisionNm"].strip().lower()
             tpp = tpp_rows.get(key, {})
             raw_ab = r["PartyAb"].strip()
+            cands = tcp_by_div.get(key, [])
+            tot_tcp = sum(c["votes"] for c in cands) or 1
+            win_c = next((c for c in cands if c["elected"]), None)
+            run_c = next((c for c in cands if not c["elected"]), None)
             elected[key] = {
                 "aec_party": "NAT" if raw_ab == "NP" else raw_ab,
                 "aec_party_name": r["PartyNm"].strip(),
                 "aec_member": f"{r['GivenNm'].strip()} {r['Surname'].strip().title()}",
                 "aec_alp_pct": tpp.get("alp_pct"),
                 "aec_coa_pct": tpp.get("coa_pct"),
-                "aec_swing": tpp.get("swing"),
+                "aec_swing": win_c["swing"] if win_c else tpp.get("swing"),
+                "aec_tcp_pct": round(100.0 * win_c["votes"] / tot_tcp, 2) if win_c else None,
+                "aec_runner_up_party": run_c["party"] if run_c else None,
+                "aec_runner_up_pct": round(100.0 * run_c["votes"] / tot_tcp, 2) if run_c else None,
                 "aec_total_votes": tpp.get("total_votes"),
             }
     return elected
