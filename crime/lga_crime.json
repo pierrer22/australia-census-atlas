@@ -1,0 +1,1392 @@
+{
+  "10050": {
+    "crime_rate_100k": 14212.1,
+    "crime_count": 7972,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "10180": {
+    "crime_rate_100k": 12278.5,
+    "crime_count": 3576,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "10250": {
+    "crime_rate_100k": 7981.3,
+    "crime_count": 3695,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "10300": {
+    "crime_rate_100k": 7699.3,
+    "crime_count": 170,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "10470": {
+    "crime_rate_100k": 9465.9,
+    "crime_count": 4124,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "10550": {
+    "crime_rate_100k": 4824.4,
+    "crime_count": 1734,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "10600": {
+    "crime_rate_100k": 6406.1,
+    "crime_count": 849,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "10650": {
+    "crime_rate_100k": 6439.7,
+    "crime_count": 558,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "10750": {
+    "crime_rate_100k": 8509.6,
+    "crime_count": 33764,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "10800": {
+    "crime_rate_100k": 6490.0,
+    "crime_count": 360,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "10850": {
+    "crime_rate_100k": 5202.1,
+    "crime_count": 390,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "10900": {
+    "crime_rate_100k": 4033.5,
+    "crime_count": 3151,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "10950": {
+    "crime_rate_100k": 19619.0,
+    "crime_count": 484,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11150": {
+    "crime_rate_100k": 62393.2,
+    "crime_count": 1460,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11200": {
+    "crime_rate_100k": 32743.4,
+    "crime_count": 444,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11250": {
+    "crime_rate_100k": 18893.6,
+    "crime_count": 3323,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11300": {
+    "crime_rate_100k": 8317.4,
+    "crime_count": 3345,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11350": {
+    "crime_rate_100k": 8403.5,
+    "crime_count": 3035,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11400": {
+    "crime_rate_100k": 3719.3,
+    "crime_count": 512,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11450": {
+    "crime_rate_100k": 4035.2,
+    "crime_count": 4815,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11520": {
+    "crime_rate_100k": 3728.5,
+    "crime_count": 3325,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11570": {
+    "crime_rate_100k": 6146.3,
+    "crime_count": 22803,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11600": {
+    "crime_rate_100k": 8129.8,
+    "crime_count": 233,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11700": {
+    "crime_rate_100k": 31478.3,
+    "crime_count": 543,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11720": {
+    "crime_rate_100k": 10695.9,
+    "crime_count": 6806,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11730": {
+    "crime_rate_100k": 11689.9,
+    "crime_count": 6326,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11750": {
+    "crime_rate_100k": 15348.6,
+    "crime_count": 623,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "11800": {
+    "crime_rate_100k": 10841.9,
+    "crime_count": 8539,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "12000": {
+    "crime_rate_100k": 7366.0,
+    "crime_count": 323,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "12150": {
+    "crime_rate_100k": 22240.1,
+    "crime_count": 830,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "12160": {
+    "crime_rate_100k": 7857.6,
+    "crime_count": 896,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "12350": {
+    "crime_rate_100k": 9965.4,
+    "crime_count": 1268,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "12380": {
+    "crime_rate_100k": 6482.8,
+    "crime_count": 15263,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "12390": {
+    "crime_rate_100k": 15434.6,
+    "crime_count": 8477,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "12700": {
+    "crime_rate_100k": 3825.6,
+    "crime_count": 365,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "12730": {
+    "crime_rate_100k": 12677.4,
+    "crime_count": 1072,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "12750": {
+    "crime_rate_100k": 6767.2,
+    "crime_count": 2747,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "12850": {
+    "crime_rate_100k": 5859.7,
+    "crime_count": 12216,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "12870": {
+    "crime_rate_100k": 5775.6,
+    "crime_count": 745,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "12900": {
+    "crime_rate_100k": 13274.0,
+    "crime_count": 1237,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "12930": {
+    "crime_rate_100k": 5955.1,
+    "crime_count": 9068,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "12950": {
+    "crime_rate_100k": 12898.7,
+    "crime_count": 554,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "13010": {
+    "crime_rate_100k": 10211.6,
+    "crime_count": 912,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "13310": {
+    "crime_rate_100k": 9889.9,
+    "crime_count": 3170,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "13340": {
+    "crime_rate_100k": 4427.7,
+    "crime_count": 494,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "13450": {
+    "crime_rate_100k": 10566.3,
+    "crime_count": 2862,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "13550": {
+    "crime_rate_100k": 16435.9,
+    "crime_count": 2125,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "13660": {
+    "crime_rate_100k": 7270.9,
+    "crime_count": 357,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "13800": {
+    "crime_rate_100k": 5621.4,
+    "crime_count": 3778,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "13850": {
+    "crime_rate_100k": 10513.5,
+    "crime_count": 303,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "13910": {
+    "crime_rate_100k": 9083.8,
+    "crime_count": 1749,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14000": {
+    "crime_rate_100k": 3599.2,
+    "crime_count": 5464,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14100": {
+    "crime_rate_100k": 4528.4,
+    "crime_count": 614,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14170": {
+    "crime_rate_100k": 6538.7,
+    "crime_count": 11954,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14220": {
+    "crime_rate_100k": 11090.6,
+    "crime_count": 1980,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14300": {
+    "crime_rate_100k": 5814.5,
+    "crime_count": 373,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14350": {
+    "crime_rate_100k": 16403.8,
+    "crime_count": 5034,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14400": {
+    "crime_rate_100k": 3410.8,
+    "crime_count": 787,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14500": {
+    "crime_rate_100k": 1788.4,
+    "crime_count": 2219,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14550": {
+    "crime_rate_100k": 5385.2,
+    "crime_count": 504,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14600": {
+    "crime_rate_100k": 15786.0,
+    "crime_count": 962,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14650": {
+    "crime_rate_100k": 7341.8,
+    "crime_count": 15700,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14700": {
+    "crime_rate_100k": 2304.9,
+    "crime_count": 909,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14750": {
+    "crime_rate_100k": 11622.4,
+    "crime_count": 1331,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14850": {
+    "crime_rate_100k": 11246.4,
+    "crime_count": 4986,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14870": {
+    "crime_rate_100k": 9792.7,
+    "crime_count": 2041,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14900": {
+    "crime_rate_100k": 10920.7,
+    "crime_count": 25494,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14920": {
+    "crime_rate_100k": 8051.9,
+    "crime_count": 608,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "14950": {
+    "crime_rate_100k": 4971.4,
+    "crime_count": 165,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15050": {
+    "crime_rate_100k": 9989.4,
+    "crime_count": 9013,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15240": {
+    "crime_rate_100k": 9154.2,
+    "crime_count": 8841,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15270": {
+    "crime_rate_100k": 7548.7,
+    "crime_count": 1941,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15300": {
+    "crime_rate_100k": 33518.9,
+    "crime_count": 4274,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15350": {
+    "crime_rate_100k": 2696.9,
+    "crime_count": 764,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15520": {
+    "crime_rate_100k": 8630.4,
+    "crime_count": 1109,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15560": {
+    "crime_rate_100k": 9126.2,
+    "crime_count": 306,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15650": {
+    "crime_rate_100k": 13780.0,
+    "crime_count": 2254,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15700": {
+    "crime_rate_100k": 9041.0,
+    "crime_count": 1845,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15750": {
+    "crime_rate_100k": 11241.4,
+    "crime_count": 1428,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15800": {
+    "crime_rate_100k": 13057.2,
+    "crime_count": 744,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15850": {
+    "crime_rate_100k": 12673.0,
+    "crime_count": 806,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15900": {
+    "crime_rate_100k": 13530.9,
+    "crime_count": 22850,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15950": {
+    "crime_rate_100k": 3588.1,
+    "crime_count": 2474,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "15990": {
+    "crime_rate_100k": 2940.6,
+    "crime_count": 7750,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "16100": {
+    "crime_rate_100k": 4462.4,
+    "crime_count": 249,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "16150": {
+    "crime_rate_100k": 11950.7,
+    "crime_count": 5200,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "16200": {
+    "crime_rate_100k": 12777.7,
+    "crime_count": 1835,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "16260": {
+    "crime_rate_100k": 8195.8,
+    "crime_count": 21041,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "16350": {
+    "crime_rate_100k": 9069.5,
+    "crime_count": 19741,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "16380": {
+    "crime_rate_100k": 7849.1,
+    "crime_count": 6810,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "16400": {
+    "crime_rate_100k": 7904.2,
+    "crime_count": 5950,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "16490": {
+    "crime_rate_100k": 5802.2,
+    "crime_count": 3673,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "16550": {
+    "crime_rate_100k": 6246.5,
+    "crime_count": 8386,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "16610": {
+    "crime_rate_100k": 11037.6,
+    "crime_count": 2601,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "16700": {
+    "crime_rate_100k": 4071.3,
+    "crime_count": 5257,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "16900": {
+    "crime_rate_100k": 6762.7,
+    "crime_count": 5158,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "16950": {
+    "crime_rate_100k": 7838.3,
+    "crime_count": 8507,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17000": {
+    "crime_rate_100k": 6766.5,
+    "crime_count": 1663,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17040": {
+    "crime_rate_100k": 5903.3,
+    "crime_count": 1279,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17080": {
+    "crime_rate_100k": 8434.6,
+    "crime_count": 1256,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17100": {
+    "crime_rate_100k": 6415.5,
+    "crime_count": 2925,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17150": {
+    "crime_rate_100k": 4669.6,
+    "crime_count": 10750,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17200": {
+    "crime_rate_100k": 20066.9,
+    "crime_count": 42468,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17310": {
+    "crime_rate_100k": 15126.1,
+    "crime_count": 9540,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17350": {
+    "crime_rate_100k": 6894.3,
+    "crime_count": 416,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17400": {
+    "crime_rate_100k": 9353.9,
+    "crime_count": 637,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17420": {
+    "crime_rate_100k": 2730.4,
+    "crime_count": 5239,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17550": {
+    "crime_rate_100k": 7810.7,
+    "crime_count": 7607,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17620": {
+    "crime_rate_100k": 6606.2,
+    "crime_count": 940,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17640": {
+    "crime_rate_100k": 4110.9,
+    "crime_count": 350,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17650": {
+    "crime_rate_100k": 5024.3,
+    "crime_count": 300,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17750": {
+    "crime_rate_100k": 12125.6,
+    "crime_count": 8198,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17850": {
+    "crime_rate_100k": 6001.3,
+    "crime_count": 181,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17900": {
+    "crime_rate_100k": 32686.1,
+    "crime_count": 1717,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "17950": {
+    "crime_rate_100k": 16078.4,
+    "crime_count": 410,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "18020": {
+    "crime_rate_100k": 12086.7,
+    "crime_count": 1115,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "18050": {
+    "crime_rate_100k": 6839.2,
+    "crime_count": 4692,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "18100": {
+    "crime_rate_100k": 6790.5,
+    "crime_count": 245,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "18200": {
+    "crime_rate_100k": 14437.1,
+    "crime_count": 1076,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "18250": {
+    "crime_rate_100k": 6647.0,
+    "crime_count": 5026,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "18350": {
+    "crime_rate_100k": 3840.0,
+    "crime_count": 2024,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "18400": {
+    "crime_rate_100k": 3878.7,
+    "crime_count": 2093,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "18450": {
+    "crime_rate_100k": 8872.9,
+    "crime_count": 19038,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "18500": {
+    "crime_rate_100k": 4110.6,
+    "crime_count": 2199,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "18710": {
+    "crime_rate_100k": 5399.0,
+    "crime_count": 933,
+    "crime_period": "Jul 2025\u2013Jun 2026 (BOCSAR)"
+  },
+  "20660": {
+    "crime_rate_100k": 7978.0,
+    "crime_count": 10632,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "21180": {
+    "crime_rate_100k": 9402.7,
+    "crime_count": 18704,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "21890": {
+    "crime_rate_100k": 9941.0,
+    "crime_count": 16174,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "23110": {
+    "crime_rate_100k": 7959.3,
+    "crime_count": 7785,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "23270": {
+    "crime_rate_100k": 8169.1,
+    "crime_count": 23691,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "24330": {
+    "crime_rate_100k": 12909.1,
+    "crime_count": 12371,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "24600": {
+    "crime_rate_100k": 22860.2,
+    "crime_count": 44694,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "24650": {
+    "crime_rate_100k": 6515.1,
+    "crime_count": 17101,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "25060": {
+    "crime_rate_100k": 7615.3,
+    "crime_count": 9942,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "25710": {
+    "crime_rate_100k": 3969.0,
+    "crime_count": 2537,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "27070": {
+    "crime_rate_100k": 6578.8,
+    "crime_count": 17709,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "27260": {
+    "crime_rate_100k": 6553.8,
+    "crime_count": 23923,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "27350": {
+    "crime_rate_100k": 15518.2,
+    "crime_count": 15823,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "20110": {
+    "crime_rate_100k": 4317.5,
+    "crime_count": 573,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "20740": {
+    "crime_rate_100k": 7713.2,
+    "crime_count": 3479,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "20830": {
+    "crime_rate_100k": 7985.1,
+    "crime_count": 5115,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "21010": {
+    "crime_rate_100k": 11171.6,
+    "crime_count": 1647,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "21110": {
+    "crime_rate_100k": 5625.7,
+    "crime_count": 10051,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "22110": {
+    "crime_rate_100k": 13646.6,
+    "crime_count": 6851,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "22830": {
+    "crime_rate_100k": 15330.4,
+    "crime_count": 10774,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "23350": {
+    "crime_rate_100k": 3329.4,
+    "crime_count": 596,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "23670": {
+    "crime_rate_100k": 6453.9,
+    "crime_count": 10589,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "24210": {
+    "crime_rate_100k": 3966.6,
+    "crime_count": 5275,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "24250": {
+    "crime_rate_100k": 3290.8,
+    "crime_count": 365,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "24410": {
+    "crime_rate_100k": 7660.4,
+    "crime_count": 9237,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "24850": {
+    "crime_rate_100k": 9063.5,
+    "crime_count": 5792,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "24900": {
+    "crime_rate_100k": 8965.8,
+    "crime_count": 2790,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "24970": {
+    "crime_rate_100k": 7087.2,
+    "crime_count": 15050,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "25620": {
+    "crime_rate_100k": 5808.6,
+    "crime_count": 924,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "26170": {
+    "crime_rate_100k": 8064.6,
+    "crime_count": 2524,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "26430": {
+    "crime_rate_100k": 5297.9,
+    "crime_count": 634,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "26670": {
+    "crime_rate_100k": 3963.2,
+    "crime_count": 246,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "26700": {
+    "crime_rate_100k": 9207.2,
+    "crime_count": 2777,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "26810": {
+    "crime_rate_100k": 12247.2,
+    "crime_count": 5731,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "26980": {
+    "crime_rate_100k": 6295.7,
+    "crime_count": 11698,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "27170": {
+    "crime_rate_100k": 9118.7,
+    "crime_count": 4126,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "27450": {
+    "crime_rate_100k": 5068.9,
+    "crime_count": 8180,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "21450": {
+    "crime_rate_100k": 6682.8,
+    "crime_count": 9129,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "21610": {
+    "crime_rate_100k": 7327.1,
+    "crime_count": 31583,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "22170": {
+    "crime_rate_100k": 11586.5,
+    "crime_count": 16840,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "22310": {
+    "crime_rate_100k": 4616.1,
+    "crime_count": 7544,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "22670": {
+    "crime_rate_100k": 12993.6,
+    "crime_count": 21880,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "25340": {
+    "crime_rate_100k": 6614.5,
+    "crime_count": 11410,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "25900": {
+    "crime_rate_100k": 14100.2,
+    "crime_count": 16196,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "26350": {
+    "crime_rate_100k": 11322.2,
+    "crime_count": 13090,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "20260": {
+    "crime_rate_100k": 13934.5,
+    "crime_count": 1647,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "20570": {
+    "crime_rate_100k": 12192.4,
+    "crime_count": 15281,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "21270": {
+    "crime_rate_100k": 6274.6,
+    "crime_count": 367,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "21370": {
+    "crime_rate_100k": 10141.5,
+    "crime_count": 3844,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "21670": {
+    "crime_rate_100k": 9865.8,
+    "crime_count": 1360,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "21830": {
+    "crime_rate_100k": 5510.1,
+    "crime_count": 863,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "22250": {
+    "crime_rate_100k": 6991.0,
+    "crime_count": 720,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "22410": {
+    "crime_rate_100k": 11846.8,
+    "crime_count": 2362,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "22490": {
+    "crime_rate_100k": 3255.9,
+    "crime_count": 878,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "22620": {
+    "crime_rate_100k": 9842.5,
+    "crime_count": 12592,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "22750": {
+    "crime_rate_100k": 8671.5,
+    "crime_count": 26102,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "22910": {
+    "crime_rate_100k": 4692.3,
+    "crime_count": 807,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "22980": {
+    "crime_rate_100k": 6892.8,
+    "crime_count": 379,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "23190": {
+    "crime_rate_100k": 13989.7,
+    "crime_count": 2836,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "23940": {
+    "crime_rate_100k": 6943.1,
+    "crime_count": 538,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "24130": {
+    "crime_rate_100k": 5131.7,
+    "crime_count": 2829,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "24780": {
+    "crime_rate_100k": 15389.8,
+    "crime_count": 8878,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "25150": {
+    "crime_rate_100k": 7967.1,
+    "crime_count": 3274,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "25430": {
+    "crime_rate_100k": 7047.6,
+    "crime_count": 1494,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "25490": {
+    "crime_rate_100k": 3681.7,
+    "crime_count": 656,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "25810": {
+    "crime_rate_100k": 15096.1,
+    "crime_count": 1794,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "25990": {
+    "crime_rate_100k": 6409.1,
+    "crime_count": 508,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "26080": {
+    "crime_rate_100k": 1675.7,
+    "crime_count": 62,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "26260": {
+    "crime_rate_100k": 8676.2,
+    "crime_count": 1430,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "26490": {
+    "crime_rate_100k": 3280.8,
+    "crime_count": 1337,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "26610": {
+    "crime_rate_100k": 11333.9,
+    "crime_count": 2377,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "26730": {
+    "crime_rate_100k": 9520.6,
+    "crime_count": 3491,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "26890": {
+    "crime_rate_100k": 5998.0,
+    "crime_count": 231,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "27630": {
+    "crime_rate_100k": 8440.3,
+    "crime_count": 532,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "29399": {
+    "crime_rate_100k": 0.0,
+    "crime_count": 113,
+    "crime_period": "YE Jun 2026 (CSA)"
+  },
+  "30250": {
+    "crime_rate_100k": 191926.5,
+    "crime_count": 2113,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "30300": {
+    "crime_rate_100k": 18212.7,
+    "crime_count": 787,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "30370": {
+    "crime_rate_100k": 9457.4,
+    "crime_count": 1373,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "30410": {
+    "crime_rate_100k": 9017.0,
+    "crime_count": 257,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "30450": {
+    "crime_rate_100k": 30270.5,
+    "crime_count": 93,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "30900": {
+    "crime_rate_100k": 13929.8,
+    "crime_count": 64,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "31000": {
+    "crime_rate_100k": 10332.0,
+    "crime_count": 128409,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "31750": {
+    "crime_rate_100k": 6876.6,
+    "crime_count": 23,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "31820": {
+    "crime_rate_100k": 9804.7,
+    "crime_count": 9728,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "31900": {
+    "crime_rate_100k": 13196.7,
+    "crime_count": 2203,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "31950": {
+    "crime_rate_100k": 19428.0,
+    "crime_count": 81,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "32080": {
+    "crime_rate_100k": 19642.9,
+    "crime_count": 32792,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "32250": {
+    "crime_rate_100k": 52907.9,
+    "crime_count": 1106,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "32260": {
+    "crime_rate_100k": 14208.3,
+    "crime_count": 4143,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "32310": {
+    "crime_rate_100k": 17162.1,
+    "crime_count": 2024,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "32330": {
+    "crime_rate_100k": 73823.6,
+    "crime_count": 881,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "32450": {
+    "crime_rate_100k": 19268.9,
+    "crime_count": 702,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "32500": {
+    "crime_rate_100k": 24852.4,
+    "crime_count": 1121,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "32600": {
+    "crime_rate_100k": 19945.3,
+    "crime_count": 53,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "32750": {
+    "crime_rate_100k": 10529.0,
+    "crime_count": 28,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "32770": {
+    "crime_rate_100k": 98594.8,
+    "crime_count": 1368,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "32810": {
+    "crime_rate_100k": 11392.8,
+    "crime_count": 1406,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "33100": {
+    "crime_rate_100k": 11873.9,
+    "crime_count": 85,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "33220": {
+    "crime_rate_100k": 10766.7,
+    "crime_count": 11955,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "33360": {
+    "crime_rate_100k": 12653.1,
+    "crime_count": 8037,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "33430": {
+    "crime_rate_100k": 10211.3,
+    "crime_count": 63829,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "33610": {
+    "crime_rate_100k": 16570.5,
+    "crime_count": 1708,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "33620": {
+    "crime_rate_100k": 11025.3,
+    "crime_count": 5870,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "33800": {
+    "crime_rate_100k": 12687.2,
+    "crime_count": 1385,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "33830": {
+    "crime_rate_100k": 43259.1,
+    "crime_count": 422,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "33960": {
+    "crime_rate_100k": 11080.0,
+    "crime_count": 25396,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "33980": {
+    "crime_rate_100k": 9612.7,
+    "crime_count": 2119,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "34420": {
+    "crime_rate_100k": 95994.1,
+    "crime_count": 1036,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "34530": {
+    "crime_rate_100k": 8524.1,
+    "crime_count": 3358,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "34570": {
+    "crime_rate_100k": 67945.1,
+    "crime_count": 435,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "34580": {
+    "crime_rate_100k": 12965.7,
+    "crime_count": 5329,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "34590": {
+    "crime_rate_100k": 12714.9,
+    "crime_count": 43879,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "34710": {
+    "crime_rate_100k": 14688.0,
+    "crime_count": 536,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "34770": {
+    "crime_rate_100k": 12352.4,
+    "crime_count": 15032,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "34830": {
+    "crime_rate_100k": 18002.3,
+    "crime_count": 78,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "34860": {
+    "crime_rate_100k": 10195.3,
+    "crime_count": 1308,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "34880": {
+    "crime_rate_100k": 19068.5,
+    "crime_count": 4359,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "34800": {
+    "crime_rate_100k": 10694.5,
+    "crime_count": 89,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "35010": {
+    "crime_rate_100k": 9076.5,
+    "crime_count": 43235,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "35250": {
+    "crime_rate_100k": 138016.7,
+    "crime_count": 1415,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "35300": {
+    "crime_rate_100k": 48329.9,
+    "crime_count": 9051,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "35600": {
+    "crime_rate_100k": 18774.7,
+    "crime_count": 746,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "35670": {
+    "crime_rate_100k": 52192.2,
+    "crime_count": 461,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "35740": {
+    "crime_rate_100k": 6281.4,
+    "crime_count": 3536,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "35760": {
+    "crime_rate_100k": 8258.9,
+    "crime_count": 832,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "35780": {
+    "crime_rate_100k": 25809.0,
+    "crime_count": 718,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "35790": {
+    "crime_rate_100k": 55760.6,
+    "crime_count": 1170,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "35800": {
+    "crime_rate_100k": 34420.1,
+    "crime_count": 578,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "36070": {
+    "crime_rate_100k": 70633.1,
+    "crime_count": 432,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "36150": {
+    "crime_rate_100k": 6776.6,
+    "crime_count": 47,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "36250": {
+    "crime_rate_100k": 6878.2,
+    "crime_count": 10952,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "36300": {
+    "crime_rate_100k": 11644.2,
+    "crime_count": 89,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "36370": {
+    "crime_rate_100k": 21322.1,
+    "crime_count": 17477,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "36510": {
+    "crime_rate_100k": 6315.3,
+    "crime_count": 2715,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "36580": {
+    "crime_rate_100k": 8825.6,
+    "crime_count": 2211,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "36630": {
+    "crime_rate_100k": 13014.6,
+    "crime_count": 4294,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "36660": {
+    "crime_rate_100k": 9559.4,
+    "crime_count": 3469,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "36720": {
+    "crime_rate_100k": 6187.8,
+    "crime_count": 21196,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "36820": {
+    "crime_rate_100k": 11445.7,
+    "crime_count": 3004,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "36910": {
+    "crime_rate_100k": 11722.9,
+    "crime_count": 20304,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "36950": {
+    "crime_rate_100k": 15969.0,
+    "crime_count": 546,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "36960": {
+    "crime_rate_100k": 10522.3,
+    "crime_count": 434,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "37010": {
+    "crime_rate_100k": 20525.2,
+    "crime_count": 39566,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "37310": {
+    "crime_rate_100k": 15670.2,
+    "crime_count": 5303,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "37340": {
+    "crime_rate_100k": 14715.9,
+    "crime_count": 5467,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "37400": {
+    "crime_rate_100k": 11253.4,
+    "crime_count": 127,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "37550": {
+    "crime_rate_100k": 70631.0,
+    "crime_count": 720,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "37570": {
+    "crime_rate_100k": 43425.6,
+    "crime_count": 120,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "37600": {
+    "crime_rate_100k": 51531.0,
+    "crime_count": 1291,
+    "crime_period": "Nov 2025\u2013Oct 2026 (QPS)"
+  },
+  "71000": {
+    "crime_rate_100k": 11046.8,
+    "crime_count": 8896,
+    "crime_period": "Oct 2025\u2013Sep 2026 (NT Police)"
+  },
+  "72800": {
+    "crime_rate_100k": 10594.1,
+    "crime_count": 3946,
+    "crime_period": "Oct 2025\u2013Sep 2026 (NT Police)"
+  },
+  "70200": {
+    "crime_rate_100k": 21804.6,
+    "crime_count": 5650,
+    "crime_period": "Oct 2025\u2013Sep 2026 (NT Police)"
+  },
+  "72200": {
+    "crime_rate_100k": 27346.3,
+    "crime_count": 2637,
+    "crime_period": "Oct 2025\u2013Sep 2026 (NT Police)"
+  }
+}

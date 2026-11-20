@@ -119,6 +119,18 @@ const STATE_ELECTION_METRICS = [
   },
 ];
 
+const CRIME_METRICS = [
+  {
+    key: "crime_rate_100k",
+    label: "Crime Rate",
+    unit: "/100k (12 mo)",
+    format: (v) => `${Math.round(v).toLocaleString()}/100k`,
+    colors: ["#fef2f2", "#fca5a5", "#dc2626", "#7f1d1d"],
+    scale: "log",
+    layerOnly: "lga",
+  },
+];
+
 const CITIES = [
   { name: "Australia", coords: null, scale: 1 },
   { name: "Sydney", coords: [151.1, -33.86], scale: 11 },
@@ -151,6 +163,7 @@ function currentGeo() {
 function availableMetrics() {
   if (state.layerKey === "ced") return [...ELECTION_METRICS, ...CENSUS_METRICS];
   if (state.layerKey === "sed") return [...STATE_ELECTION_METRICS, ...CENSUS_METRICS];
+  if (state.layerKey === "lga") return [...CENSUS_METRICS, ...CRIME_METRICS];
   return CENSUS_METRICS;
 }
 
@@ -684,6 +697,9 @@ function renderDossier() {
     { k: "Non-English Home", v: p.pct_other_lang != null ? `${p.pct_other_lang}%` : "N/A" },
     { k: "Year 12+ (15+ yrs)", v: p.pct_yr12 != null ? `${p.pct_yr12}%` : "N/A" },
     { k: "Avg Household Size", v: p.avg_hhd_size != null ? `${p.avg_hhd_size}` : "N/A" },
+    ...(p.crime_rate_100k != null
+      ? [{ k: `Crime Rate (${p.crime_period || "12 mo"})`, v: `${Math.round(p.crime_rate_100k).toLocaleString()}/100k` }]
+      : []),
   ]
     .map((s) => `<div class="stat-cell"><div class="k">${s.k}</div><div class="v mono">${s.v}</div></div>`)
     .join("");

@@ -4,6 +4,9 @@
 Metadata/
 Readme/
 boundaries/
+crime/*.csv
+crime/*.xlsx
+crime/*.xlsm
 
 # Intermediate unmerged GeoJSONs
 web/data/sa4_2021.geojson

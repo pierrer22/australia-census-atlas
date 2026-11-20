@@ -339,6 +339,8 @@ def load_state_elections() -> dict[str, dict]:
 def main() -> None:
     aec_2025 = load_aec_2025()
     state_elec = load_state_elections()
+    crime_path = BASE / "crime" / "lga_crime.json"
+    lga_crime = json.loads(crime_path.read_text(encoding="utf-8")) if crime_path.exists() else {}
     ced21_geo = json.loads((WEB_DATA / "ced_2021.geojson").read_text(encoding="utf-8"))
     ced21_name_to_code = {
         f["properties"]["CED_NAME21"].strip().lower(): f"CED{f['properties']['CED_CODE21']}"
@@ -387,6 +389,10 @@ def main() -> None:
                 st_key = f"{props['STE_NAME21'].strip().lower()}::{clean_sed}"
                 st_elec = state_elec.get(st_key, {})
                 out_props.update(st_elec)
+            elif cfg["key"] == "lga":
+                c_data = lga_crime.get(raw_code)
+                if c_data:
+                    out_props.update(c_data)
             feat["properties"] = out_props
 
         (WEB_DATA / cfg["out_geo"]).write_text(
