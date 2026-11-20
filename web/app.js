@@ -803,8 +803,8 @@ function renderDossier() {
   document.getElementById("stat-grid").innerHTML = [
     { k: "Born Overseas", v: p.pct_born_overseas != null ? `${p.pct_born_overseas}%` : "N/A" },
     { k: "Non-English Home", v: p.pct_other_lang != null ? `${p.pct_other_lang}%` : "N/A" },
-    { k: "Year 12+ (15+ yrs)", v: p.pct_yr12 != null ? `${p.pct_yr12}%` : "N/A" },
-    { k: "Uni Degree (15+ yrs)", v: p.pct_uni != null ? `${p.pct_uni}%` : "N/A" },
+    { k: "Year 12+", v: p.pct_yr12 != null ? `${p.pct_yr12}%` : "N/A" },
+    { k: "Uni Degree", v: p.pct_uni != null ? `${p.pct_uni}%` : "N/A" },
     { k: "Avg Household Size", v: p.avg_hhd_size != null ? `${p.avg_hhd_size}` : "N/A" },
     ...(p.crime_rate_100k != null
       ? [{ k: `Crime Rate (${p.crime_period || "12 mo"})`, v: `${Math.round(p.crime_rate_100k).toLocaleString()}/100k` }]
