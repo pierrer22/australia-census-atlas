@@ -598,11 +598,54 @@ def main() -> None:
         json.dumps(cities_out, indent=2), encoding="utf-8"
     )
 
+    csv_ste = CSV_ROOT / "STE" / "AUS"
+    g01_ste = load_csv_by_code(csv_ste / "2021Census_G01_AUST_STE.csv", "STE_CODE_2021")
+    g02_ste = load_csv_by_code(csv_ste / "2021Census_G02_AUST_STE.csv", "STE_CODE_2021")
+    pop_ste = {k: int(v.get("Tot_P_P", 0) or 0) for k, v in g01_ste.items()}
+    pop15_ste = {
+        k: max(1, int(v.get("Tot_P_P", 0) or 0) - int(v.get("Age_0_4_yr_P", 0) or 0) - int(v.get("Age_5_14_yr_P", 0) or 0))
+        for k, v in g01_ste.items()
+    }
+    cob_ste = load_top_cob(csv_ste, "AUST_STE", "STE_CODE_2021", pop_ste)
+    ste_no_rel, ste_top_rel = load_religion(csv_ste, "AUST_STE", "STE_CODE_2021")
+    ste_uni, ste_edu_bd = load_uni_pct(csv_ste, "AUST_STE", "STE_CODE_2021", pop15_ste, g01_ste)
+
     ste_geo = json.loads((WEB_DATA / "ste_2021.geojson").read_text(encoding="utf-8"))
+    ste_areas = {}
     for feat in ste_geo["features"]:
         fix_winding(feat["geometry"])
+        ste_areas[str(feat["properties"]["STE_CODE21"])] = round(float(feat["properties"].get("AREASQKM21") or 0), 1)
     (WEB_DATA / "ste_2021.geojson").write_text(
         json.dumps(ste_geo, separators=(",", ":")), encoding="utf-8"
+    )
+
+    state_meta = [
+        ("1", "NSW", "New South Wales"),
+        ("2", "VIC", "Victoria"),
+        ("3", "QLD", "Queensland"),
+        ("4", "SA", "South Australia"),
+        ("5", "WA", "Western Australia"),
+        ("6", "TAS", "Tasmania"),
+        ("7", "NT", "Northern Territory"),
+        ("8", "ACT", "Australian Capital Territory"),
+    ]
+    states_out = {}
+    for ste_code, abbr, full_name in state_meta:
+        area_km2 = ste_areas.get(ste_code, 0.0)
+        m = extract_metrics(g01_ste.get(ste_code, {}), g02_ste.get(ste_code, {}), area_km2)
+        m["code"] = ste_code
+        m["abbr"] = abbr
+        m["name"] = full_name
+        m["ste_name"] = "State / Territory"
+        m["area_sqkm"] = area_km2
+        m["top_cob"] = cob_ste.get(ste_code, [])
+        m["pct_no_religion"] = ste_no_rel.get(ste_code, 0.0)
+        m["top_rel"] = ste_top_rel.get(ste_code, [])
+        m["pct_uni"] = ste_uni.get(ste_code, 0.0)
+        m["edu_bd"] = ste_edu_bd.get(ste_code, [])
+        states_out[abbr] = m
+    (WEB_DATA / "states_2021.json").write_text(
+        json.dumps(states_out, indent=2), encoding="utf-8"
     )
     print("Done.")
 

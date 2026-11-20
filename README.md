@@ -18,7 +18,7 @@ Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G
 - **9 Census Lenses:** Household Income, Personal Income, Weekly Rent, Monthly Mortgage, Median Age, Born Overseas (%), Religion (% Affiliated), Education (% Uni Degree + hover qualification breakdown table), and Population Density.
 - **Crime Lens (`LGA` layer):** 12-month Crime Rate (`/100k` residents) across 278 LGAs in NSW, VIC, QLD, and NT.
 - **Election Lenses:** `2025 Winner` & `2025 ALP 2PP` (Federal), `State Winner` (State Seats), with actual 2CP Winner vs Runner-up cards in the sidebar.
-- **Interactive Dossier:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), search result, or leaderboard item to view benchmarks against Australian medians, age structure, Top 5 overseas countries of birth, and Top 5 religions.
+- **Interactive Dossier:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), state/territory quick-zoom (`NSW`, `VIC`, `QLD`, `WA`, `SA`, `TAS`, `NT`, `ACT`), search result, or leaderboard item to view benchmarks against Australian medians, age structure, Top 5 overseas countries of birth, and Top 5 religions.
 - **Dark / Light Mode:** Persisted in `localStorage`.
 
 ## Quick Start

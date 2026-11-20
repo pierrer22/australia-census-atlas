@@ -327,14 +327,21 @@ body {
   pointer-events: none;
 }
 
-.city-bar {
+.quick-bars {
   position: absolute;
   top: 14px;
   left: 14px;
   display: flex;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 10;
+}
+
+.city-bar,
+.state-bar {
+  display: flex;
   gap: 5px;
   flex-wrap: wrap;
-  z-index: 10;
 }
 
 .city-btn {
@@ -901,7 +908,8 @@ body {
   }
   .layer-switch::-webkit-scrollbar,
   .metric-tabs::-webkit-scrollbar,
-  .city-bar::-webkit-scrollbar {
+  .city-bar::-webkit-scrollbar,
+  .state-bar::-webkit-scrollbar {
     display: none;
   }
   .layer-btn {
@@ -942,10 +950,13 @@ body {
     height: 54vh;
     min-height: 340px;
   }
-  .city-bar {
+  .quick-bars {
     top: 10px;
     left: 10px;
     right: 10px;
+  }
+  .city-bar,
+  .state-bar {
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;

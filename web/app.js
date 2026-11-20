@@ -155,9 +155,11 @@ const state = {
   ste: null,
   national: null,
   cities: null,
+  states: null,
   metric: CENSUS_METRICS[0],
   selectedCode: null,
   activeCity: "Australia",
+  activeState: null,
 };
 
 let svg, mapGroup, regionLayer, pathGen, projection, zoomBehavior;
@@ -184,19 +186,22 @@ async function loadLayer(key) {
 
 async function init() {
   initTheme();
-  const [sa4, ste, national, cities] = await Promise.all([
+  const [sa4, ste, national, cities, states] = await Promise.all([
     loadLayer("sa4"),
     d3.json("data/ste_2021.geojson"),
     d3.json("data/national_2021.json"),
     d3.json("data/cities_2021.json"),
+    d3.json("data/states_2021.json"),
   ]);
   state.ste = ste;
   state.national = national;
   state.cities = cities;
+  state.states = states;
 
   buildLayerSwitch();
   buildMetricTabs();
   buildCityBar();
+  buildStateBar();
   initSearch();
   initMap(sa4);
   renderLayerPaths();
@@ -206,6 +211,7 @@ async function init() {
   document.getElementById("clear-selection").addEventListener("click", () => {
     state.selectedCode = null;
     state.activeCity = "Australia";
+    state.activeState = null;
     document.querySelectorAll(".city-btn").forEach((b) => b.classList.toggle("active", b.textContent === "Australia"));
     updateSelectionHighlight();
     zoomToCity(CITIES[0]);
@@ -299,11 +305,38 @@ function buildCityBar() {
     btn.textContent = c.name;
     btn.addEventListener("click", () => {
       state.activeCity = c.name;
+      state.activeState = null;
       state.selectedCode = null;
-      bar.querySelectorAll(".city-btn").forEach((b) => b.classList.remove("active"));
+      document.querySelectorAll(".quick-bars .city-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       updateSelectionHighlight();
       zoomToCity(c);
+      renderDossier();
+    });
+    bar.appendChild(btn);
+  });
+}
+
+function buildStateBar() {
+  const bar = document.getElementById("state-bar");
+  const order = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "NT", "ACT"];
+  order.forEach((abbr) => {
+    const info = state.states && state.states[abbr];
+    if (!info) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "city-btn";
+    btn.textContent = abbr;
+    btn.title = info.name;
+    btn.addEventListener("click", () => {
+      state.activeState = abbr;
+      state.activeCity = null;
+      state.selectedCode = null;
+      document.querySelectorAll(".quick-bars .city-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      updateSelectionHighlight();
+      const steFeat = state.ste.features.find((f) => String(f.properties.STE_CODE21) === String(info.code));
+      if (steFeat) focusFeature(steFeat);
       renderDossier();
     });
     bar.appendChild(btn);
@@ -701,19 +734,23 @@ function renderDossier() {
   const feat = state.selectedCode
     ? features.find((f) => f.properties.code === state.selectedCode)
     : null;
-  const cityProfile = !feat && state.activeCity !== "Australia" && state.cities
+  const cityProfile = !feat && state.activeCity && state.activeCity !== "Australia" && state.cities
     ? state.cities[state.activeCity]
     : null;
-  const p = feat ? feat.properties : (cityProfile || state.national);
+  const stateProfile = !feat && !cityProfile && state.activeState && state.states
+    ? state.states[state.activeState]
+    : null;
+  const quickProfile = cityProfile || stateProfile;
+  const p = feat ? feat.properties : (quickProfile || state.national);
   const aus = state.national;
   const layerCfg = LAYERS.find((l) => l.key === state.layerKey);
 
-  document.getElementById("clear-selection").hidden = !feat && !cityProfile;
+  document.getElementById("clear-selection").hidden = !feat && !quickProfile;
   document.getElementById("dossier-badge").textContent = feat
     ? p.ste_name
-    : (cityProfile ? `${p.ste_name} · Greater City` : "National Overview");
-  document.getElementById("dossier-title").textContent = (feat || cityProfile) ? p.name : "Australia";
-  document.getElementById("dossier-sub").textContent = (feat || cityProfile)
+    : (cityProfile ? `${p.ste_name} · Greater City` : (stateProfile ? "State / Territory" : "National Overview"));
+  document.getElementById("dossier-title").textContent = (feat || quickProfile) ? p.name : "Australia";
+  document.getElementById("dossier-sub").textContent = (feat || quickProfile)
     ? `${p.pop != null ? p.pop.toLocaleString() + " people" : "New 2025 division"} · ${p.area_sqkm.toLocaleString()} km²`
     : `${aus.pop.toLocaleString()} people · ${layerCfg.desc}`;
 
@@ -721,7 +758,7 @@ function renderDossier() {
   document.getElementById("hero-kpi-label").textContent = m.label;
   if (feat) {
     document.getElementById("hero-kpi-value").textContent = p[m.key] != null ? m.format(p[m.key]) : "N/A";
-  } else if (cityProfile) {
+  } else if (quickProfile) {
     document.getElementById("hero-kpi-value").textContent = p[m.key] != null ? m.format(p[m.key]) : "N/A";
   } else if (m.key === "st_party") {
     document.getElementById("hero-kpi-value").textContent = "410 Seats";
