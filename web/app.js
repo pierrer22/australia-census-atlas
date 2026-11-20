@@ -110,7 +110,7 @@ const STATE_ELECTION_METRICS = [
   {
     key: "st_party",
     label: "State Winner",
-    unit: "NSW/VIC/QLD/WA",
+    unit: "NSW/VIC/QLD/WA/SA",
     format: (v) => v || "Not loaded",
     scale: "party",
     layerOnly: "sed",
@@ -504,7 +504,7 @@ function handleHover(event, d) {
   let extra = "";
   if (m.scale === "party") {
     if (m.key === "st_party") {
-      extra = p.st_member ? `${p.st_member} (${p.st_year} · ${p.st_tcp_pct ?? "—"}%)` : "NSW/VIC/QLD/WA only";
+      extra = p.st_member ? `${p.st_member} (${p.st_year} · ${p.st_tcp_pct ?? "—"}%)` : "TAS/ACT/NT not loaded";
     } else {
       extra = p.aec_member ? `${p.aec_member} (${p.aec_alp_pct ?? "—"}% ALP 2PP)` : "Abolished 2025";
     }
@@ -555,7 +555,7 @@ function renderDossier() {
   } else if (cityProfile) {
     document.getElementById("hero-kpi-value").textContent = p[m.key] != null ? m.format(p[m.key]) : "N/A";
   } else if (m.key === "st_party") {
-    document.getElementById("hero-kpi-value").textContent = "333 Seats";
+    document.getElementById("hero-kpi-value").textContent = "380 Seats";
   } else if (m.scale === "party") {
     document.getElementById("hero-kpi-value").textContent = "ALP 94 · LNP 43";
   } else if (m.key === "aec_alp_pct") {

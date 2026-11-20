@@ -13,6 +13,7 @@ SOURCES = [
     ("Victoria", 2022, "Results_of_the_2022_Victorian_state_election_(Legislative_Assembly)"),
     ("Queensland", 2024, "Results_of_the_2024_Queensland_state_election"),
     ("Western Australia", 2025, "Results_of_the_2025_Western_Australian_state_election_(Legislative_Assembly)"),
+    ("South Australia", 2026, "Results_of_the_2026_South_Australian_state_election_(House_of_Assembly)"),
 ]
 
 
