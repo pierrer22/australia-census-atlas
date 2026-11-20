@@ -169,10 +169,9 @@ function currentGeo() {
 }
 
 function availableMetrics() {
-  if (state.layerKey === "ced") return [...ELECTION_METRICS, ...CENSUS_METRICS];
-  if (state.layerKey === "sed") return [...STATE_ELECTION_METRICS, ...CENSUS_METRICS];
-  if (state.layerKey === "lga") return [...CENSUS_METRICS, ...CRIME_METRICS];
-  return CENSUS_METRICS;
+  if (state.layerKey === "ced") return [...ELECTION_METRICS, ...CENSUS_METRICS, ...CRIME_METRICS];
+  if (state.layerKey === "sed") return [...STATE_ELECTION_METRICS, ...CENSUS_METRICS, ...CRIME_METRICS];
+  return [...CENSUS_METRICS, ...CRIME_METRICS];
 }
 
 async function loadLayer(key) {
@@ -230,29 +229,37 @@ function applyTheme(mode) {
   document.getElementById("theme-toggle").textContent = mode === "dark" ? "Light" : "Dark";
 }
 
+async function switchLayer(targetKey) {
+  const l = LAYERS.find((x) => x.key === targetKey);
+  if (!l) return;
+  state.layerKey = l.key;
+  state.selectedCode = null;
+  document.querySelectorAll("#layer-switch .layer-btn").forEach((b) => {
+    b.classList.toggle("active", b.dataset.layer === l.key);
+  });
+  document.getElementById("subtitle").textContent = `ABS 2021 · ${l.desc}`;
+
+  await loadLayer(l.key);
+  if (state.metric.layerOnly && state.metric.layerOnly !== l.key) {
+    state.metric = CENSUS_METRICS[0];
+  }
+  buildMetricTabs();
+  renderLayerPaths();
+  renderChoropleth();
+  renderDossier();
+}
+
 function buildLayerSwitch() {
   const wrap = document.getElementById("layer-switch");
   LAYERS.forEach((l) => {
     const btn = document.createElement("button");
     btn.type = "button";
+    btn.dataset.layer = l.key;
     btn.className = "layer-btn" + (l.key === state.layerKey ? " active" : "");
     btn.textContent = l.label;
     btn.addEventListener("click", async () => {
       if (l.key === state.layerKey) return;
-      state.layerKey = l.key;
-      state.selectedCode = null;
-      wrap.querySelectorAll(".layer-btn").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      document.getElementById("subtitle").textContent = `ABS 2021 · ${l.desc}`;
-
-      await loadLayer(l.key);
-      if (state.metric.layerOnly && state.metric.layerOnly !== l.key) {
-        state.metric = CENSUS_METRICS[0];
-      }
-      buildMetricTabs();
-      renderLayerPaths();
-      renderChoropleth();
-      renderDossier();
+      await switchLayer(l.key);
     });
     wrap.appendChild(btn);
   });
@@ -266,8 +273,12 @@ function buildMetricTabs() {
     btn.type = "button";
     btn.className = "metric-btn" + (m.key === state.metric.key ? " active" : "");
     btn.textContent = m.label;
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       state.metric = m;
+      if (m.layerOnly && state.layerKey !== m.layerOnly) {
+        await switchLayer(m.layerOnly);
+        return;
+      }
       container.querySelectorAll(".metric-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       renderChoropleth();
