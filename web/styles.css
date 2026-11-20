@@ -727,6 +727,12 @@ body {
   border-radius: 999px;
 }
 
+.rel-fill {
+  height: 100%;
+  background: #9333ea;
+  border-radius: 999px;
+}
+
 .leaderboard {
   display: flex;
   flex-direction: column;

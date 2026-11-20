@@ -107,6 +107,56 @@ COB_NAMES = {
 }
 
 
+RELIGION_COLS = [
+    ("SB_OSB_NRA_NR_P", "No Religion"),
+    ("Christianity_Catholic_P", "Catholic"),
+    ("Christianity_Anglican_P", "Anglican"),
+    ("Christianity_Uniting_Church_P", "Uniting Church"),
+    ("Christianity_Eastrn_Orthdox_P", "Eastern Orthodox"),
+    ("Christinty_Prsbytrin_Refrmd_P", "Presbyterian"),
+    ("Christianity_Baptist_P", "Baptist"),
+    ("Christianity_Pentecostal_P", "Pentecostal"),
+    ("Christianity_Lutheran_P", "Lutheran"),
+    ("Christianity_Christian_nfd_P", "Christian (nfd)"),
+    ("Islam_P", "Islam"),
+    ("Hinduism_P", "Hinduism"),
+    ("Buddhism_P", "Buddhism"),
+    ("Othr_Rel_Sikhism_P", "Sikhism"),
+    ("Judaism_P", "Judaism"),
+]
+
+
+def load_religion(csv_dir: Path, prefix: str, code_col: str) -> tuple[dict[str, float], dict[str, list]]:
+    pct_no_rel: dict[str, float] = {}
+    top_rel: dict[str, list] = {}
+    path = csv_dir / f"2021Census_G14_{prefix}.csv"
+    with path.open(newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            code = row[code_col].strip()
+            try:
+                tot = int(row.get("Tot_P", 0) or 0)
+            except ValueError:
+                tot = 0
+            if tot <= 0:
+                continue
+            try:
+                no_rel = int(row.get("SB_OSB_NRA_NR_P", 0) or 0)
+            except ValueError:
+                no_rel = 0
+            pct_no_rel[code] = round(100.0 * no_rel / tot, 1)
+            counts = []
+            for col, label in RELIGION_COLS:
+                try:
+                    val = int(row.get(col, 0) or 0)
+                except ValueError:
+                    val = 0
+                if val > 0:
+                    counts.append((label, val))
+            counts.sort(key=lambda x: x[1], reverse=True)
+            top_rel[code] = [[lbl, cnt, round(100.0 * cnt / tot, 1)] for lbl, cnt in counts[:5]]
+    return pct_no_rel, top_rel
+
+
 def load_top_cob(csv_dir: Path, prefix: str, code_col: str, pop_by_code: dict[str, int]) -> dict[str, list]:
     merged: dict[str, dict[str, int]] = {}
     for part in ("G09F", "G09G", "G09H"):
@@ -244,6 +294,7 @@ def main() -> None:
         pop_map = {k: int(v.get("Tot_P_P", 0) or 0) for k, v in g01.items()}
         cob_prefix = f"AUST_{cfg['key'].upper()}"
         top_cob = load_top_cob(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"], pop_map)
+        pct_no_rel, top_rel = load_religion(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"])
 
         geo = json.loads((WEB_DATA / cfg["in_geo"]).read_text(encoding="utf-8"))
         for feat in geo["features"]:
@@ -267,6 +318,9 @@ def main() -> None:
             }
             if csv_key in top_cob:
                 out_props["top_cob"] = top_cob[csv_key]
+            if csv_key in pct_no_rel:
+                out_props["pct_no_religion"] = pct_no_rel[csv_key]
+                out_props["top_rel"] = top_rel[csv_key]
             if cfg["key"] == "ced":
                 elec = aec_2025.get(name.strip().lower(), {})
                 out_props.update(elec)
@@ -282,6 +336,9 @@ def main() -> None:
     g02_aus = load_csv_by_code(csv_aus / "2021Census_G02_AUS_AUS.csv", "AUS_CODE_2021")["AUS"]
     national = extract_metrics(g01_aus, g02_aus, 7688095.0)
     national["top_cob"] = load_top_cob(csv_aus, "AUS_AUS", "AUS_CODE_2021", {"AUS": national["pop"]}).get("AUS", [])
+    aus_no_rel, aus_top_rel = load_religion(csv_aus, "AUS_AUS", "AUS_CODE_2021")
+    national["pct_no_religion"] = aus_no_rel.get("AUS", 0.0)
+    national["top_rel"] = aus_top_rel.get("AUS", [])
     (WEB_DATA / "national_2021.json").write_text(
         json.dumps(national, indent=2), encoding="utf-8"
     )
@@ -291,6 +348,7 @@ def main() -> None:
     g02_gcc = load_csv_by_code(csv_gcc / "2021Census_G02_AUST_GCCSA.csv", "GCCSA_CODE_2021")
     pop_gcc = {k: int(v.get("Tot_P_P", 0) or 0) for k, v in g01_gcc.items()}
     cob_gcc = load_top_cob(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021", pop_gcc)
+    gcc_no_rel, gcc_top_rel = load_religion(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021")
     city_map = {
         "Sydney": ("1GSYD", "Greater Sydney", "New South Wales", 12368.7),
         "Melbourne": ("2GMEL", "Greater Melbourne", "Victoria", 9992.5),
@@ -306,6 +364,8 @@ def main() -> None:
         m["ste_name"] = ste_name
         m["area_sqkm"] = area_km2
         m["top_cob"] = cob_gcc.get(gcc_code, [])
+        m["pct_no_religion"] = gcc_no_rel.get(gcc_code, 0.0)
+        m["top_rel"] = gcc_top_rel.get(gcc_code, [])
         cities_out[city_key] = m
     (WEB_DATA / "cities_2021.json").write_text(
         json.dumps(cities_out, indent=2), encoding="utf-8"

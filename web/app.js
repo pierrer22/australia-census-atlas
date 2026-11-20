@@ -67,6 +67,14 @@ const CENSUS_METRICS = [
     scale: "linear",
   },
   {
+    key: "pct_no_religion",
+    label: "No Religion",
+    unit: "%",
+    format: (v) => `${v.toFixed(1)}%`,
+    colors: ["#f3e8ff", "#c084fc", "#7e22ce", "#3b0764"],
+    scale: "linear",
+  },
+  {
     key: "density_sqkm",
     label: "Pop. Density",
     unit: "/km²",
@@ -632,6 +640,25 @@ function renderDossier() {
       .join("");
   } else {
     cobSec.hidden = true;
+  }
+
+  const relSec = document.getElementById("rel-section");
+  const relList = document.getElementById("rel-list");
+  if (p.top_rel && p.top_rel.length) {
+    relSec.hidden = false;
+    const maxRel = Math.max(1, p.top_rel[0][2]);
+    relList.innerHTML = p.top_rel
+      .map(([rel, cnt, pct]) => `
+        <div class="cob-row">
+          <div class="cob-top">
+            <span>${rel}</span>
+            <span class="mono"><strong>${pct}%</strong> <span style="color:var(--muted)">(${cnt.toLocaleString()})</span></span>
+          </div>
+          <div class="cob-track"><div class="rel-fill" style="width:${((pct / maxRel) * 100).toFixed(1)}%"></div></div>
+        </div>`)
+      .join("");
+  } else {
+    relSec.hidden = true;
   }
 
   const lbSection = document.getElementById("leaderboard-section");

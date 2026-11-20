@@ -44,6 +44,34 @@
         91339,
         1.7
       ]
+    ],
+    "pct_no_religion": 30.3,
+    "top_rel": [
+      [
+        "No Religion",
+        1583084,
+        30.3
+      ],
+      [
+        "Catholic",
+        1210979,
+        23.1
+      ],
+      [
+        "Anglican",
+        478777,
+        9.2
+      ],
+      [
+        "Islam",
+        329566,
+        6.3
+      ],
+      [
+        "Hinduism",
+        253210,
+        4.8
+      ]
     ]
   },
   "Melbourne": {
@@ -90,6 +118,34 @@
         "New Zealand",
         82939,
         1.7
+      ]
+    ],
+    "pct_no_religion": 36.9,
+    "top_rel": [
+      [
+        "No Religion",
+        1812815,
+        36.9
+      ],
+      [
+        "Catholic",
+        1024099,
+        20.8
+      ],
+      [
+        "Anglican",
+        269899,
+        5.5
+      ],
+      [
+        "Islam",
+        258250,
+        5.3
+      ],
+      [
+        "Eastern Orthodox",
+        206077,
+        4.2
       ]
     ]
   },
@@ -138,6 +194,34 @@
         27907,
         1.1
       ]
+    ],
+    "pct_no_religion": 41.4,
+    "top_rel": [
+      [
+        "No Religion",
+        1045284,
+        41.4
+      ],
+      [
+        "Catholic",
+        470193,
+        18.6
+      ],
+      [
+        "Anglican",
+        245852,
+        9.7
+      ],
+      [
+        "Uniting Church",
+        81735,
+        3.2
+      ],
+      [
+        "Christian (nfd)",
+        80065,
+        3.2
+      ]
     ]
   },
   "Perth": {
@@ -184,6 +268,34 @@
         "Malaysia",
         31268,
         1.5
+      ]
+    ],
+    "pct_no_religion": 41.8,
+    "top_rel": [
+      [
+        "No Religion",
+        883758,
+        41.8
+      ],
+      [
+        "Catholic",
+        411980,
+        19.5
+      ],
+      [
+        "Anglican",
+        208870,
+        9.9
+      ],
+      [
+        "Christian (nfd)",
+        72877,
+        3.4
+      ],
+      [
+        "Islam",
+        62899,
+        3.0
       ]
     ]
   },
@@ -232,6 +344,34 @@
         15667,
         1.1
       ]
+    ],
+    "pct_no_religion": 44.6,
+    "top_rel": [
+      [
+        "No Religion",
+        618936,
+        44.6
+      ],
+      [
+        "Catholic",
+        229853,
+        16.6
+      ],
+      [
+        "Anglican",
+        97176,
+        7.0
+      ],
+      [
+        "Uniting Church",
+        54642,
+        3.9
+      ],
+      [
+        "Eastern Orthodox",
+        40041,
+        2.9
+      ]
     ]
   },
   "Canberra": {
@@ -278,6 +418,34 @@
         "New Zealand",
         5096,
         1.1
+      ]
+    ],
+    "pct_no_religion": 43.5,
+    "top_rel": [
+      [
+        "No Religion",
+        197367,
+        43.5
+      ],
+      [
+        "Catholic",
+        87500,
+        19.3
+      ],
+      [
+        "Anglican",
+        37113,
+        8.2
+      ],
+      [
+        "Hinduism",
+        20498,
+        4.5
+      ],
+      [
+        "Islam",
+        14602,
+        3.2
       ]
     ]
   }
