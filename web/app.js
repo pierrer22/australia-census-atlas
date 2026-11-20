@@ -896,11 +896,12 @@ function buildTooltipDetails(p, metricKey) {
       const cit = p.citizen_p != null ? p.citizen_p : Math.round((p.pop * (p.pct_citizen || 0)) / 100);
       const nonCit = Math.max(0, p.pop - cit);
       const nonPct = Math.max(0, 100 - (p.pct_citizen || 0)).toFixed(1);
-      inner = tooltipRows([
-        ["Aus Citizens", `${cit.toLocaleString()} (${p.pct_citizen}%)`],
-        ["Non-Citizen / NS", `${nonCit.toLocaleString()} (${nonPct}%)`],
-        ["Born Overseas", p.pct_born_overseas != null ? `${p.pct_born_overseas}%` : "—"],
-      ]);
+      inner =
+        tooltipRows([
+          ["Aus Citizens", `${cit.toLocaleString()} (${p.pct_citizen}%)`],
+          ["Non-Citizen / NS", `${nonCit.toLocaleString()} (${nonPct}%)`],
+          ["Born Overseas", p.pct_born_overseas != null ? `${p.pct_born_overseas}%` : "—"],
+        ]) + tooltipTop5Table(p.top_cob, "Countries");
       break;
     }
     case "density_sqkm": {
