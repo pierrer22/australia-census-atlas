@@ -1,8 +1,8 @@
 const LAYERS = [
   { key: "sa4", label: "SA4", file: "data/sa4_census_2021.geojson", desc: "89 SA4 regions" },
+  { key: "ced", label: "Electorates", file: "data/ced_census_2021.geojson", desc: "150 divisions (2025 AEC)" },
   { key: "sa3", label: "SA3", file: "data/sa3_census_2021.geojson", desc: "340 SA3 regions" },
   { key: "lga", label: "LGA", file: "data/lga_census_2021.geojson", desc: "547 councils" },
-  { key: "ced", label: "Electorates", file: "data/ced_census_2021.geojson", desc: "151 divisions + 2025 AEC" },
 ];
 
 const PARTY_COLORS = {
@@ -388,10 +388,10 @@ function getColorScale() {
   const interp = d3.interpolateRgbBasis(m.colors);
   if (m.scale === "log") {
     const s = d3.scaleLog().domain([Math.max(0.1, min), max]).range([0, 1]).clamp(true);
-    return { color: (v) => interp(s(Math.max(0.1, v))), min, max };
+    return { color: (v) => (v == null || v <= 0 ? "#94a3b8" : interp(s(Math.max(0.1, v)))), min, max };
   }
   const s = d3.scaleLinear().domain([min, max]).range([0, 1]).clamp(true);
-  return { color: (v) => interp(s(v)), min, max };
+  return { color: (v) => (v == null ? "#94a3b8" : interp(s(v))), min, max };
 }
 
 function renderChoropleth() {
@@ -466,10 +466,11 @@ function handleHover(event, d) {
     extra = `#${rank}/${total}`;
   }
 
+  const valStr = val != null ? m.format(val) : "N/A";
   tip.innerHTML = `
     <div class="tooltip-title">${p.name}</div>
-    <div class="tooltip-meta">${p.ste_name} · Pop ${p.pop.toLocaleString()}</div>
-    <div class="tooltip-val">${m.format(val)} <span style="opacity:0.75;font-weight:400">${extra}</span></div>
+    <div class="tooltip-meta">${p.ste_name} · Pop ${p.pop != null ? p.pop.toLocaleString() : "New 2025"}</div>
+    <div class="tooltip-val">${valStr} <span style="opacity:0.75;font-weight:400">${extra}</span></div>
   `;
   const stageRect = document.querySelector(".map-stage").getBoundingClientRect();
   const x = Math.min(stageRect.width - 260, event.clientX - stageRect.left + 14);
@@ -492,13 +493,13 @@ function renderDossier() {
   document.getElementById("dossier-badge").textContent = feat ? p.ste_name : "National Overview";
   document.getElementById("dossier-title").textContent = feat ? p.name : "Australia";
   document.getElementById("dossier-sub").textContent = feat
-    ? `${p.pop.toLocaleString()} people · ${p.area_sqkm.toLocaleString()} km²`
+    ? `${p.pop != null ? p.pop.toLocaleString() + " people" : "New 2025 division"} · ${p.area_sqkm.toLocaleString()} km²`
     : `${aus.pop.toLocaleString()} people · ${layerCfg.desc}`;
 
   const m = state.metric;
   document.getElementById("hero-kpi-label").textContent = m.label;
   if (feat) {
-    document.getElementById("hero-kpi-value").textContent = m.format(p[m.key]);
+    document.getElementById("hero-kpi-value").textContent = p[m.key] != null ? m.format(p[m.key]) : "N/A";
   } else if (m.scale === "party") {
     document.getElementById("hero-kpi-value").textContent = "ALP 94 · LNP 43";
   } else if (m.key === "aec_alp_pct") {
@@ -549,6 +550,9 @@ function renderDossier() {
 
   document.getElementById("compare-list").innerHTML = comparisons
     .map((c) => {
+      if (c.val == null) {
+        return `<div class="compare-row"><div class="compare-top"><span class="label">${c.label}</span><span class="mono" style="color:var(--muted)">N/A (new 2025 seat)</span></div></div>`;
+      }
       const maxRef = Math.max(c.val, c.aus) * 1.15;
       const pct = Math.min(100, (c.val / maxRef) * 100);
       const ausPct = Math.min(100, (c.aus / maxRef) * 100);
@@ -566,22 +570,22 @@ function renderDossier() {
     })
     .join("");
 
-  document.getElementById("age-bar").innerHTML = `
+  document.getElementById("age-bar").innerHTML = p.pct_age_0_19 != null ? `
     <div class="age-seg-youth" style="width:${p.pct_age_0_19}%"></div>
     <div class="age-seg-work" style="width:${p.pct_age_20_64}%"></div>
     <div class="age-seg-senior" style="width:${p.pct_age_65_plus}%"></div>
-  `;
-  document.getElementById("age-legend").innerHTML = `
+  ` : "";
+  document.getElementById("age-legend").innerHTML = p.pct_age_0_19 != null ? `
     <span>0–19: ${p.pct_age_0_19}%</span>
     <span>20–64: ${p.pct_age_20_64}%</span>
     <span>65+: ${p.pct_age_65_plus}%</span>
-  `;
+  ` : `<span style="color:var(--muted)">No 2021 Census profile for new 2025 division</span>`;
 
   document.getElementById("stat-grid").innerHTML = [
-    { k: "Born Overseas", v: `${p.pct_born_overseas}%` },
-    { k: "Non-English Home", v: `${p.pct_other_lang}%` },
-    { k: "Year 12+ (15+ yrs)", v: `${p.pct_yr12}%` },
-    { k: "Avg Household Size", v: `${p.avg_hhd_size}` },
+    { k: "Born Overseas", v: p.pct_born_overseas != null ? `${p.pct_born_overseas}%` : "N/A" },
+    { k: "Non-English Home", v: p.pct_other_lang != null ? `${p.pct_other_lang}%` : "N/A" },
+    { k: "Year 12+ (15+ yrs)", v: p.pct_yr12 != null ? `${p.pct_yr12}%` : "N/A" },
+    { k: "Avg Household Size", v: p.avg_hhd_size != null ? `${p.avg_hhd_size}` : "N/A" },
   ]
     .map((s) => `<div class="stat-cell"><div class="k">${s.k}</div><div class="v mono">${s.v}</div></div>`)
     .join("");

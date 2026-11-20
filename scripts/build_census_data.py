@@ -49,10 +49,11 @@ LAYERS = [
     },
     {
         "key": "ced",
-        "in_geo": "ced_2021.geojson",
+        "in_geo": "ced_2025.geojson",
         "out_geo": "ced_census_2021.geojson",
-        "code_prop": "CED_CODE21",
-        "name_prop": "CED_NAME21",
+        "code_prop": "CED_CODE25",
+        "name_prop": "CED_NAME25",
+        "area_prop": "AREASQKM",
         "csv_dir": CSV_ROOT / "CED" / "AUS",
         "g01": "2021Census_G01_AUST_CED.csv",
         "g02": "2021Census_G02_AUST_CED.csv",
@@ -179,6 +180,11 @@ def fix_winding(geom: dict) -> None:
 
 def main() -> None:
     aec_2025 = load_aec_2025()
+    ced21_geo = json.loads((WEB_DATA / "ced_2021.geojson").read_text(encoding="utf-8"))
+    ced21_name_to_code = {
+        f["properties"]["CED_NAME21"].strip().lower(): f"CED{f['properties']['CED_CODE21']}"
+        for f in ced21_geo["features"]
+    }
 
     for cfg in LAYERS:
         g01 = load_csv_by_code(cfg["csv_dir"] / cfg["g01"], cfg["csv_code_col"])
@@ -189,10 +195,13 @@ def main() -> None:
             fix_winding(feat["geometry"])
             props = feat["properties"]
             raw_code = str(props[cfg["code_prop"]])
-            csv_key = raw_code if not cfg["code_prefix"] or raw_code.startswith(cfg["code_prefix"]) else f"{cfg['code_prefix']}{raw_code}"
-            area = float(props.get("AREASQKM21") or 0)
-            m = extract_metrics(g01.get(csv_key, {}), g02.get(csv_key, {}), area)
             name = props[cfg["name_prop"]]
+            if cfg["key"] == "ced":
+                csv_key = ced21_name_to_code.get(name.strip().lower(), "")
+            else:
+                csv_key = raw_code if not cfg["code_prefix"] or raw_code.startswith(cfg["code_prefix"]) else f"{cfg['code_prefix']}{raw_code}"
+            area = float(props.get(cfg.get("area_prop", "AREASQKM21")) or 0)
+            m = extract_metrics(g01.get(csv_key, {}), g02.get(csv_key, {}), area) if csv_key in g01 else {}
             out_props = {
                 "code": raw_code,
                 "name": name,

@@ -10,6 +10,7 @@ web/data/sa4_2021.geojson
 web/data/sa3_2021.geojson
 web/data/lga_2021.geojson
 web/data/ced_2021.geojson
+web/data/ced_2025.geojson
 
 # OS / editor
 .DS_Store
