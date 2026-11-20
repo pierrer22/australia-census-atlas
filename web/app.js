@@ -298,7 +298,7 @@ function buildMetricTabs() {
 
 function buildCityBar() {
   const bar = document.getElementById("city-bar");
-  CITIES.forEach((c) => {
+  CITIES.filter((c) => c.name !== "Australia").forEach((c) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "city-btn" + (c.name === state.activeCity ? " active" : "");
@@ -319,6 +319,22 @@ function buildCityBar() {
 
 function buildStateBar() {
   const bar = document.getElementById("state-bar");
+  const ausBtn = document.createElement("button");
+  ausBtn.type = "button";
+  ausBtn.className = "city-btn" + (state.activeCity === "Australia" ? " active" : "");
+  ausBtn.textContent = "Australia";
+  ausBtn.addEventListener("click", () => {
+    state.activeCity = "Australia";
+    state.activeState = null;
+    state.selectedCode = null;
+    document.querySelectorAll(".quick-bars .city-btn").forEach((b) => b.classList.remove("active"));
+    ausBtn.classList.add("active");
+    updateSelectionHighlight();
+    zoomToCity(CITIES[0]);
+    renderDossier();
+  });
+  bar.appendChild(ausBtn);
+
   const order = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "NT", "ACT"];
   order.forEach((abbr) => {
     const info = state.states && state.states[abbr];
