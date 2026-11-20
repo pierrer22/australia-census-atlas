@@ -611,6 +611,17 @@ function buildTooltipDetails(p, metricKey) {
     case "pct_no_religion":
       inner = tooltipTop5Table(p.top_rel, "Religions");
       break;
+    case "pct_uni":
+      if (p.edu_bd && p.edu_bd.length) {
+        const body = p.edu_bd
+          .map(
+            ([name, cnt, pct]) =>
+              `<tr><td>${name}</td><td>${pct}%</td><td class="muted">${cnt.toLocaleString()}</td></tr>`
+          )
+          .join("");
+        inner = `<table class="tooltip-table"><thead><tr><th>Highest Qualification</th><th>%</th><th>Pop</th></tr></thead><tbody>${body}</tbody></table>`;
+      }
+      break;
     case "density_sqkm": {
       const tot = p.pop || 1;
       const mStr = p.pop_m != null ? `${p.pop_m.toLocaleString()} (${((100 * p.pop_m) / tot).toFixed(1)}%)` : "—";

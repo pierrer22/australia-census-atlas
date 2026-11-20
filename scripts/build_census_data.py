@@ -170,21 +170,36 @@ def load_religion(csv_dir: Path, prefix: str, code_col: str) -> tuple[dict[str, 
     return pct_no_rel, top_rel
 
 
-def load_uni_pct(csv_dir: Path, prefix: str, code_col: str, pop15_by_code: dict[str, int]) -> dict[str, float]:
-    out: dict[str, float] = {}
+EDU_COLS = [
+    ("P_PGrad_Deg_Total", "Postgraduate"),
+    ("P_GradDip_and_GradCert_Total", "Grad Dip / Cert"),
+    ("P_BachDeg_Total", "Bachelor"),
+    ("P_AdvDip_and_Dip_Total", "Diploma"),
+    ("P_Cert_III_IV_Total", "Cert III / IV"),
+    ("P_Cert_I_II_Total", "Cert I / II"),
+]
+
+
+def load_uni_pct(csv_dir: Path, prefix: str, code_col: str, pop15_by_code: dict[str, int]) -> tuple[dict[str, float], dict[str, list]]:
+    pct_uni: dict[str, float] = {}
+    edu_bd: dict[str, list] = {}
     path = csv_dir / f"2021Census_G49B_{prefix}.csv"
     with path.open(newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
             code = row[code_col].strip()
             pop15 = max(1, pop15_by_code.get(code, 1))
-            uni = 0
-            for col in ("P_PGrad_Deg_Total", "P_GradDip_and_GradCert_Total", "P_BachDeg_Total"):
+            vals = []
+            bd = []
+            for col, label in EDU_COLS:
                 try:
-                    uni += int(row.get(col, 0) or 0)
+                    cnt = int(row.get(col, 0) or 0)
                 except ValueError:
-                    pass
-            out[code] = round(100.0 * uni / pop15, 1)
-    return out
+                    cnt = 0
+                vals.append(cnt)
+                bd.append([label, cnt, round(100.0 * cnt / pop15, 1)])
+            pct_uni[code] = round(100.0 * sum(vals[:3]) / pop15, 1)
+            edu_bd[code] = bd
+    return pct_uni, edu_bd
 
 
 def load_top_cob(csv_dir: Path, prefix: str, code_col: str, pop_by_code: dict[str, int]) -> dict[str, list]:
@@ -450,7 +465,7 @@ def main() -> None:
         cob_prefix = f"AUST_{cfg['key'].upper()}"
         top_cob = load_top_cob(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"], pop_map)
         pct_no_rel, top_rel = load_religion(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"])
-        pct_uni = load_uni_pct(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"], pop15_map)
+        pct_uni, edu_bd = load_uni_pct(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"], pop15_map)
         age_gender = load_age_by_gender(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"])
         inc_gender = load_income_by_gender(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"])
 
@@ -481,6 +496,7 @@ def main() -> None:
                 out_props["top_rel"] = top_rel[csv_key]
             if csv_key in pct_uni:
                 out_props["pct_uni"] = pct_uni[csv_key]
+                out_props["edu_bd"] = edu_bd[csv_key]
             if csv_key in age_gender:
                 ag_m, ag_f = age_gender[csv_key]
                 if ag_m is not None:
@@ -522,7 +538,9 @@ def main() -> None:
     national["pct_no_religion"] = aus_no_rel.get("AUS", 0.0)
     national["top_rel"] = aus_top_rel.get("AUS", [])
     aus_pop15 = max(1, national["pop"] - int(g01_aus.get("Age_0_4_yr_P", 0) or 0) - int(g01_aus.get("Age_5_14_yr_P", 0) or 0))
-    national["pct_uni"] = load_uni_pct(csv_aus, "AUS_AUS", "AUS_CODE_2021", {"AUS": aus_pop15}).get("AUS", 0.0)
+    aus_uni, aus_edu_bd = load_uni_pct(csv_aus, "AUS_AUS", "AUS_CODE_2021", {"AUS": aus_pop15})
+    national["pct_uni"] = aus_uni.get("AUS", 0.0)
+    national["edu_bd"] = aus_edu_bd.get("AUS", [])
     aus_age_g = load_age_by_gender(csv_aus, "AUS_AUS", "AUS_CODE_2021").get("AUS", (None, None))
     aus_inc_g = load_income_by_gender(csv_aus, "AUS_AUS", "AUS_CODE_2021").get("AUS", (None, None))
     national["median_age_m"], national["median_age_f"] = aus_age_g
@@ -541,7 +559,7 @@ def main() -> None:
     }
     cob_gcc = load_top_cob(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021", pop_gcc)
     gcc_no_rel, gcc_top_rel = load_religion(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021")
-    gcc_uni = load_uni_pct(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021", pop15_gcc)
+    gcc_uni, gcc_edu_bd = load_uni_pct(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021", pop15_gcc)
     gcc_age_g = load_age_by_gender(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021")
     gcc_inc_g = load_income_by_gender(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021")
     city_map = {
@@ -562,6 +580,7 @@ def main() -> None:
         m["pct_no_religion"] = gcc_no_rel.get(gcc_code, 0.0)
         m["top_rel"] = gcc_top_rel.get(gcc_code, [])
         m["pct_uni"] = gcc_uni.get(gcc_code, 0.0)
+        m["edu_bd"] = gcc_edu_bd.get(gcc_code, [])
         m["median_age_m"], m["median_age_f"] = gcc_age_g.get(gcc_code, (None, None))
         m["median_prsnl_inc_m"], m["median_prsnl_inc_f"] = gcc_inc_g.get(gcc_code, (None, None))
         cities_out[city_key] = m

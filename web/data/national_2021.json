@@ -72,6 +72,38 @@
     ]
   ],
   "pct_uni": 26.3,
+  "edu_bd": [
+    [
+      "Postgraduate",
+      1359428,
+      6.5
+    ],
+    [
+      "Grad Dip / Cert",
+      495942,
+      2.4
+    ],
+    [
+      "Bachelor",
+      3609256,
+      17.4
+    ],
+    [
+      "Diploma",
+      1946738,
+      9.4
+    ],
+    [
+      "Cert III / IV",
+      3340079,
+      16.1
+    ],
+    [
+      "Cert I / II",
+      252186,
+      1.2
+    ]
+  ],
   "median_age_m": 37,
   "median_age_f": 39,
   "median_prsnl_inc_m": 992,

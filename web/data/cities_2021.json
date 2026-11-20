@@ -76,6 +76,38 @@
       ]
     ],
     "pct_uni": 33.3,
+    "edu_bd": [
+      [
+        "Postgraduate",
+        400516,
+        9.4
+      ],
+      [
+        "Grad Dip / Cert",
+        90797,
+        2.1
+      ],
+      [
+        "Bachelor",
+        932044,
+        21.8
+      ],
+      [
+        "Diploma",
+        412740,
+        9.7
+      ],
+      [
+        "Cert III / IV",
+        506312,
+        11.9
+      ],
+      [
+        "Cert I / II",
+        39276,
+        0.9
+      ]
+    ],
     "median_age_m": 36,
     "median_age_f": 38,
     "median_prsnl_inc_m": 1073,
@@ -158,6 +190,38 @@
       ]
     ],
     "pct_uni": 32.8,
+    "edu_bd": [
+      [
+        "Postgraduate",
+        354900,
+        8.8
+      ],
+      [
+        "Grad Dip / Cert",
+        119704,
+        3.0
+      ],
+      [
+        "Bachelor",
+        845280,
+        21.0
+      ],
+      [
+        "Diploma",
+        400602,
+        9.9
+      ],
+      [
+        "Cert III / IV",
+        502428,
+        12.5
+      ],
+      [
+        "Cert I / II",
+        33315,
+        0.8
+      ]
+    ],
     "median_age_m": 36,
     "median_age_f": 38,
     "median_prsnl_inc_m": 1035,
@@ -240,6 +304,38 @@
       ]
     ],
     "pct_uni": 27.0,
+    "edu_bd": [
+      [
+        "Postgraduate",
+        128765,
+        6.3
+      ],
+      [
+        "Grad Dip / Cert",
+        53320,
+        2.6
+      ],
+      [
+        "Bachelor",
+        368727,
+        18.1
+      ],
+      [
+        "Diploma",
+        200443,
+        9.8
+      ],
+      [
+        "Cert III / IV",
+        348099,
+        17.0
+      ],
+      [
+        "Cert I / II",
+        27488,
+        1.3
+      ]
+    ],
     "median_age_m": 36,
     "median_age_f": 37,
     "median_prsnl_inc_m": 1015,
@@ -322,6 +418,38 @@
       ]
     ],
     "pct_uni": 26.5,
+    "edu_bd": [
+      [
+        "Postgraduate",
+        101204,
+        5.9
+      ],
+      [
+        "Grad Dip / Cert",
+        43076,
+        2.5
+      ],
+      [
+        "Bachelor",
+        310258,
+        18.1
+      ],
+      [
+        "Diploma",
+        167344,
+        9.8
+      ],
+      [
+        "Cert III / IV",
+        290986,
+        17.0
+      ],
+      [
+        "Cert I / II",
+        26049,
+        1.5
+      ]
+    ],
     "median_age_m": 37,
     "median_age_f": 38,
     "median_prsnl_inc_m": 1144,
@@ -404,6 +532,38 @@
       ]
     ],
     "pct_uni": 25.9,
+    "edu_bd": [
+      [
+        "Postgraduate",
+        71463,
+        6.2
+      ],
+      [
+        "Grad Dip / Cert",
+        28468,
+        2.5
+      ],
+      [
+        "Bachelor",
+        198243,
+        17.2
+      ],
+      [
+        "Diploma",
+        103858,
+        9.0
+      ],
+      [
+        "Cert III / IV",
+        191331,
+        16.6
+      ],
+      [
+        "Cert I / II",
+        15003,
+        1.3
+      ]
+    ],
     "median_age_m": 38,
     "median_age_f": 40,
     "median_prsnl_inc_m": 925,
@@ -486,6 +646,38 @@
       ]
     ],
     "pct_uni": 43.0,
+    "edu_bd": [
+      [
+        "Postgraduate",
+        52739,
+        14.2
+      ],
+      [
+        "Grad Dip / Cert",
+        16812,
+        4.5
+      ],
+      [
+        "Bachelor",
+        89879,
+        24.2
+      ],
+      [
+        "Diploma",
+        34370,
+        9.3
+      ],
+      [
+        "Cert III / IV",
+        39764,
+        10.7
+      ],
+      [
+        "Cert I / II",
+        3499,
+        0.9
+      ]
+    ],
     "median_age_m": 35,
     "median_age_f": 36,
     "median_prsnl_inc_m": 1363,
