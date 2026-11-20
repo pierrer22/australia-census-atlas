@@ -393,7 +393,7 @@ function initMap(initialGeo) {
   let repaintTimer;
   zoomBehavior = d3
     .zoom()
-    .scaleExtent([0.75, 120])
+    .scaleExtent([0.75, 320])
     .on("zoom", (event) => {
       currentTransform = event.transform;
       mapGroup.attr("transform", event.transform);
@@ -648,7 +648,7 @@ function focusFeature(feature) {
   const dy = Math.max(12, y1 - y0);
   const cx = (x0 + x1) / 2;
   const cy = (y0 + y1) / 2;
-  const scale = Math.min(75, 0.65 / Math.max(dx / width, dy / height));
+  const scale = Math.min(180, 0.65 / Math.max(dx / width, dy / height));
   const t = d3.zoomIdentity
     .translate(width / 2, height / 2)
     .scale(scale)
