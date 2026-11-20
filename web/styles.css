@@ -696,6 +696,37 @@ body {
   font-weight: 600;
 }
 
+.cob-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.cob-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cob-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.cob-track {
+  height: 6px;
+  background: var(--surface-subtle);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.cob-fill {
+  height: 100%;
+  background: #6366f1;
+  border-radius: 999px;
+}
+
 .leaderboard {
   display: flex;
   flex-direction: column;

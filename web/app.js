@@ -591,6 +591,25 @@ function renderDossier() {
     .map((s) => `<div class="stat-cell"><div class="k">${s.k}</div><div class="v mono">${s.v}</div></div>`)
     .join("");
 
+  const cobSec = document.getElementById("cob-section");
+  const cobList = document.getElementById("cob-list");
+  if (p.top_cob && p.top_cob.length) {
+    cobSec.hidden = false;
+    const maxPct = Math.max(1, p.top_cob[0][2]);
+    cobList.innerHTML = p.top_cob
+      .map(([country, cnt, pct]) => `
+        <div class="cob-row">
+          <div class="cob-top">
+            <span>${country}</span>
+            <span class="mono"><strong>${pct}%</strong> <span style="color:var(--muted)">(${cnt.toLocaleString()})</span></span>
+          </div>
+          <div class="cob-track"><div class="cob-fill" style="width:${((pct / maxPct) * 100).toFixed(1)}%"></div></div>
+        </div>`)
+      .join("");
+  } else {
+    cobSec.hidden = true;
+  }
+
   const lbSection = document.getElementById("leaderboard-section");
   const lb = document.getElementById("leaderboard");
   if (m.scale === "party") {

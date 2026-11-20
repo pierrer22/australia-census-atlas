@@ -93,6 +93,46 @@ def load_csv_by_code(path: Path, code_col: str) -> dict[str, dict[str, float | s
     return rows
 
 
+SKIP_COB = {"P_Australia_Tot", "P_Elsewhere_Tot", "P_COB_NS_Tot", "P_Tot_Tot"}
+COB_NAMES = {
+    "Bosnia_Herzegov": "Bosnia & Herz.",
+    "Hong_Kong_SAR_Ch": "Hong Kong",
+    "Korea_South": "South Korea",
+    "New_Zealand": "New Zealand",
+    "North_Macedonia": "N. Macedonia",
+    "PNG": "Papua New Guinea",
+    "South_Africa": "South Africa",
+    "Sri_Lanka": "Sri Lanka",
+    "USA": "United States",
+}
+
+
+def load_top_cob(csv_dir: Path, prefix: str, code_col: str, pop_by_code: dict[str, int]) -> dict[str, list]:
+    merged: dict[str, dict[str, int]] = {}
+    for part in ("G09F", "G09G", "G09H"):
+        path = csv_dir / f"2021Census_{part}_{prefix}.csv"
+        with path.open(newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            cols = [c for c in (reader.fieldnames or []) if c.startswith("P_") and c.endswith("_Tot") and c not in SKIP_COB]
+            for row in reader:
+                code = row[code_col].strip()
+                bucket = merged.setdefault(code, {})
+                for c in cols:
+                    try:
+                        val = int(row[c])
+                    except ValueError:
+                        val = 0
+                    if val > 0:
+                        raw_name = c[2:-4]
+                        bucket[COB_NAMES.get(raw_name, raw_name.replace("_", " "))] = val
+    out: dict[str, list] = {}
+    for code, counts in merged.items():
+        pop = max(1, pop_by_code.get(code, 1))
+        top5 = sorted(counts.items(), key=lambda x: x[1], reverse=True)[:5]
+        out[code] = [[name, cnt, round(100.0 * cnt / pop, 1)] for name, cnt in top5]
+    return out
+
+
 def load_aec_2025() -> dict[str, dict]:
     tpp_rows: dict[str, dict] = {}
     with (AEC_ROOT / "HouseTppByDivisionDownload-31496.csv").open(newline="", encoding="utf-8") as f:
@@ -201,6 +241,9 @@ def main() -> None:
     for cfg in LAYERS:
         g01 = load_csv_by_code(cfg["csv_dir"] / cfg["g01"], cfg["csv_code_col"])
         g02 = load_csv_by_code(cfg["csv_dir"] / cfg["g02"], cfg["csv_code_col"])
+        pop_map = {k: int(v.get("Tot_P_P", 0) or 0) for k, v in g01.items()}
+        cob_prefix = f"AUST_{cfg['key'].upper()}"
+        top_cob = load_top_cob(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"], pop_map)
 
         geo = json.loads((WEB_DATA / cfg["in_geo"]).read_text(encoding="utf-8"))
         for feat in geo["features"]:
@@ -222,6 +265,8 @@ def main() -> None:
                 "area_sqkm": round(area, 1),
                 **m,
             }
+            if csv_key in top_cob:
+                out_props["top_cob"] = top_cob[csv_key]
             if cfg["key"] == "ced":
                 elec = aec_2025.get(name.strip().lower(), {})
                 out_props.update(elec)
@@ -236,6 +281,7 @@ def main() -> None:
     g01_aus = load_csv_by_code(csv_aus / "2021Census_G01_AUS_AUS.csv", "AUS_CODE_2021")["AUS"]
     g02_aus = load_csv_by_code(csv_aus / "2021Census_G02_AUS_AUS.csv", "AUS_CODE_2021")["AUS"]
     national = extract_metrics(g01_aus, g02_aus, 7688095.0)
+    national["top_cob"] = load_top_cob(csv_aus, "AUS_AUS", "AUS_CODE_2021", {"AUS": national["pop"]}).get("AUS", [])
     (WEB_DATA / "national_2021.json").write_text(
         json.dumps(national, indent=2), encoding="utf-8"
     )
