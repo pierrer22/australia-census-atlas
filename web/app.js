@@ -304,14 +304,27 @@ function initMap(initialGeo) {
 
   pathGen = d3.geoPath(projection);
 
+  let repaintTimer;
   zoomBehavior = d3
     .zoom()
     .scaleExtent([0.75, 120])
     .on("zoom", (event) => {
       mapGroup.attr("transform", event.transform);
+    })
+    .on("end", () => {
+      clearTimeout(repaintTimer);
+      repaintTimer = setTimeout(() => {
+        mapGroup.style("opacity", "0.999");
+        requestAnimationFrame(() => mapGroup.style("opacity", null));
+      }, 60);
     });
 
   svg.call(zoomBehavior);
+  svg.on("mouseenter", () => {
+    if (document.activeElement !== document.getElementById("region-search")) {
+      svg.node().focus({ preventScroll: true });
+    }
+  });
 
   regionLayer = mapGroup.append("g").attr("class", "sa4-layer");
 
