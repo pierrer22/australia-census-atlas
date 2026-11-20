@@ -541,6 +541,7 @@ function scheduleLabels() {
 function renderLabels() {
   if (!labelLayer) return;
   const { x: tx, y: ty, k } = currentTransform;
+  const atMaxZoom = k >= 280;
   const placed = [];
   const visible = [];
   const padX = 5;
@@ -562,28 +563,30 @@ function renderLabels() {
     const screenH = c.bh * k;
     const isSel = c.code === state.selectedCode;
 
-    // Require label to fit inside the polygon's screen bounding box (prevents spilling over boundaries)
-    if (!isSel && (screenW < c.estW * 0.95 || screenH < c.estH * 1.25)) continue;
+    if (!atMaxZoom) {
+      // Require label to fit inside the polygon's screen bounding box (prevents spilling over boundaries)
+      if (!isSel && (screenW < c.estW * 0.95 || screenH < c.estH * 1.25)) continue;
 
-    const box = {
-      x0: sx - c.estW / 2 - padX,
-      y0: sy - c.estH / 2 - padY,
-      x1: sx + c.estW / 2 + padX,
-      y1: sy + c.estH / 2 + padY,
-    };
+      const box = {
+        x0: sx - c.estW / 2 - padX,
+        y0: sy - c.estH / 2 - padY,
+        x1: sx + c.estW / 2 + padX,
+        y1: sy + c.estH / 2 + padY,
+      };
 
-    let overlaps = false;
-    for (const p of placed) {
-      if (box.x0 < p.x1 && box.x1 > p.x0 && box.y0 < p.y1 && box.y1 > p.y0) {
-        overlaps = true;
-        break;
+      let overlaps = false;
+      for (const p of placed) {
+        if (box.x0 < p.x1 && box.x1 > p.x0 && box.y0 < p.y1 && box.y1 > p.y0) {
+          overlaps = true;
+          break;
+        }
       }
+      if (overlaps) continue;
+      placed.push(box);
     }
-    if (overlaps) continue;
 
-    placed.push(box);
     visible.push({ code: c.code, label: c.label, sx, sy, isSel });
-    if (visible.length >= 65) break;
+    if (!atMaxZoom && visible.length >= 65) break;
   }
 
   labelLayer
