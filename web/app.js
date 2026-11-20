@@ -4,7 +4,7 @@ const LAYERS = [
   { key: "sa3", label: "SA3", file: "data/sa3_census_2021.geojson", desc: "340 SA3 regions" },
   { key: "sed", label: "State Seats", file: "data/sed_census_2021.geojson", desc: "433 state electorates" },
   { key: "lga", label: "LGA", file: "data/lga_census_2021.geojson", desc: "547 councils" },
-  { key: "sa2", label: "SA2", file: "data/sa2_census_2021.geojson", desc: "2,454 suburbs/areas" },
+  { key: "sa2", label: "Suburbs", file: "data/sa2_census_2021.geojson", desc: "2,454 suburbs/areas (SA2)" },
 ];
 
 const PARTY_COLORS = {

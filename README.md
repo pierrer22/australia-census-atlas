@@ -14,7 +14,7 @@ Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G
   - `SA3` (340 Statistical Areas Level 3)
   - `State Seats` (433 State Electoral Divisions + 410 results across NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
   - `LGA` (547 Local Government Areas)
-  - `SA2` (2,454 suburb-level areas)
+  - `Suburbs` (`SA2`, 2,454 suburb-level areas)
 - **9 Census Lenses:** Household Income, Personal Income, Weekly Rent, Monthly Mortgage, Median Age, Born Overseas (%), Religion (% Affiliated), Education (% Uni Degree + hover qualification breakdown table), and Population Density.
 - **Crime Lens (`LGA` layer):** 12-month Crime Rate (`/100k` residents) across 278 LGAs in NSW, VIC, QLD, and NT.
 - **Election Lenses:** `2025 Winner` & `2025 ALP 2PP` (Federal), `State Winner` (State Seats), with actual 2CP Winner vs Runner-up cards in the sidebar.
