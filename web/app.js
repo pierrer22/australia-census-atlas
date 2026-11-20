@@ -73,6 +73,7 @@ const CENSUS_METRICS = [
     format: (v) => `${v.toFixed(1)}%`,
     colors: ["#3b0764", "#7e22ce", "#c084fc", "#f3e8ff"],
     scale: "linear",
+    invertRank: true,
   },
   {
     key: "density_sqkm",
@@ -471,9 +472,13 @@ function updateSelectionHighlight() {
     .classed("selected", (d) => d.properties.code === state.selectedCode);
 }
 
-function getRank(code, key) {
+function getRank(code, metric) {
+  const key = typeof metric === "string" ? metric : metric.key;
+  const asc = typeof metric === "object" && metric.invertRank;
   const features = currentGeo().features.filter((f) => isRankable(f) && f.properties[key] != null);
-  const sorted = [...features].sort((a, b) => b.properties[key] - a.properties[key]);
+  const sorted = [...features].sort((a, b) =>
+    asc ? a.properties[key] - b.properties[key] : b.properties[key] - a.properties[key]
+  );
   const idx = sorted.findIndex((f) => f.properties.code === code);
   return { rank: idx >= 0 ? idx + 1 : null, total: sorted.length };
 }
@@ -488,7 +493,7 @@ function handleHover(event, d) {
   if (m.scale === "party") {
     extra = p.aec_member ? `${p.aec_member} (${p.aec_alp_pct ?? "—"}% ALP 2PP)` : "Abolished 2025";
   } else if (val != null) {
-    const { rank, total } = getRank(p.code, m.key);
+    const { rank, total } = getRank(p.code, m);
     extra = rank ? `#${rank}/${total}` : "pop < 500";
   }
 
@@ -543,7 +548,7 @@ function renderDossier() {
 
   const rankPill = document.getElementById("hero-rank-pill");
   if (feat && m.scale !== "party" && p[m.key] != null) {
-    const { rank, total } = getRank(p.code, m.key);
+    const { rank, total } = getRank(p.code, m);
     rankPill.textContent = rank ? `#${rank} of ${total}` : "Unranked (pop < 500)";
     rankPill.hidden = false;
   } else {
@@ -670,7 +675,9 @@ function renderDossier() {
   lbSection.hidden = false;
 
   const valid = features.filter((f) => isRankable(f) && f.properties[m.key] != null && f.properties[m.key] > 0);
-  const sorted = [...valid].sort((a, b) => b.properties[m.key] - a.properties[m.key]);
+  const sorted = [...valid].sort((a, b) =>
+    m.invertRank ? a.properties[m.key] - b.properties[m.key] : b.properties[m.key] - a.properties[m.key]
+  );
   const top3 = sorted.slice(0, 3);
   const bot3 = sorted.slice(-3).reverse();
 
