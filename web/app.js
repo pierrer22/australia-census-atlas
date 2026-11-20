@@ -439,8 +439,40 @@ function initMap(initialGeo) {
     svg.transition().duration(250).call(zoomBehavior.scaleBy, 0.625);
   });
   document.getElementById("zoom-reset").addEventListener("click", () => {
+    document.getElementById("australia-map").classList.remove("flipped");
     zoomToCity(CITIES[0]);
   });
+
+  let brandClicks = 0;
+  let brandTimer;
+  document.querySelector(".brand").addEventListener("click", () => {
+    brandClicks += 1;
+    clearTimeout(brandTimer);
+    brandTimer = setTimeout(() => (brandClicks = 0), 2000);
+    if (brandClicks >= 5) {
+      brandClicks = 0;
+      state.sausageMode = !state.sausageMode;
+      showToast(
+        state.sausageMode
+          ? "🌭 Democracy Sausage unlocked — onions on top or bottom?"
+          : "Democracy Sausage mode off"
+      );
+      renderDossier();
+    }
+  });
+}
+
+function showToast(msg) {
+  let el = document.querySelector(".atlas-toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.className = "atlas-toast";
+    document.querySelector(".map-stage").appendChild(el);
+  }
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => (el.hidden = true), 3800);
 }
 
 function renderLayerPaths() {
@@ -810,7 +842,8 @@ function renderDossier() {
   const elecPanel = document.getElementById("election-panel");
   if (state.layerKey === "ced" && feat && p.aec_party) {
     elecPanel.hidden = false;
-    elecPanel.querySelector("h3").textContent = "2025 Federal Election (AEC)";
+    elecPanel.querySelector("h3").textContent =
+      "2025 Federal Election (AEC)" + (state.sausageMode ? " 🌭" : "");
     const partyColor = PARTY_COLORS[p.aec_party] || "#475569";
     const runParty = p.aec_runner_up_party || "COA";
     const runColor = PARTY_COLORS[runParty] || "#64748b";
@@ -833,7 +866,8 @@ function renderDossier() {
     `;
   } else if (state.layerKey === "sed" && feat && p.st_party) {
     elecPanel.hidden = false;
-    elecPanel.querySelector("h3").textContent = `${p.st_year} ${p.ste_name} Election`;
+    elecPanel.querySelector("h3").textContent =
+      `${p.st_year} ${p.ste_name} Election` + (state.sausageMode ? " 🌭" : "");
     const winColor = PARTY_COLORS[p.st_party] || "#475569";
     const runColor = PARTY_COLORS[p.st_runner_up_party] || "#64748b";
     const swingStr = p.st_swing != null ? ` (${p.st_swing > 0 ? "+" : ""}${p.st_swing}%)` : "";
@@ -987,14 +1021,100 @@ function renderDossier() {
   });
 }
 
+function triggerSpecialQuery(q) {
+  if (q === "upside down" || q === "straya") {
+    const mapEl = document.getElementById("australia-map");
+    const flipped = mapEl.classList.toggle("flipped");
+    showToast(flipped ? "Northern Hemisphere View — Reset to flip back" : "Back down under");
+    return true;
+  }
+  if (q === "nz" || q === "new zealand") {
+    zoomToCity({ name: "NZ", coords: [163, -36], scale: 2.4 });
+    showToast("New Zealand not found — left off the map again (r/MapsWithoutNZ)");
+    return true;
+  }
+  if (q === "emu" || q === "emu war") {
+    zoomToCity({ name: "Wheatbelt", coords: [118.2, -31.0], scale: 5.5 });
+    document.getElementById("clear-selection").hidden = false;
+    document.getElementById("dossier-badge").textContent = "Western Australia · Nov 1932";
+    document.getElementById("dossier-title").textContent = "Great Emu War";
+    document.getElementById("dossier-sub").textContent = "~20,000 emus · Campion, WA";
+    document.getElementById("hero-kpi-label").textContent = "Final Result";
+    document.getElementById("hero-kpi-value").textContent = "Emus 100%";
+    document.getElementById("hero-rank-pill").hidden = true;
+    const ep = document.getElementById("election-panel");
+    ep.hidden = false;
+    ep.querySelector("h3").textContent = "1932 Conflict Outcome";
+    document.getElementById("election-card").innerHTML = `
+      <div class="elec-top"><span class="elec-mp">Dromaius novaehollandiae</span><span class="party-pill" style="background:#166534">EMU</span></div>
+      <div class="tpp-bar"><div style="width:100%;background:#166534"></div></div>
+      <div class="tpp-labels mono"><span>EMUS 100% (+100%)</span><span>RAA 0%</span></div>
+    `;
+    showToast("1932 Great Emu War — decisive Emu victory");
+    return true;
+  }
+  if (q === "drop bear" || q === "dropbear") {
+    document.getElementById("clear-selection").hidden = false;
+    document.getElementById("dossier-badge").textContent = "Biosecurity Advisory";
+    document.getElementById("dossier-title").textContent = "Drop Bear Alert";
+    document.getElementById("dossier-sub").textContent = "Thylarctos plummetus · Eucalyptus canopy";
+    document.getElementById("hero-kpi-label").textContent = "Threat Level";
+    document.getElementById("hero-kpi-value").textContent = "EXTREME";
+    document.getElementById("hero-rank-pill").hidden = true;
+    const ep = document.getElementById("election-panel");
+    ep.hidden = false;
+    ep.querySelector("h3").textContent = "Recommended Countermeasure";
+    document.getElementById("election-card").innerHTML = `
+      <div class="elec-top"><span class="elec-mp">Vegemite behind ears</span><span class="party-pill" style="background:#dc2626">CRITICAL</span></div>
+      <div class="tpp-labels mono"><span>Fork in hair: +12%</span><span>Accent: Mandatory</span></div>
+    `;
+    showToast("Look up before walking under gum trees");
+    return true;
+  }
+  return false;
+}
+
 function initSearch() {
   const input = document.getElementById("region-search");
   const box = document.getElementById("search-results");
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const q = input.value.trim().toLowerCase();
+      if (triggerSpecialQuery(q)) {
+        e.preventDefault();
+        box.hidden = true;
+      }
+    }
+  });
 
   input.addEventListener("input", () => {
     const q = input.value.trim().toLowerCase();
     if (!q) {
       box.hidden = true;
+      return;
+    }
+    const specialLabels = {
+      "upside down": ["Northern Hemisphere View", "Press Enter"],
+      straya: ["Northern Hemisphere View", "Press Enter"],
+      nz: ["New Zealand", "Tasman Sea"],
+      "new zealand": ["New Zealand", "Tasman Sea"],
+      emu: ["Great Emu War (1932)", "Western Australia"],
+      "drop bear": ["Drop Bear Advisory", "Canopy Alert"],
+    };
+    if (specialLabels[q]) {
+      box.innerHTML = "";
+      const [lbl, sub] = specialLabels[q];
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "search-item";
+      btn.innerHTML = `${lbl} <span>${sub}</span>`;
+      btn.addEventListener("click", () => {
+        box.hidden = true;
+        triggerSpecialQuery(q);
+      });
+      box.appendChild(btn);
+      box.hidden = false;
       return;
     }
     const matches = currentGeo()

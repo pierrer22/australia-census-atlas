@@ -296,6 +296,29 @@ body {
   touch-action: none;
   outline: none;
   shape-rendering: geometricPrecision;
+  transition: transform 0.6s ease;
+}
+
+#australia-map.flipped {
+  transform: rotate(180deg);
+}
+
+.atlas-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  background: var(--tooltip-bg);
+  color: var(--tooltip-fg);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  z-index: 50;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 #australia-map:active {
