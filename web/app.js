@@ -624,13 +624,20 @@ function buildTooltipDetails(p, metricKey) {
       break;
     case "pct_uni":
       if (p.edu_bd && p.edu_bd.length) {
-        const body = p.edu_bd
-          .map(
-            ([name, cnt, pct]) =>
-              `<tr><td>${name}</td><td>${pct}%</td><td class="muted">${cnt.toLocaleString()}</td></tr>`
-          )
-          .join("");
-        inner = `<table class="tooltip-table"><thead><tr><th>Highest Qualification</th><th>%</th><th>Pop</th></tr></thead><tbody>${body}</tbody></table>`;
+        const mkRows = (items) =>
+          items
+            .map(
+              ([name, cnt, pct]) =>
+                `<tr><td>${name}</td><td>${pct}%</td><td class="muted">${cnt.toLocaleString()}</td></tr>`
+            )
+            .join("");
+        const postSchool = p.edu_bd.slice(0, 6);
+        const school = p.edu_bd.slice(6);
+        inner =
+          `<table class="tooltip-table"><thead><tr><th>Non-School Quals</th><th>%</th><th>Pop</th></tr></thead><tbody>${mkRows(postSchool)}</tbody></table>` +
+          (school.length
+            ? `<table class="tooltip-table" style="margin-top:6px"><thead><tr><th>School Completed</th><th>%</th><th>Pop</th></tr></thead><tbody>${mkRows(school)}</tbody></table>`
+            : "");
       }
       break;
     case "density_sqkm": {
