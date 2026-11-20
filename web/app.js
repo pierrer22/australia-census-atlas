@@ -71,7 +71,7 @@ const CENSUS_METRICS = [
     label: "Religion",
     unit: "% No Religion",
     format: (v) => `${v.toFixed(1)}%`,
-    colors: ["#f3e8ff", "#c084fc", "#7e22ce", "#3b0764"],
+    colors: ["#3b0764", "#7e22ce", "#c084fc", "#f3e8ff"],
     scale: "linear",
   },
   {
