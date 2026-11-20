@@ -370,6 +370,13 @@ function focusFeature(feature) {
   svg.transition().duration(500).call(zoomBehavior.transform, t);
 }
 
+const MIN_RANK_POP = 500;
+
+function isRankable(feature) {
+  const pop = feature.properties.pop;
+  return pop != null && pop >= MIN_RANK_POP;
+}
+
 function getColorScale() {
   const m = state.metric;
   const features = currentGeo().features;
@@ -392,7 +399,7 @@ function getColorScale() {
     };
   }
 
-  const vals = features.map((f) => f.properties[m.key]).filter((v) => v > 0);
+  const vals = features.filter(isRankable).map((f) => f.properties[m.key]).filter((v) => v > 0);
   const min = d3.min(vals);
   const max = d3.max(vals);
   const interp = d3.interpolateRgbBasis(m.colors);
@@ -457,9 +464,10 @@ function updateSelectionHighlight() {
 }
 
 function getRank(code, key) {
-  const features = currentGeo().features.filter((f) => f.properties[key] != null);
+  const features = currentGeo().features.filter((f) => isRankable(f) && f.properties[key] != null);
   const sorted = [...features].sort((a, b) => b.properties[key] - a.properties[key]);
-  return { rank: sorted.findIndex((f) => f.properties.code === code) + 1, total: sorted.length };
+  const idx = sorted.findIndex((f) => f.properties.code === code);
+  return { rank: idx >= 0 ? idx + 1 : null, total: sorted.length };
 }
 
 function handleHover(event, d) {
@@ -473,7 +481,7 @@ function handleHover(event, d) {
     extra = p.aec_member ? `${p.aec_member} (${p.aec_alp_pct ?? "—"}% ALP 2PP)` : "Abolished 2025";
   } else if (val != null) {
     const { rank, total } = getRank(p.code, m.key);
-    extra = `#${rank}/${total}`;
+    extra = rank ? `#${rank}/${total}` : "pop < 500";
   }
 
   const valStr = val != null ? m.format(val) : "N/A";
@@ -528,7 +536,7 @@ function renderDossier() {
   const rankPill = document.getElementById("hero-rank-pill");
   if (feat && m.scale !== "party" && p[m.key] != null) {
     const { rank, total } = getRank(p.code, m.key);
-    rankPill.textContent = `#${rank} of ${total}`;
+    rankPill.textContent = rank ? `#${rank} of ${total}` : "Unranked (pop < 500)";
     rankPill.hidden = false;
   } else {
     rankPill.hidden = true;
@@ -634,7 +642,7 @@ function renderDossier() {
   }
   lbSection.hidden = false;
 
-  const valid = features.filter((f) => f.properties[m.key] != null);
+  const valid = features.filter((f) => isRankable(f) && f.properties[m.key] != null && f.properties[m.key] > 0);
   const sorted = [...valid].sort((a, b) => b.properties[m.key] - a.properties[m.key]);
   const top3 = sorted.slice(0, 3);
   const bot3 = sorted.slice(-3).reverse();
