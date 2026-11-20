@@ -29,7 +29,7 @@ def norm_party(raw: str) -> str:
     if "liberal national" in p or p == "lnp":
         return "LNP"
     if "national" in p:
-        return "NP"
+        return "NAT"
     if "liberal" in p:
         return "LP"
     if "green" in p:

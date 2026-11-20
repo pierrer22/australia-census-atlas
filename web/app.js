@@ -12,8 +12,8 @@ const PARTY_COLORS = {
   LP: "#1d4ed8",
   LNP: "#1d4ed8",
   CLP: "#1d4ed8",
-  NP: "#1e40af",
-  GRN: "#16a34a",
+  NAT: "#166534",
+  GRN: "#22c55e",
   ONP: "#f97316",
   IND: "#64748b",
   KAP: "#b45309",
@@ -457,8 +457,9 @@ function renderChoropleth() {
     partiesEl.hidden = false;
     partiesEl.innerHTML = [
       { label: "Labor (ALP)", color: "#e11d48" },
-      { label: "Coalition", color: "#1d4ed8" },
-      { label: "Greens", color: "#16a34a" },
+      { label: "Liberal (LP/LNP)", color: "#1d4ed8" },
+      { label: "Nationals (NAT)", color: "#166534" },
+      { label: "Greens", color: "#22c55e" },
       { label: "One Nation (ONP)", color: "#f97316" },
       { label: "Independent", color: "#64748b" },
       { label: "Other (KAP/CA)", color: "#b45309" },

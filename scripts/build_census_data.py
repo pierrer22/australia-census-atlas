@@ -214,8 +214,9 @@ def load_aec_2025() -> dict[str, dict]:
         for r in csv.DictReader(f):
             key = r["DivisionNm"].strip().lower()
             tpp = tpp_rows.get(key, {})
+            raw_ab = r["PartyAb"].strip()
             elected[key] = {
-                "aec_party": r["PartyAb"].strip(),
+                "aec_party": "NAT" if raw_ab == "NP" else raw_ab,
                 "aec_party_name": r["PartyNm"].strip(),
                 "aec_member": f"{r['GivenNm'].strip()} {r['Surname'].strip().title()}",
                 "aec_alp_pct": tpp.get("alp_pct"),
