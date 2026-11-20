@@ -296,11 +296,11 @@ body {
   touch-action: none;
   outline: none;
   shape-rendering: geometricPrecision;
-  transition: transform 0.6s ease;
 }
 
 #australia-map.flipped {
   transform: rotate(180deg);
+  transition: transform 0.6s ease;
 }
 
 .atlas-toast {

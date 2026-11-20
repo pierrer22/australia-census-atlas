@@ -403,9 +403,10 @@ function initMap(initialGeo) {
       scheduleLabels();
       clearTimeout(repaintTimer);
       repaintTimer = setTimeout(() => {
-        mapGroup.style("opacity", "0.999");
-        requestAnimationFrame(() => mapGroup.style("opacity", null));
-      }, 60);
+        svg.style("shape-rendering", "crispEdges");
+        svg.node().getBoundingClientRect();
+        requestAnimationFrame(() => svg.style("shape-rendering", "geometricPrecision"));
+      }, 40);
     });
 
   svg.call(zoomBehavior);
