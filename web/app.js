@@ -68,8 +68,8 @@ const CENSUS_METRICS = [
   },
   {
     key: "pct_no_religion",
-    label: "No Religion",
-    unit: "%",
+    label: "Religion",
+    unit: "% No Religion",
     format: (v) => `${v.toFixed(1)}%`,
     colors: ["#f3e8ff", "#c084fc", "#7e22ce", "#3b0764"],
     scale: "linear",
