@@ -195,9 +195,7 @@ function buildLayerSwitch() {
       document.getElementById("subtitle").textContent = `ABS 2021 · ${l.desc}`;
 
       await loadLayer(l.key);
-      if (l.key === "ced") {
-        state.metric = ELECTION_METRICS[0];
-      } else if (state.metric.cedOnly) {
+      if (l.key !== "ced" && state.metric.cedOnly) {
         state.metric = CENSUS_METRICS[0];
       }
       buildMetricTabs();
