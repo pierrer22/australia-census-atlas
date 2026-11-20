@@ -26,6 +26,14 @@ const CENSUS_METRICS = [
     scale: "linear",
   },
   {
+    key: "median_prsnl_inc_wk",
+    label: "Personal Income",
+    unit: "$/wk",
+    format: (v) => `$${v.toLocaleString()}`,
+    colors: ["#ecfeff", "#67e8f9", "#0e7490", "#164e63"],
+    scale: "linear",
+  },
+  {
     key: "median_rent_wk",
     label: "Weekly Rent",
     unit: "$/wk",
@@ -535,6 +543,7 @@ function renderDossier() {
 
   const comparisons = [
     { label: "Household Income", val: p.median_hhd_inc_wk, aus: aus.median_hhd_inc_wk, fmt: (v) => `$${v.toLocaleString()}/wk` },
+    { label: "Personal Income", val: p.median_prsnl_inc_wk, aus: aus.median_prsnl_inc_wk, fmt: (v) => `$${v.toLocaleString()}/wk` },
     { label: "Weekly Rent", val: p.median_rent_wk, aus: aus.median_rent_wk, fmt: (v) => `$${v.toLocaleString()}/wk` },
     { label: "Monthly Mortgage", val: p.median_mortgage_mo, aus: aus.median_mortgage_mo, fmt: (v) => `$${v.toLocaleString()}/mo` },
     { label: "Median Age", val: p.median_age, aus: aus.median_age, fmt: (v) => `${v} yrs` },
