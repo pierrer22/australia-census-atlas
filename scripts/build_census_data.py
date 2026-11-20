@@ -397,6 +397,8 @@ def extract_metrics(g1: dict, g2: dict, area_sqkm: float | None = None) -> dict:
         "avg_hhd_size": float(g2.get("Average_household_size", 0)),
         "pct_born_overseas": round(100.0 * g1.get("Birthplace_Elsewhere_P", 0) / pop, 1),
         "pct_other_lang": round(100.0 * g1.get("Lang_used_home_Oth_Lang_P", 0) / pop, 1),
+        "pct_citizen": round(100.0 * g1.get("Australian_citizen_P", 0) / pop, 1),
+        "citizen_p": int(g1.get("Australian_citizen_P", 0)),
         "pct_indigenous": round(100.0 * g1.get("Indigenous_P_Tot_P", 0) / pop, 1),
         "pct_yr12": round(100.0 * g1.get("High_yr_schl_comp_Yr_12_eq_P", 0) / pop_15_plus, 1),
         "pct_age_0_19": round(100.0 * age_0_19 / pop, 1),

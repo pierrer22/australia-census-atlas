@@ -87,6 +87,14 @@ const CENSUS_METRICS = [
     scale: "linear",
   },
   {
+    key: "pct_citizen",
+    label: "Citizenship",
+    unit: "% Aus Citizen",
+    format: (v) => `${v.toFixed(1)}%`,
+    colors: ["#f0fdf4", "#86efac", "#15803d", "#14532d"],
+    scale: "linear",
+  },
+  {
     key: "density_sqkm",
     label: "Pop. Density",
     unit: "/km²",
@@ -880,6 +888,17 @@ function buildTooltipDetails(p, metricKey) {
             : "");
       }
       break;
+    case "pct_citizen": {
+      const cit = p.citizen_p != null ? p.citizen_p : Math.round((p.pop * (p.pct_citizen || 0)) / 100);
+      const nonCit = Math.max(0, p.pop - cit);
+      const nonPct = Math.max(0, 100 - (p.pct_citizen || 0)).toFixed(1);
+      inner = tooltipRows([
+        ["Aus Citizens", `${cit.toLocaleString()} (${p.pct_citizen}%)`],
+        ["Non-Citizen / NS", `${nonCit.toLocaleString()} (${nonPct}%)`],
+        ["Born Overseas", p.pct_born_overseas != null ? `${p.pct_born_overseas}%` : "—"],
+      ]);
+      break;
+    }
     case "density_sqkm": {
       const tot = p.pop || 1;
       const mStr = p.pop_m != null ? `${p.pop_m.toLocaleString()} (${((100 * p.pop_m) / tot).toFixed(1)}%)` : "—";
@@ -1079,6 +1098,7 @@ function renderDossier() {
 
   document.getElementById("stat-grid").innerHTML = [
     { k: "Born Overseas", v: p.pct_born_overseas != null ? `${p.pct_born_overseas}%` : "N/A" },
+    { k: "Aus Citizen", v: p.pct_citizen != null ? `${p.pct_citizen}%` : "N/A" },
     { k: "Non-English Home", v: p.pct_other_lang != null ? `${p.pct_other_lang}%` : "N/A" },
     { k: "Year 12+", v: p.pct_yr12 != null ? `${p.pct_yr12}%` : "N/A" },
     { k: "Uni Degree", v: p.pct_uni != null ? `${p.pct_uni}%` : "N/A" },
