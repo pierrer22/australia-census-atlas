@@ -111,6 +111,7 @@ const state = {
   cache: {},
   ste: null,
   national: null,
+  cities: null,
   metric: CENSUS_METRICS[0],
   selectedCode: null,
   activeCity: "Australia",
@@ -140,13 +141,15 @@ async function loadLayer(key) {
 
 async function init() {
   initTheme();
-  const [sa4, ste, national] = await Promise.all([
+  const [sa4, ste, national, cities] = await Promise.all([
     loadLayer("sa4"),
     d3.json("data/ste_2021.geojson"),
     d3.json("data/national_2021.json"),
+    d3.json("data/cities_2021.json"),
   ]);
   state.ste = ste;
   state.national = national;
+  state.cities = cities;
 
   buildLayerSwitch();
   buildMetricTabs();
@@ -159,7 +162,10 @@ async function init() {
 
   document.getElementById("clear-selection").addEventListener("click", () => {
     state.selectedCode = null;
+    state.activeCity = "Australia";
+    document.querySelectorAll(".city-btn").forEach((b) => b.classList.toggle("active", b.textContent === "Australia"));
     updateSelectionHighlight();
+    zoomToCity(CITIES[0]);
     renderDossier();
   });
 }
@@ -236,9 +242,12 @@ function buildCityBar() {
     btn.textContent = c.name;
     btn.addEventListener("click", () => {
       state.activeCity = c.name;
+      state.selectedCode = null;
       bar.querySelectorAll(".city-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
+      updateSelectionHighlight();
       zoomToCity(c);
+      renderDossier();
     });
     bar.appendChild(btn);
   });
@@ -486,20 +495,27 @@ function renderDossier() {
   const feat = state.selectedCode
     ? features.find((f) => f.properties.code === state.selectedCode)
     : null;
-  const p = feat ? feat.properties : state.national;
+  const cityProfile = !feat && state.activeCity !== "Australia" && state.cities
+    ? state.cities[state.activeCity]
+    : null;
+  const p = feat ? feat.properties : (cityProfile || state.national);
   const aus = state.national;
   const layerCfg = LAYERS.find((l) => l.key === state.layerKey);
 
-  document.getElementById("clear-selection").hidden = !feat;
-  document.getElementById("dossier-badge").textContent = feat ? p.ste_name : "National Overview";
-  document.getElementById("dossier-title").textContent = feat ? p.name : "Australia";
-  document.getElementById("dossier-sub").textContent = feat
+  document.getElementById("clear-selection").hidden = !feat && !cityProfile;
+  document.getElementById("dossier-badge").textContent = feat
+    ? p.ste_name
+    : (cityProfile ? `${p.ste_name} · Greater City` : "National Overview");
+  document.getElementById("dossier-title").textContent = (feat || cityProfile) ? p.name : "Australia";
+  document.getElementById("dossier-sub").textContent = (feat || cityProfile)
     ? `${p.pop != null ? p.pop.toLocaleString() + " people" : "New 2025 division"} · ${p.area_sqkm.toLocaleString()} km²`
     : `${aus.pop.toLocaleString()} people · ${layerCfg.desc}`;
 
   const m = state.metric;
   document.getElementById("hero-kpi-label").textContent = m.label;
   if (feat) {
+    document.getElementById("hero-kpi-value").textContent = p[m.key] != null ? m.format(p[m.key]) : "N/A";
+  } else if (cityProfile) {
     document.getElementById("hero-kpi-value").textContent = p[m.key] != null ? m.format(p[m.key]) : "N/A";
   } else if (m.scale === "party") {
     document.getElementById("hero-kpi-value").textContent = "ALP 94 · LNP 43";

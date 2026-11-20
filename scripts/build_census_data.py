@@ -286,6 +286,31 @@ def main() -> None:
         json.dumps(national, indent=2), encoding="utf-8"
     )
 
+    csv_gcc = CSV_ROOT / "GCCSA" / "AUS"
+    g01_gcc = load_csv_by_code(csv_gcc / "2021Census_G01_AUST_GCCSA.csv", "GCCSA_CODE_2021")
+    g02_gcc = load_csv_by_code(csv_gcc / "2021Census_G02_AUST_GCCSA.csv", "GCCSA_CODE_2021")
+    pop_gcc = {k: int(v.get("Tot_P_P", 0) or 0) for k, v in g01_gcc.items()}
+    cob_gcc = load_top_cob(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021", pop_gcc)
+    city_map = {
+        "Sydney": ("1GSYD", "Greater Sydney", "New South Wales", 12368.7),
+        "Melbourne": ("2GMEL", "Greater Melbourne", "Victoria", 9992.5),
+        "Brisbane": ("3GBRI", "Greater Brisbane", "Queensland", 15842.0),
+        "Perth": ("5GPER", "Greater Perth", "Western Australia", 6417.9),
+        "Adelaide": ("4GADE", "Greater Adelaide", "South Australia", 3259.8),
+        "Canberra": ("8ACTE", "Canberra (ACT)", "Australian Capital Territory", 2358.1),
+    }
+    cities_out = {}
+    for city_key, (gcc_code, full_name, ste_name, area_km2) in city_map.items():
+        m = extract_metrics(g01_gcc.get(gcc_code, {}), g02_gcc.get(gcc_code, {}), area_km2)
+        m["name"] = full_name
+        m["ste_name"] = ste_name
+        m["area_sqkm"] = area_km2
+        m["top_cob"] = cob_gcc.get(gcc_code, [])
+        cities_out[city_key] = m
+    (WEB_DATA / "cities_2021.json").write_text(
+        json.dumps(cities_out, indent=2), encoding="utf-8"
+    )
+
     ste_geo = json.loads((WEB_DATA / "ste_2021.geojson").read_text(encoding="utf-8"))
     for feat in ste_geo["features"]:
         fix_winding(feat["geometry"])

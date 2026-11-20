@@ -1,0 +1,284 @@
+{
+  "Sydney": {
+    "pop": 5231147,
+    "median_hhd_inc_wk": 2077,
+    "median_prsnl_inc_wk": 881,
+    "median_rent_wk": 470,
+    "median_mortgage_mo": 2427,
+    "median_age": 37,
+    "avg_hhd_size": 2.7,
+    "pct_born_overseas": 38.6,
+    "pct_other_lang": 37.4,
+    "pct_indigenous": 1.7,
+    "pct_yr12": 64.5,
+    "pct_age_0_19": 24.0,
+    "pct_age_20_64": 60.8,
+    "pct_age_65_plus": 15.2,
+    "density_sqkm": 422.9,
+    "name": "Greater Sydney",
+    "ste_name": "New South Wales",
+    "area_sqkm": 12368.7,
+    "top_cob": [
+      [
+        "China",
+        238316,
+        4.6
+      ],
+      [
+        "India",
+        187810,
+        3.6
+      ],
+      [
+        "England",
+        153052,
+        2.9
+      ],
+      [
+        "Vietnam",
+        93778,
+        1.8
+      ],
+      [
+        "Philippines",
+        91339,
+        1.7
+      ]
+    ]
+  },
+  "Melbourne": {
+    "pop": 4917750,
+    "median_hhd_inc_wk": 1901,
+    "median_prsnl_inc_wk": 841,
+    "median_rent_wk": 390,
+    "median_mortgage_mo": 2000,
+    "median_age": 37,
+    "avg_hhd_size": 2.6,
+    "pct_born_overseas": 35.7,
+    "pct_other_lang": 34.1,
+    "pct_indigenous": 0.7,
+    "pct_yr12": 64.3,
+    "pct_age_0_19": 23.7,
+    "pct_age_20_64": 61.2,
+    "pct_age_65_plus": 15.0,
+    "density_sqkm": 492.1,
+    "name": "Greater Melbourne",
+    "ste_name": "Victoria",
+    "area_sqkm": 9992.5,
+    "top_cob": [
+      [
+        "India",
+        242635,
+        4.9
+      ],
+      [
+        "China",
+        166023,
+        3.4
+      ],
+      [
+        "England",
+        132912,
+        2.7
+      ],
+      [
+        "Vietnam",
+        90552,
+        1.8
+      ],
+      [
+        "New Zealand",
+        82939,
+        1.7
+      ]
+    ]
+  },
+  "Brisbane": {
+    "pop": 2526238,
+    "median_hhd_inc_wk": 1849,
+    "median_prsnl_inc_wk": 842,
+    "median_rent_wk": 380,
+    "median_mortgage_mo": 1863,
+    "median_age": 36,
+    "avg_hhd_size": 2.6,
+    "pct_born_overseas": 27.2,
+    "pct_other_lang": 17.7,
+    "pct_indigenous": 3.0,
+    "pct_yr12": 61.4,
+    "pct_age_0_19": 25.4,
+    "pct_age_20_64": 59.8,
+    "pct_age_65_plus": 14.8,
+    "density_sqkm": 159.5,
+    "name": "Greater Brisbane",
+    "ste_name": "Queensland",
+    "area_sqkm": 15842.0,
+    "top_cob": [
+      [
+        "New Zealand",
+        111649,
+        4.4
+      ],
+      [
+        "England",
+        95284,
+        3.8
+      ],
+      [
+        "India",
+        51650,
+        2.0
+      ],
+      [
+        "China",
+        41978,
+        1.7
+      ],
+      [
+        "Philippines",
+        27907,
+        1.1
+      ]
+    ]
+  },
+  "Perth": {
+    "pop": 2116647,
+    "median_hhd_inc_wk": 1865,
+    "median_prsnl_inc_wk": 859,
+    "median_rent_wk": 350,
+    "median_mortgage_mo": 1907,
+    "median_age": 37,
+    "avg_hhd_size": 2.6,
+    "pct_born_overseas": 36.0,
+    "pct_other_lang": 20.9,
+    "pct_indigenous": 2.0,
+    "pct_yr12": 59.6,
+    "pct_age_0_19": 24.8,
+    "pct_age_20_64": 59.4,
+    "pct_age_65_plus": 15.8,
+    "density_sqkm": 329.8,
+    "name": "Greater Perth",
+    "ste_name": "Western Australia",
+    "area_sqkm": 6417.9,
+    "top_cob": [
+      [
+        "England",
+        169938,
+        8.0
+      ],
+      [
+        "New Zealand",
+        59459,
+        2.8
+      ],
+      [
+        "India",
+        58229,
+        2.8
+      ],
+      [
+        "South Africa",
+        38793,
+        1.8
+      ],
+      [
+        "Malaysia",
+        31268,
+        1.5
+      ]
+    ]
+  },
+  "Adelaide": {
+    "pop": 1387290,
+    "median_hhd_inc_wk": 1548,
+    "median_prsnl_inc_wk": 762,
+    "median_rent_wk": 320,
+    "median_mortgage_mo": 1562,
+    "median_age": 39,
+    "avg_hhd_size": 2.5,
+    "pct_born_overseas": 27.6,
+    "pct_other_lang": 21.3,
+    "pct_indigenous": 1.7,
+    "pct_yr12": 57.0,
+    "pct_age_0_19": 22.8,
+    "pct_age_20_64": 58.6,
+    "pct_age_65_plus": 18.6,
+    "density_sqkm": 425.6,
+    "name": "Greater Adelaide",
+    "ste_name": "South Australia",
+    "area_sqkm": 3259.8,
+    "top_cob": [
+      [
+        "England",
+        78486,
+        5.7
+      ],
+      [
+        "India",
+        42933,
+        3.1
+      ],
+      [
+        "China",
+        24921,
+        1.8
+      ],
+      [
+        "Vietnam",
+        16564,
+        1.2
+      ],
+      [
+        "Italy",
+        15667,
+        1.1
+      ]
+    ]
+  },
+  "Canberra": {
+    "pop": 453890,
+    "median_hhd_inc_wk": 2373,
+    "median_prsnl_inc_wk": 1204,
+    "median_rent_wk": 450,
+    "median_mortgage_mo": 2080,
+    "median_age": 35,
+    "avg_hhd_size": 2.5,
+    "pct_born_overseas": 28.8,
+    "pct_other_lang": 24.6,
+    "pct_indigenous": 2.0,
+    "pct_yr12": 74.2,
+    "pct_age_0_19": 24.1,
+    "pct_age_20_64": 62.3,
+    "pct_age_65_plus": 13.7,
+    "density_sqkm": 192.5,
+    "name": "Canberra (ACT)",
+    "ste_name": "Australian Capital Territory",
+    "area_sqkm": 2358.1,
+    "top_cob": [
+      [
+        "India",
+        17188,
+        3.8
+      ],
+      [
+        "England",
+        13237,
+        2.9
+      ],
+      [
+        "China",
+        12141,
+        2.7
+      ],
+      [
+        "Nepal",
+        5686,
+        1.3
+      ],
+      [
+        "New Zealand",
+        5096,
+        1.1
+      ]
+    ]
+  }
+}
