@@ -16,6 +16,7 @@ Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G
   - `LGA` (547 Local Government Areas)
   - `SA2` (2,454 suburb-level areas)
 - **8 Census Lenses:** Household Income, Personal Income, Weekly Rent, Monthly Mortgage, Median Age, Born Overseas (%), Religion (% Affiliated), and Population Density.
+- **Crime Lens (`LGA` layer):** 12-month Crime Rate (`/100k` residents) across 278 LGAs in NSW, VIC, QLD, and NT.
 - **Election Lenses:** `2025 Winner` & `2025 ALP 2PP` (Federal), `State Winner` (State Seats), with actual 2CP Winner vs Runner-up cards in the sidebar.
 - **Interactive Dossier:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), search result, or leaderboard item to view benchmarks against Australian medians, age structure, Top 5 overseas countries of birth, and Top 5 religions.
 - **Dark / Light Mode:** Persisted in `localStorage`.
@@ -36,6 +37,7 @@ To re-fetch state election data and rebuild `web/data/*.geojson` from raw ABS 20
 
 ```bash
 python3 scripts/fetch_state_elections.py
+python3 scripts/build_crime_data.py
 python3 scripts/build_census_data.py
 ```
 
@@ -44,3 +46,4 @@ python3 scripts/build_census_data.py
 - Australian Bureau of Statistics (ABS) 2021 Census General Community Profile (GCP) & ASGS Edition 3 Digital Boundary Files
 - Australian Electoral Commission (AEC) 2025 Federal Election Tally Room (`Event 31496`)
 - State/Territory Legislative Assembly & House of Assembly election results (NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
+- State/Territory Crime Data: NSW BOCSAR, Crime Statistics Agency Victoria (CSA), Queensland Police Service (QPS), and NT Police
