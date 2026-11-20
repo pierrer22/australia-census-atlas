@@ -36,6 +36,18 @@ LAYERS = [
         "code_prefix": "",
     },
     {
+        "key": "sa2",
+        "in_geo": "sa2_2021.geojson",
+        "out_geo": "sa2_census_2021.geojson",
+        "code_prop": "SA2_CODE21",
+        "name_prop": "SA2_NAME21",
+        "csv_dir": CSV_ROOT / "SA2" / "AUS",
+        "g01": "2021Census_G01_AUST_SA2.csv",
+        "g02": "2021Census_G02_AUST_SA2.csv",
+        "csv_code_col": "SA2_CODE_2021",
+        "code_prefix": "",
+    },
+    {
         "key": "lga",
         "in_geo": "lga_2021.geojson",
         "out_geo": "lga_census_2021.geojson",

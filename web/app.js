@@ -3,6 +3,7 @@ const LAYERS = [
   { key: "ced", label: "Electorates", file: "data/ced_census_2021.geojson", desc: "150 divisions (2025 AEC)" },
   { key: "sa3", label: "SA3", file: "data/sa3_census_2021.geojson", desc: "340 SA3 regions" },
   { key: "lga", label: "LGA", file: "data/lga_census_2021.geojson", desc: "547 councils" },
+  { key: "sa2", label: "SA2", file: "data/sa2_census_2021.geojson", desc: "2,454 suburbs/areas" },
 ];
 
 const PARTY_COLORS = {
