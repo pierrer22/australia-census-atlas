@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Australia Census &amp; Election Atlas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <h1>Australia Atlas</h1>
+          <p class="subtitle" id="subtitle">ABS 2021 · 89 SA4 regions</p>
+        </div>
+      </div>
+
+      <div class="layer-switch" id="layer-switch" role="group" aria-label="Geography layer"></div>
+
+      <nav class="metric-tabs" id="metric-tabs" aria-label="Census and election metrics"></nav>
+
+      <div class="topbar-right">
+        <div class="search-wrap">
+          <input
+            id="region-search"
+            type="search"
+            placeholder="Search region..."
+            autocomplete="off"
+            aria-label="Search region"
+          />
+          <div id="search-results" class="search-results" hidden></div>
+        </div>
+        <button id="theme-toggle" class="theme-btn" type="button" aria-label="Toggle dark mode">Dark</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="map-stage" aria-label="Interactive map of Australia">
+        <div class="city-bar" id="city-bar" aria-label="Quick zoom to cities"></div>
+
+        <svg id="australia-map" role="img" aria-label="Choropleth map of Australia"></svg>
+
+        <div class="zoom-controls" aria-label="Map zoom controls">
+          <button id="zoom-in" type="button" title="Zoom in">+</button>
+          <button id="zoom-out" type="button" title="Zoom out">−</button>
+          <button id="zoom-reset" type="button" title="Reset view">Reset</button>
+        </div>
+
+        <aside class="legend-card" id="legend-card">
+          <div class="legend-header">
+            <span id="legend-title">Median Household Income</span>
+            <span id="legend-unit" class="mono">$/wk</span>
+          </div>
+          <div class="legend-bar" id="legend-bar"></div>
+          <div class="legend-ticks mono" id="legend-ticks"></div>
+          <div class="legend-parties" id="legend-parties" hidden></div>
+        </aside>
+
+        <div id="tooltip" class="tooltip" hidden></div>
+      </section>
+
+      <aside class="dossier" id="dossier" aria-label="Region demographic dossier">
+        <div class="dossier-head">
+          <div>
+            <span class="badge" id="dossier-badge">National Overview</span>
+            <h2 id="dossier-title">Australia</h2>
+            <p class="dossier-sub" id="dossier-sub">25,422,788 people · 89 SA4 regions</p>
+          </div>
+          <button id="clear-selection" class="ghost-btn" type="button" hidden>Australia</button>
+        </div>
+
+        <div class="hero-kpi">
+          <div class="hero-kpi-label" id="hero-kpi-label">Median Household Income</div>
+          <div class="hero-kpi-row">
+            <span class="hero-kpi-value mono" id="hero-kpi-value">—</span>
+            <span class="rank-pill mono" id="hero-rank-pill" hidden></span>
+          </div>
+        </div>
+
+        <section class="panel-section" id="election-panel" hidden>
+          <h3>2025 Federal Election (AEC)</h3>
+          <div class="election-card" id="election-card"></div>
+        </section>
+
+        <section class="panel-section">
+          <h3>Compared with Australia</h3>
+          <div class="compare-list" id="compare-list"></div>
+        </section>
+
+        <section class="panel-section">
+          <h3>Age Structure</h3>
+          <div class="age-bar" id="age-bar"></div>
+          <div class="age-legend mono" id="age-legend"></div>
+        </section>
+
+        <section class="panel-section">
+          <h3>Community Profile</h3>
+          <div class="stat-grid" id="stat-grid"></div>
+        </section>
+
+        <section class="panel-section" id="leaderboard-section">
+          <div class="leaderboard-head">
+            <h3 id="leaderboard-title">Highest &amp; Lowest</h3>
+          </div>
+          <div class="leaderboard" id="leaderboard"></div>
+        </section>
+      </aside>
+    </main>
+  </div>
+</body>
+</html>

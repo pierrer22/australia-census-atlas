@@ -1,0 +1,17 @@
+# Raw ABS downloads & shapefiles (re-downloadable from abs.gov.au)
+*.zip
+2021 Census GCP All Geographies for AUS/
+Metadata/
+Readme/
+boundaries/
+
+# Intermediate unmerged GeoJSONs
+web/data/sa4_2021.geojson
+web/data/sa3_2021.geojson
+web/data/lga_2021.geojson
+web/data/ced_2021.geojson
+
+# OS / editor
+.DS_Store
+__pycache__/
+*.pyc
