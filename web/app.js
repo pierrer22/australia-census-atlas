@@ -867,7 +867,9 @@ function buildTooltipDetails(p, metricKey) {
       ]);
       break;
     case "pct_born_overseas":
-      inner = tooltipTop5Table(p.top_cob, "Countries");
+      inner =
+        tooltipRows([["Aus Citizen", p.pct_citizen != null ? `${p.pct_citizen}%` : "—"]]) +
+        tooltipTop5Table(p.top_cob, "Countries");
       break;
     case "pct_no_religion":
       inner = tooltipTop5Table(p.top_rel, "Religions");
