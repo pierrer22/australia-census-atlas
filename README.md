@@ -48,3 +48,12 @@ python3 scripts/build_census_data.py
 - Australian Electoral Commission (AEC) 2025 Federal Election Tally Room (`Event 31496`)
 - State/Territory Legislative Assembly & House of Assembly election results (NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
 - State/Territory Crime Data: NSW BOCSAR, Crime Statistics Agency Victoria (CSA), Queensland Police Service (QPS), and NT Police
+
+## License
+
+- **Code (`web/*.{html,css,js}`, `scripts/`, `.github/`):** Licensed under the [MIT License](LICENSE).
+- **Data (`web/data/`, `aec/`, `crime/`):** Third-party and derived datasets retain their original licences:
+  - **ABS data:** Based on Australian Bureau of Statistics data ([abs.gov.au](https://www.abs.gov.au)), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). ABS data used with permission from the Australian Bureau of Statistics.
+  - **AEC federal election data (`aec/House*.csv`):** © Commonwealth of Australia (Australian Electoral Commission), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+  - **State/Territory election summaries (`aec/state_elections.json`):** Derived from Wikipedia Legislative Assembly / House of Assembly election result tables, licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+  - **Crime datasets (`crime/lga_crime.json`):** Derived from NSW BOCSAR, Crime Statistics Agency Victoria (CSA), Queensland Police Service (QPS), and NT Police open datasets ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)).
