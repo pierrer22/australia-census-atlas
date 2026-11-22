@@ -55,6 +55,14 @@ const CENSUS_METRICS = [
     scale: "linear",
   },
   {
+    key: "avg_hhd_size",
+    label: "Household Size",
+    unit: "persons",
+    format: (v) => `${v.toFixed(1)} ppl`,
+    colors: ["#fdf2f8", "#f472b6", "#be185d", "#831843"],
+    scale: "linear",
+  },
+  {
     key: "median_age",
     label: "Median Age",
     unit: "yrs",
@@ -752,9 +760,10 @@ function renderChoropleth() {
     partiesEl.hidden = true;
     barEl.style.background = `linear-gradient(90deg, ${m.colors.join(", ")})`;
     const mid = m.scale === "log" ? Math.sqrt(min * max) : (min + max) / 2;
+    const midVal = max <= 20 ? mid : Math.round(mid);
     ticksEl.innerHTML =
       `<span>${m.format(min)}</span>` +
-      `<span>${m.format(Math.round(mid))}</span>` +
+      `<span>${m.format(midVal)}</span>` +
       `<span>${m.format(max)}</span>`;
   }
 }
@@ -858,6 +867,16 @@ function buildTooltipDetails(p, metricKey) {
         ["Weekly Rent", rent],
         ["Household Income", hhdInc],
         ["Personal Income", prsnlInc],
+      ]);
+      break;
+    case "avg_hhd_size":
+      inner = tooltipRows([
+        ["Household Income", hhdInc],
+        ["Monthly Mortgage", mortgage],
+        ["Weekly Rent", rent],
+        ["Median Age", p.median_age != null ? `${p.median_age} yrs` : "—"],
+        ["Male Income", fmtMoney(p.median_prsnl_inc_m, "/wk")],
+        ["Female Income", fmtMoney(p.median_prsnl_inc_f, "/wk")],
       ]);
       break;
     case "median_age":
