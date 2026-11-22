@@ -21,9 +21,28 @@ const PARTY_COLORS = {
   XEN: "#b45309",
 };
 
+const STATE_ABBR = {
+  "New South Wales": "NSW",
+  Victoria: "VIC",
+  Queensland: "QLD",
+  "South Australia": "SA",
+  "Western Australia": "WA",
+  Tasmania: "TAS",
+  "Northern Territory": "NT",
+  "Australian Capital Territory": "ACT",
+  "Other Territories": "OT",
+};
+
+const METRIC_GROUPS = [
+  { key: "housing", label: "Housing & Income" },
+  { key: "people", label: "Demographics" },
+  { key: "politics", label: "Elections & Crime" },
+];
+
 const CENSUS_METRICS = [
   {
     key: "median_hhd_inc_wk",
+    group: "housing",
     label: "Household Income",
     unit: "$/wk",
     format: (v) => `$${v.toLocaleString()}`,
@@ -32,6 +51,7 @@ const CENSUS_METRICS = [
   },
   {
     key: "median_prsnl_inc_wk",
+    group: "housing",
     label: "Personal Income",
     unit: "$/wk",
     format: (v) => `$${v.toLocaleString()}`,
@@ -40,6 +60,7 @@ const CENSUS_METRICS = [
   },
   {
     key: "median_rent_wk",
+    group: "housing",
     label: "Weekly Rent",
     unit: "$/wk",
     format: (v) => `$${v.toLocaleString()}`,
@@ -48,6 +69,7 @@ const CENSUS_METRICS = [
   },
   {
     key: "median_mortgage_mo",
+    group: "housing",
     label: "Monthly Mortgage",
     unit: "$/mo",
     format: (v) => `$${v.toLocaleString()}`,
@@ -56,6 +78,7 @@ const CENSUS_METRICS = [
   },
   {
     key: "avg_hhd_size",
+    group: "housing",
     label: "Household Size",
     unit: "persons",
     format: (v) => `${v.toFixed(1)} ppl`,
@@ -64,6 +87,7 @@ const CENSUS_METRICS = [
   },
   {
     key: "median_age",
+    group: "people",
     label: "Median Age",
     unit: "yrs",
     format: (v) => `${v} yrs`,
@@ -72,6 +96,7 @@ const CENSUS_METRICS = [
   },
   {
     key: "pct_born_overseas",
+    group: "people",
     label: "Born Overseas",
     unit: "%",
     format: (v) => `${v.toFixed(1)}%`,
@@ -79,7 +104,8 @@ const CENSUS_METRICS = [
     scale: "linear",
   },
   {
-    key: "pct_no_religion",
+    key: "pct_affiliated",
+    group: "people",
     label: "Religion",
     unit: "% Affiliated",
     format: (v) => `${v.toFixed(1)}%`,
@@ -88,6 +114,7 @@ const CENSUS_METRICS = [
   },
   {
     key: "pct_uni",
+    group: "people",
     label: "Education",
     unit: "% Uni Degree",
     format: (v) => `${v.toFixed(1)}%`,
@@ -96,6 +123,7 @@ const CENSUS_METRICS = [
   },
   {
     key: "pct_citizen",
+    group: "people",
     label: "Citizenship",
     unit: "% Aus Citizen",
     format: (v) => `${v.toFixed(1)}%`,
@@ -104,6 +132,7 @@ const CENSUS_METRICS = [
   },
   {
     key: "density_sqkm",
+    group: "people",
     label: "Pop. Density",
     unit: "/km²",
     format: (v) => (v >= 100 ? `${Math.round(v).toLocaleString()}/km²` : `${v.toFixed(1)}/km²`),
@@ -115,6 +144,7 @@ const CENSUS_METRICS = [
 const ELECTION_METRICS = [
   {
     key: "aec_party",
+    group: "politics",
     label: "2025 Winner",
     unit: "AEC",
     format: (v) => v || "Abolished 2025",
@@ -123,6 +153,7 @@ const ELECTION_METRICS = [
   },
   {
     key: "aec_alp_pct",
+    group: "politics",
     label: "2025 ALP 2PP",
     unit: "%",
     format: (v) => (v != null ? `${v.toFixed(1)}%` : "N/A"),
@@ -135,6 +166,7 @@ const ELECTION_METRICS = [
 const STATE_ELECTION_METRICS = [
   {
     key: "st_party",
+    group: "politics",
     label: "State Winner",
     unit: "7 States/Terr.",
     format: (v) => v || "Not loaded",
@@ -146,13 +178,23 @@ const STATE_ELECTION_METRICS = [
 const CRIME_METRICS = [
   {
     key: "crime_rate_100k",
+    group: "politics",
     label: "Crime Rate",
     unit: "/100k (12 mo)",
     format: (v) => `${Math.round(v).toLocaleString()}/100k`,
     colors: ["#fef2f2", "#fca5a5", "#dc2626", "#7f1d1d"],
     scale: "log",
     layerOnly: "lga",
+    withinState: true,
+    note: "State police use different offence rules & pop bases (NSW/VIC/QLD/NT only; WA/SA/TAS/ACT unavailable). Compare within states, not across borders.",
   },
+];
+
+const ALL_METRICS = [
+  ...CENSUS_METRICS,
+  ...ELECTION_METRICS,
+  ...STATE_ELECTION_METRICS,
+  ...CRIME_METRICS,
 ];
 
 const CITIES = [
@@ -173,6 +215,7 @@ const state = {
   cities: null,
   states: null,
   metric: CENSUS_METRICS[0],
+  activeGroup: "housing",
   selectedCode: null,
   activeCity: "Australia",
   activeState: null,
@@ -182,6 +225,8 @@ let svg, mapGroup, regionLayer, labelLayer, pathGen, projection, zoomBehavior;
 let currentTransform = d3.zoomIdentity;
 let labelCandidates = [];
 let labelRaf = null;
+let layerLoadSeq = 0;
+const rankCache = new Map();
 let width = 900;
 let height = 650;
 
@@ -189,13 +234,54 @@ function currentGeo() {
   return state.cache[state.layerKey];
 }
 
-function availableMetrics() {
-  if (state.layerKey === "ced") return [...ELECTION_METRICS, ...CENSUS_METRICS, ...CRIME_METRICS];
-  if (state.layerKey === "sed") return [...STATE_ELECTION_METRICS, ...CENSUS_METRICS, ...CRIME_METRICS];
-  return [...CENSUS_METRICS, ...CRIME_METRICS];
+function metricsInGroup(groupKey) {
+  return ALL_METRICS.filter((m) => m.group === groupKey);
 }
 
-const DATA_VERSION = "20261121b";
+const DATA_VERSION = "20261122a";
+
+function showLoading(msg) {
+  const el = document.getElementById("map-loading");
+  const txt = document.getElementById("map-loading-text");
+  if (txt) txt.textContent = msg;
+  if (el) el.hidden = false;
+}
+
+function hideLoading() {
+  const el = document.getElementById("map-loading");
+  if (el) el.hidden = true;
+}
+
+function parseHash() {
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  let metric = params.get("metric") || "";
+  if (metric === "pct_no_religion") metric = "pct_affiliated";
+  return {
+    layer: params.get("layer") || "",
+    metric,
+    code: params.get("code") || "",
+    city: params.get("city") || "",
+    stateAbbr: (params.get("state") || "").toUpperCase(),
+  };
+}
+
+function syncHash() {
+  const params = new URLSearchParams();
+  if (state.layerKey !== "sa4") params.set("layer", state.layerKey);
+  if (state.metric.key !== CENSUS_METRICS[0].key) params.set("metric", state.metric.key);
+  if (state.selectedCode) {
+    params.set("code", state.selectedCode);
+  } else if (state.activeCity && state.activeCity !== "Australia") {
+    params.set("city", state.activeCity);
+  } else if (state.activeState) {
+    params.set("state", state.activeState);
+  }
+  const qs = params.toString();
+  const hashStr = qs ? `#${qs}` : "";
+  if (hashStr !== window.location.hash) {
+    history.replaceState(null, "", hashStr || `${window.location.pathname}${window.location.search}`);
+  }
+}
 
 async function loadLayer(key) {
   if (state.cache[key]) return state.cache[key];
@@ -207,26 +293,80 @@ async function loadLayer(key) {
 
 async function init() {
   initTheme();
-  const [sa4, ste, national, cities, states] = await Promise.all([
-    loadLayer("sa4"),
-    d3.json(`data/ste_2021.geojson?v=${DATA_VERSION}`),
-    d3.json(`data/national_2021.json?v=${DATA_VERSION}`),
-    d3.json(`data/cities_2021.json?v=${DATA_VERSION}`),
-    d3.json(`data/states_2021.json?v=${DATA_VERSION}`),
-  ]);
+  const initial = parseHash();
+  const hashLayer = LAYERS.find((l) => l.key === initial.layer);
+  const hashMetric = ALL_METRICS.find((m) => m.key === initial.metric);
+  if (hashLayer) state.layerKey = hashLayer.key;
+  if (hashMetric) state.metric = hashMetric;
+  if (state.metric.layerOnly && state.layerKey !== state.metric.layerOnly) {
+    state.layerKey = state.metric.layerOnly;
+  }
+  state.activeGroup = state.metric.group || "housing";
+
+  showLoading(`Loading ${LAYERS.find((l) => l.key === state.layerKey).label}…`);
+  let initialGeo;
+  let ste, national, cities, states;
+  try {
+    [initialGeo, ste, national, cities, states] = await Promise.all([
+      loadLayer(state.layerKey),
+      d3.json(`data/ste_2021.geojson?v=${DATA_VERSION}`),
+      d3.json(`data/national_2021.json?v=${DATA_VERSION}`),
+      d3.json(`data/cities_2021.json?v=${DATA_VERSION}`),
+      d3.json(`data/states_2021.json?v=${DATA_VERSION}`),
+    ]);
+  } finally {
+    hideLoading();
+  }
   state.ste = ste;
   state.national = national;
   state.cities = cities;
   state.states = states;
 
+  const initLayerCfg = LAYERS.find((l) => l.key === state.layerKey);
+  document.getElementById("subtitle").textContent = `ABS 2021 · ${initLayerCfg.desc}`;
+
+  const matchedCity =
+    !initial.code && initial.city
+      ? CITIES.find((c) => c.name.toLowerCase() === initial.city.toLowerCase() && c.coords)
+      : null;
+  const matchedState =
+    !initial.code && !matchedCity && initial.stateAbbr && state.states[initial.stateAbbr]
+      ? initial.stateAbbr
+      : null;
+
+  if (matchedCity) {
+    state.activeCity = matchedCity.name;
+    state.activeState = null;
+  } else if (matchedState) {
+    state.activeState = matchedState;
+    state.activeCity = null;
+  }
+
   buildLayerSwitch();
+  buildMetricGroups();
   buildMetricTabs();
   buildCityBar();
   buildStateBar();
   initSearch();
-  initMap(sa4);
+  initMap(initialGeo);
   renderLayerPaths();
   renderChoropleth();
+
+  if (initial.code) {
+    const feat = initialGeo.features.find((f) => String(f.properties.code) === String(initial.code));
+    if (feat) {
+      state.selectedCode = feat.properties.code;
+      updateSelectionHighlight();
+      focusFeature(feat, true);
+    }
+  } else if (matchedCity) {
+    zoomToCity(matchedCity, true);
+  } else if (matchedState) {
+    const info = state.states[matchedState];
+    const steFeat = state.ste.features.find((f) => String(f.properties.STE_CODE21) === String(info.code));
+    if (steFeat) focusFeature(steFeat, true);
+  }
+
   renderDossier();
 
   document.getElementById("clear-selection").addEventListener("click", () => {
@@ -237,6 +377,7 @@ async function init() {
     updateSelectionHighlight();
     zoomToCity(CITIES[0]);
     renderDossier();
+    syncHash();
   });
 }
 
@@ -256,24 +397,36 @@ function applyTheme(mode) {
   document.getElementById("theme-toggle").textContent = mode === "dark" ? "Light" : "Dark";
 }
 
-async function switchLayer(targetKey) {
+async function switchLayer(targetKey, opts = {}) {
   const l = LAYERS.find((x) => x.key === targetKey);
   if (!l) return;
+  const seq = ++layerLoadSeq;
+  if (!state.cache[l.key]) showLoading(`Loading ${l.label}…`);
+
+  try {
+    await loadLayer(l.key);
+  } finally {
+    if (seq === layerLoadSeq) hideLoading();
+  }
+  if (seq !== layerLoadSeq) return;
+
   state.layerKey = l.key;
-  state.selectedCode = null;
+  if (!opts.preserveSelection) state.selectedCode = null;
   document.querySelectorAll("#layer-switch .layer-btn").forEach((b) => {
     b.classList.toggle("active", b.dataset.layer === l.key);
   });
   document.getElementById("subtitle").textContent = `ABS 2021 · ${l.desc}`;
 
-  await loadLayer(l.key);
   if (state.metric.layerOnly && state.metric.layerOnly !== l.key) {
     state.metric = CENSUS_METRICS[0];
+    state.activeGroup = state.metric.group;
   }
+  buildMetricGroups();
   buildMetricTabs();
   renderLayerPaths();
   renderChoropleth();
   renderDossier();
+  syncHash();
 }
 
 function buildLayerSwitch() {
@@ -294,24 +447,48 @@ function buildLayerSwitch() {
   });
 }
 
+function buildMetricGroups() {
+  const wrap = document.getElementById("metric-groups");
+  wrap.innerHTML = "";
+  METRIC_GROUPS.forEach((g) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    const isActive = g.key === state.activeGroup;
+    const hasActiveMetric = !isActive && state.metric.group === g.key;
+    btn.className = "group-btn" + (isActive ? " active" : "") + (hasActiveMetric ? " has-active" : "");
+    btn.setAttribute("role", "tab");
+    btn.setAttribute("aria-selected", String(isActive));
+    btn.textContent = g.label;
+    btn.addEventListener("click", () => {
+      if (state.activeGroup === g.key) return;
+      state.activeGroup = g.key;
+      buildMetricGroups();
+      buildMetricTabs();
+    });
+    wrap.appendChild(btn);
+  });
+}
+
 function buildMetricTabs() {
   const container = document.getElementById("metric-tabs");
   container.innerHTML = "";
-  availableMetrics().forEach((m) => {
+  metricsInGroup(state.activeGroup).forEach((m) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "metric-btn" + (m.key === state.metric.key ? " active" : "");
     btn.textContent = m.label;
     btn.addEventListener("click", async () => {
       state.metric = m;
+      state.activeGroup = m.group;
       if (m.layerOnly && state.layerKey !== m.layerOnly) {
         await switchLayer(m.layerOnly);
         return;
       }
-      container.querySelectorAll(".metric-btn").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
+      buildMetricGroups();
+      container.querySelectorAll(".metric-btn").forEach((b) => b.classList.toggle("active", b === btn));
       renderChoropleth();
       renderDossier();
+      syncHash();
     });
     container.appendChild(btn);
   });
@@ -333,6 +510,7 @@ function buildCityBar() {
       updateSelectionHighlight();
       zoomToCity(c);
       renderDossier();
+      syncHash();
     });
     bar.appendChild(btn);
   });
@@ -353,6 +531,7 @@ function buildStateBar() {
     updateSelectionHighlight();
     zoomToCity(CITIES[0]);
     renderDossier();
+    syncHash();
   });
   bar.appendChild(ausBtn);
 
@@ -362,7 +541,7 @@ function buildStateBar() {
     if (!info) return;
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "city-btn";
+    btn.className = "city-btn" + (state.activeState === abbr ? " active" : "");
     btn.textContent = abbr;
     btn.title = info.name;
     btn.addEventListener("click", () => {
@@ -375,9 +554,23 @@ function buildStateBar() {
       const steFeat = state.ste.features.find((f) => String(f.properties.STE_CODE21) === String(info.code));
       if (steFeat) focusFeature(steFeat);
       renderDossier();
+      syncHash();
     });
     bar.appendChild(btn);
   });
+}
+
+function mainlandBoundsFeatureCollection(fallbackGeo) {
+  if (state.ste && state.ste.features) {
+    return {
+      type: "FeatureCollection",
+      features: state.ste.features.filter((f) => String(f.properties.STE_CODE21) !== "9"),
+    };
+  }
+  return {
+    type: "FeatureCollection",
+    features: fallbackGeo.features.filter((f) => String(f.properties.ste_code) !== "9"),
+  };
 }
 
 function initMap(initialGeo) {
@@ -388,10 +581,7 @@ function initMap(initialGeo) {
   svg = d3.select("#australia-map").attr("viewBox", `0 0 ${width} ${height}`);
   mapGroup = svg.append("g");
 
-  const mainlandFeatures = {
-    type: "FeatureCollection",
-    features: initialGeo.features.filter((f) => f.properties.ste_code !== "9"),
-  };
+  const mainlandFeatures = mainlandBoundsFeatureCollection(initialGeo);
 
   projection = d3
     .geoConicEqualArea()
@@ -439,6 +629,7 @@ function initMap(initialGeo) {
     });
     updateSelectionHighlight();
     renderDossier();
+    syncHash();
   });
   svg.on("mouseenter", () => {
     if (document.activeElement !== document.getElementById("region-search")) {
@@ -458,6 +649,12 @@ function initMap(initialGeo) {
     .attr("d", pathGen);
 
   labelLayer = svg.append("g").attr("class", "label-layer");
+
+  let resizeTimer;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(handleResize, 150);
+  });
 
   document.getElementById("zoom-in").addEventListener("click", () => {
     svg.transition().duration(250).call(zoomBehavior.scaleBy, 1.6);
@@ -487,6 +684,48 @@ function initMap(initialGeo) {
       renderDossier();
     }
   });
+}
+
+function handleResize() {
+  const stage = document.querySelector(".map-stage");
+  if (!stage) return;
+  const newW = stage.clientWidth;
+  const newH = stage.clientHeight;
+  if (!newW || !newH || (newW === width && newH === height)) return;
+
+  const prevK = currentTransform.k;
+  const centerLonLat =
+    prevK > 1.05 && projection.invert
+      ? projection.invert(currentTransform.invert([width / 2, height / 2]))
+      : null;
+
+  width = newW;
+  height = newH;
+  svg.attr("viewBox", `0 0 ${width} ${height}`);
+
+  projection.fitExtent(
+    [
+      [36, 56],
+      [width - 36, height - 76],
+    ],
+    mainlandBoundsFeatureCollection(currentGeo())
+  );
+
+  regionLayer.selectAll("path").attr("d", pathGen);
+  mapGroup.selectAll(".ste-border").attr("d", pathGen);
+  buildLabelCandidates();
+
+  if (centerLonLat && Number.isFinite(centerLonLat[0]) && Number.isFinite(centerLonLat[1])) {
+    const [nx, ny] = projection(centerLonLat);
+    const nextT = d3.zoomIdentity
+      .translate(width / 2, height / 2)
+      .scale(prevK)
+      .translate(-nx, -ny);
+    svg.call(zoomBehavior.transform, nextT);
+  } else {
+    svg.call(zoomBehavior.transform, d3.zoomIdentity);
+  }
+  renderLabels();
 }
 
 function showToast(msg) {
@@ -546,7 +785,8 @@ function buildLabelCandidates() {
         estH: 14,
       };
     })
-    .filter((c) => Number.isFinite(c.cx) && Number.isFinite(c.cy) && c.area > 0);
+    .filter((c) => Number.isFinite(c.cx) && Number.isFinite(c.cy) && c.area > 0)
+    .sort((a, b) => b.area * Math.log10(b.pop + 10) - a.area * Math.log10(a.pop + 10));
 }
 
 function scheduleLabels() {
@@ -566,17 +806,10 @@ function renderLabels() {
   const padX = 5;
   const padY = 3;
 
-  // Priority: selected region first, then larger projected area & population
-  const ordered = [...labelCandidates].sort((a, b) => {
-    if (a.code === state.selectedCode) return -1;
-    if (b.code === state.selectedCode) return 1;
-    return b.area * Math.log10(b.pop + 10) - a.area * Math.log10(a.pop + 10);
-  });
-
-  for (const c of ordered) {
+  const tryPlace = (c) => {
     const sx = c.cx * k + tx;
     const sy = c.cy * k + ty;
-    if (sx < 18 || sx > width - 18 || sy < 56 || sy > height - 48) continue;
+    if (sx < 18 || sx > width - 18 || sy < 56 || sy > height - 48) return false;
 
     const screenW = c.bw * k;
     const screenH = c.bh * k;
@@ -584,7 +817,7 @@ function renderLabels() {
 
     if (!atMaxZoom) {
       // Require label to fit inside the polygon's screen bounding box (prevents spilling over boundaries)
-      if (!isSel && (screenW < c.estW * 0.95 || screenH < c.estH * 1.25)) continue;
+      if (!isSel && (screenW < c.estW * 0.95 || screenH < c.estH * 1.25)) return false;
 
       const box = {
         x0: sx - c.estW / 2 - padX,
@@ -593,19 +826,25 @@ function renderLabels() {
         y1: sy + c.estH / 2 + padY,
       };
 
-      let overlaps = false;
       for (const p of placed) {
-        if (box.x0 < p.x1 && box.x1 > p.x0 && box.y0 < p.y1 && box.y1 > p.y0) {
-          overlaps = true;
-          break;
-        }
+        if (box.x0 < p.x1 && box.x1 > p.x0 && box.y0 < p.y1 && box.y1 > p.y0) return false;
       }
-      if (overlaps) continue;
       placed.push(box);
     }
 
     visible.push({ code: c.code, label: c.label, sx, sy, isSel });
+    return true;
+  };
+
+  if (state.selectedCode) {
+    const sel = labelCandidates.find((c) => c.code === state.selectedCode);
+    if (sel) tryPlace(sel);
+  }
+
+  for (const c of labelCandidates) {
     if (!atMaxZoom && visible.length >= 65) break;
+    if (c.code === state.selectedCode) continue;
+    tryPlace(c);
   }
 
   labelLayer
@@ -616,6 +855,16 @@ function renderLabels() {
     .attr("x", (d) => d.sx)
     .attr("y", (d) => d.sy)
     .text((d) => d.label);
+}
+
+function selectRegion(code) {
+  state.selectedCode = code;
+  state.activeCity = null;
+  state.activeState = null;
+  document.querySelectorAll(".quick-bars .city-btn").forEach((b) => b.classList.remove("active"));
+  updateSelectionHighlight();
+  renderDossier();
+  syncHash();
 }
 
 function renderLayerPaths() {
@@ -630,17 +879,16 @@ function renderLayerPaths() {
       document.getElementById("tooltip").hidden = true;
     })
     .on("click", (_, d) => {
-      state.selectedCode = d.properties.code;
-      updateSelectionHighlight();
-      renderDossier();
+      selectRegion(d.properties.code);
     });
   buildLabelCandidates();
   renderLabels();
 }
 
-function zoomToCity(city) {
+function zoomToCity(city, instant = false) {
   if (!city.coords) {
-    svg.transition().duration(450).call(zoomBehavior.transform, d3.zoomIdentity);
+    const sel = instant ? svg : svg.transition().duration(450);
+    sel.call(zoomBehavior.transform, d3.zoomIdentity);
     return;
   }
   const [x, y] = projection(city.coords);
@@ -648,23 +896,12 @@ function zoomToCity(city) {
     .translate(width / 2, height / 2)
     .scale(city.scale)
     .translate(-x, -y);
-  svg.transition().duration(500).call(zoomBehavior.transform, t);
+  const sel = instant ? svg : svg.transition().duration(500);
+  sel.call(zoomBehavior.transform, t);
 }
 
-function focusFeature(feature) {
-  let target = feature;
-  if (feature.geometry.type === "MultiPolygon" && feature.geometry.coordinates.length > 1) {
-    let bestPoly = feature.geometry.coordinates[0];
-    let bestArea = 0;
-    for (const poly of feature.geometry.coordinates) {
-      const area = pathGen.area({ type: "Polygon", coordinates: poly });
-      if (area > bestArea) {
-        bestArea = area;
-        bestPoly = poly;
-      }
-    }
-    target = { type: "Polygon", coordinates: bestPoly };
-  }
+function focusFeature(feature, instant = false) {
+  const target = largestPolygonGeo(feature);
   const [[x0, y0], [x1, y1]] = pathGen.bounds(target);
   const dx = Math.max(12, x1 - x0);
   const dy = Math.max(12, y1 - y0);
@@ -675,7 +912,8 @@ function focusFeature(feature) {
     .translate(width / 2, height / 2)
     .scale(scale)
     .translate(-cx, -cy);
-  svg.transition().duration(500).call(zoomBehavior.transform, t);
+  const sel = instant ? svg : svg.transition().duration(500);
+  sel.call(zoomBehavior.transform, t);
 }
 
 const MIN_RANK_POP = 500;
@@ -735,6 +973,7 @@ function renderChoropleth() {
   const barEl = document.getElementById("legend-bar");
   const ticksEl = document.getElementById("legend-ticks");
   const partiesEl = document.getElementById("legend-parties");
+  const noteEl = document.getElementById("legend-note");
 
   if (m.scale === "party") {
     barEl.hidden = true;
@@ -766,6 +1005,9 @@ function renderChoropleth() {
       `<span>${m.format(midVal)}</span>` +
       `<span>${m.format(max)}</span>`;
   }
+
+  noteEl.textContent = m.note || "";
+  noteEl.hidden = !m.note;
 }
 
 function updateSelectionHighlight() {
@@ -776,14 +1018,39 @@ function updateSelectionHighlight() {
 }
 
 function getRank(code, metric) {
-  const key = typeof metric === "string" ? metric : metric.key;
-  const asc = typeof metric === "object" && metric.invertRank;
-  const features = currentGeo().features.filter((f) => isRankable(f) && f.properties[key] != null);
-  const sorted = [...features].sort((a, b) =>
-    asc ? a.properties[key] - b.properties[key] : b.properties[key] - a.properties[key]
-  );
-  const idx = sorted.findIndex((f) => f.properties.code === code);
-  return { rank: idx >= 0 ? idx + 1 : null, total: sorted.length };
+  const mObj = typeof metric === "object" ? metric : ALL_METRICS.find((x) => x.key === metric) || { key: metric };
+  const key = mObj.key;
+  const cacheKey = `${state.layerKey}:${key}`;
+  let table = rankCache.get(cacheKey);
+  if (!table) {
+    table = new Map();
+    const asc = Boolean(mObj.invertRank);
+    const valid = currentGeo().features.filter(
+      (f) =>
+        isRankable(f) &&
+        f.properties[key] != null &&
+        (key === "crime_rate_100k" ? f.properties[key] > 0 : true)
+    );
+    const cmp = (a, b) => (asc ? a.properties[key] - b.properties[key] : b.properties[key] - a.properties[key]);
+    if (mObj.withinState) {
+      const byState = new Map();
+      for (const f of valid) {
+        const ste = f.properties.ste_name || "Other";
+        if (!byState.has(ste)) byState.set(ste, []);
+        byState.get(ste).push(f);
+      }
+      for (const [ste, grp] of byState.entries()) {
+        grp.sort(cmp);
+        const scope = STATE_ABBR[ste] || ste;
+        grp.forEach((f, idx) => table.set(f.properties.code, { rank: idx + 1, total: grp.length, scope }));
+      }
+    } else {
+      valid.sort(cmp);
+      valid.forEach((f, idx) => table.set(f.properties.code, { rank: idx + 1, total: valid.length, scope: null }));
+    }
+    rankCache.set(cacheKey, table);
+  }
+  return table.get(code) || { rank: null, total: table.size, scope: null };
 }
 
 function fmtMoney(v, suffix) {
@@ -890,8 +1157,18 @@ function buildTooltipDetails(p, metricKey) {
         tooltipRows([["Aus Citizen", p.pct_citizen != null ? `${p.pct_citizen}%` : "—"]]) +
         tooltipTop5Table(p.top_cob, "Countries");
       break;
-    case "pct_no_religion":
-      inner = tooltipTop5Table(p.top_rel, "Religions");
+    case "pct_affiliated":
+      inner =
+        tooltipRows([["Not Stated", p.pct_religion_ns != null ? `${p.pct_religion_ns}%` : "—"]]) +
+        tooltipTop5Table(p.top_rel, "Religions");
+      break;
+    case "crime_rate_100k":
+      if (p.crime_rate_100k == null) return "";
+      inner = tooltipRows([
+        ["Offences (12 mo)", p.crime_count != null ? p.crime_count.toLocaleString() : "—"],
+        ["Source / Period", p.crime_period || "—"],
+        ["Comparability", "Compare within state only"],
+      ]);
       break;
     case "pct_uni":
       if (p.edu_bd && p.edu_bd.length) {
@@ -955,15 +1232,15 @@ function handleHover(event, d) {
         : "Abolished 2025";
     }
   } else if (val != null) {
-    const { rank, total } = getRank(p.code, m);
-    extra = rank ? `#${rank}/${total}` : "pop < 500";
+    const { rank, total, scope } = getRank(p.code, m);
+    extra = rank ? (scope ? `#${rank}/${total} ${scope}` : `#${rank}/${total}`) : "pop < 500";
   }
 
   const valStr = val != null ? m.format(val) : "N/A";
   const details = buildTooltipDetails(p, m.key);
   tip.innerHTML = `
     <div class="tooltip-title">${p.name}</div>
-    <div class="tooltip-meta">${p.ste_name} · Pop ${p.pop != null ? p.pop.toLocaleString() : "New 2025"}</div>
+    <div class="tooltip-meta">${p.ste_name} · Pop ${p.pop != null ? p.pop.toLocaleString() : "Post-2021 seat"}</div>
     <div class="tooltip-val">${valStr} <span style="opacity:0.75;font-weight:400">${extra}</span></div>
     ${details}
   `;
@@ -1001,7 +1278,7 @@ function renderDossier() {
     : (cityProfile ? `${p.ste_name} · Greater City` : (stateProfile ? "State / Territory" : "National Overview"));
   document.getElementById("dossier-title").textContent = (feat || quickProfile) ? p.name : "Australia";
   document.getElementById("dossier-sub").textContent = (feat || quickProfile)
-    ? `${p.pop != null ? p.pop.toLocaleString() + " people" : "New 2025 division"} · ${p.area_sqkm.toLocaleString()} km²`
+    ? `${p.pop != null ? p.pop.toLocaleString() + " people" : "Post-2021 redistributed seat"} · ${p.area_sqkm.toLocaleString()} km²`
     : `${aus.pop.toLocaleString()} people · ${layerCfg.desc}`;
 
   const m = state.metric;
@@ -1016,14 +1293,18 @@ function renderDossier() {
     document.getElementById("hero-kpi-value").textContent = "ALP 94 · LNP 43";
   } else if (m.key === "aec_alp_pct") {
     document.getElementById("hero-kpi-value").textContent = "55.2% ALP";
+  } else if (m.key === "crime_rate_100k") {
+    document.getElementById("hero-kpi-value").textContent = "4 States/Terr.";
   } else {
-    document.getElementById("hero-kpi-value").textContent = m.format(p[m.key]);
+    document.getElementById("hero-kpi-value").textContent = p[m.key] != null ? m.format(p[m.key]) : "N/A";
   }
 
   const rankPill = document.getElementById("hero-rank-pill");
   if (feat && m.scale !== "party" && p[m.key] != null) {
-    const { rank, total } = getRank(p.code, m);
-    rankPill.textContent = rank ? `#${rank} of ${total}` : "Unranked (pop < 500)";
+    const { rank, total, scope } = getRank(p.code, m);
+    rankPill.textContent = rank
+      ? (scope ? `#${rank} of ${total} in ${scope}` : `#${rank} of ${total}`)
+      : "Unranked (pop < 500)";
     rankPill.hidden = false;
   } else {
     rankPill.hidden = true;
@@ -1090,7 +1371,7 @@ function renderDossier() {
   document.getElementById("compare-list").innerHTML = comparisons
     .map((c) => {
       if (c.val == null) {
-        return `<div class="compare-row"><div class="compare-top"><span class="label">${c.label}</span><span class="mono" style="color:var(--muted)">N/A (new 2025 seat)</span></div></div>`;
+        return `<div class="compare-row"><div class="compare-top"><span class="label">${c.label}</span><span class="mono" style="color:var(--muted)">N/A (post-2021 seat)</span></div></div>`;
       }
       const maxRef = Math.max(c.val, c.aus) * 1.15;
       const pct = Math.min(100, (c.val / maxRef) * 100);
@@ -1118,7 +1399,7 @@ function renderDossier() {
     <span>0–19: ${p.pct_age_0_19}%</span>
     <span>20–64: ${p.pct_age_20_64}%</span>
     <span>65+: ${p.pct_age_65_plus}%</span>
-  ` : `<span style="color:var(--muted)">No 2021 Census profile for new 2025 division</span>`;
+  ` : `<span style="color:var(--muted)">No 2021 Census profile (post-2021 redistributed seat)</span>`;
 
   document.getElementById("stat-grid").innerHTML = [
     { k: "Born Overseas", v: p.pct_born_overseas != null ? `${p.pct_born_overseas}%` : "N/A" },
@@ -1190,7 +1471,9 @@ function renderDossier() {
   const top3 = sorted.slice(0, 3);
   const bot3 = sorted.slice(-3).reverse();
 
-  lb.innerHTML = "";
+  lb.innerHTML = m.withinState
+    ? `<div class="lb-note">State police definitions differ — compare within each state.</div>`
+    : "";
   [
     { title: "Highest", rows: top3 },
     { title: "Lowest", rows: bot3 },
@@ -1203,12 +1486,11 @@ function renderDossier() {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "lb-row";
-      btn.innerHTML = `<span class="lb-name">${f.properties.name}</span><span class="lb-val mono">${m.format(f.properties[m.key])}</span>`;
+      const steTag = m.withinState ? ` (${STATE_ABBR[f.properties.ste_name] || f.properties.ste_name})` : "";
+      btn.innerHTML = `<span class="lb-name">${f.properties.name}${steTag}</span><span class="lb-val mono">${m.format(f.properties[m.key])}</span>`;
       btn.addEventListener("click", () => {
-        state.selectedCode = f.properties.code;
-        updateSelectionHighlight();
         focusFeature(f);
-        renderDossier();
+        selectRegion(f.properties.code);
       });
       lb.appendChild(btn);
     });
@@ -1329,12 +1611,10 @@ function initSearch() {
       btn.className = "search-item";
       btn.innerHTML = `${f.properties.name} <span>${f.properties.ste_name}</span>`;
       btn.addEventListener("click", () => {
-        state.selectedCode = f.properties.code;
         input.value = f.properties.name;
         box.hidden = true;
-        updateSelectionHighlight();
         focusFeature(f);
-        renderDossier();
+        selectRegion(f.properties.code);
       });
       box.appendChild(btn);
     });

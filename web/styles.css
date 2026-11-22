@@ -160,6 +160,60 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
+.metric-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 100%;
+  order: 3;
+  flex-wrap: wrap;
+}
+
+.metric-groups {
+  display: inline-flex;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.group-btn {
+  position: relative;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.group-btn:hover {
+  color: var(--ink);
+}
+
+.group-btn.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.group-btn.has-active::after {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 5px;
+  vertical-align: middle;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
 .metric-tabs {
   display: flex;
   gap: 5px;
@@ -196,6 +250,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
 }
 
 .search-wrap {
@@ -319,6 +374,42 @@ body {
   z-index: 50;
   pointer-events: none;
   white-space: nowrap;
+}
+
+.map-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink);
+  z-index: 35;
+  pointer-events: none;
+}
+
+.loading-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: atlas-spin 0.7s linear infinite;
+}
+
+@keyframes atlas-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 #australia-map:active {
@@ -505,6 +596,15 @@ body {
   width: 9px;
   height: 9px;
   border-radius: 999px;
+}
+
+.legend-note {
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-size: 0.66rem;
+  line-height: 1.35;
+  color: var(--muted);
 }
 
 .tooltip {
@@ -892,6 +992,13 @@ body {
   margin: 4px 0 2px;
 }
 
+.lb-note {
+  font-size: 0.69rem;
+  color: var(--muted);
+  margin: 0 0 6px;
+  line-height: 1.35;
+}
+
 .lb-row {
   display: flex;
   justify-content: space-between;
@@ -962,6 +1069,27 @@ body {
     white-space: nowrap;
     text-align: center;
   }
+  .metric-nav {
+    order: 0;
+    flex: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    width: 100%;
+  }
+  .metric-groups {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .metric-groups::-webkit-scrollbar {
+    display: none;
+  }
+  .group-btn {
+    flex: 1 0 auto;
+    text-align: center;
+  }
   .metric-tabs {
     flex: none;
     width: 100%;
@@ -978,6 +1106,7 @@ body {
   .topbar-right {
     width: 100%;
     gap: 8px;
+    margin-left: 0;
   }
   .search-wrap {
     flex: 1;

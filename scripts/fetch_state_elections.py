@@ -6,7 +6,8 @@ import re
 import urllib.request
 from pathlib import Path
 
-OUT_PATH = Path("/home/pierre/census/aec/state_elections.json")
+BASE = Path(__file__).resolve().parent.parent
+OUT_PATH = BASE / "aec" / "state_elections.json"
 
 SOURCES = [
     ("New South Wales", 2023, "Results_of_the_2023_New_South_Wales_Legislative_Assembly_election"),

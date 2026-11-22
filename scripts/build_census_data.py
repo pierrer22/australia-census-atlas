@@ -3,9 +3,10 @@
 
 import csv
 import json
+import re
 from pathlib import Path
 
-BASE = Path("/home/pierre/census")
+BASE = Path(__file__).resolve().parent.parent
 CSV_ROOT = BASE / "2021 Census GCP All Geographies for AUS"
 AEC_ROOT = BASE / "aec"
 WEB_DATA = BASE / "web" / "data"
@@ -139,35 +140,94 @@ RELIGION_COLS = [
 ]
 
 
-def load_religion(csv_dir: Path, prefix: str, code_col: str) -> tuple[dict[str, float], dict[str, list]]:
-    pct_no_rel: dict[str, float] = {}
+AFFILIATED_COLS = (
+    "Christianity_Tot_P",
+    "Buddhism_P",
+    "Hinduism_P",
+    "Islam_P",
+    "Judaism_P",
+    "Other_Religions_Tot_P",
+)
+
+
+def _int_val(row: dict, col: str) -> int:
+    try:
+        return int(row.get(col, 0) or 0)
+    except ValueError:
+        return 0
+
+
+def load_religion(csv_dir: Path, prefix: str, code_col: str) -> tuple[dict[str, float], dict[str, float], dict[str, list]]:
+    pct_affiliated: dict[str, float] = {}
+    pct_rel_ns: dict[str, float] = {}
     top_rel: dict[str, list] = {}
     path = csv_dir / f"2021Census_G14_{prefix}.csv"
     with path.open(newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
             code = row[code_col].strip()
-            try:
-                tot = int(row.get("Tot_P", 0) or 0)
-            except ValueError:
-                tot = 0
+            tot = _int_val(row, "Tot_P")
             if tot <= 0:
                 continue
-            try:
-                no_rel = int(row.get("SB_OSB_NRA_NR_P", 0) or 0)
-            except ValueError:
-                no_rel = 0
-            pct_no_rel[code] = round(100.0 - (100.0 * no_rel / tot), 1)
+            aff = sum(_int_val(row, c) for c in AFFILIATED_COLS)
+            ns = _int_val(row, "Religious_affiliation_ns_P")
+            pct_affiliated[code] = min(100.0, round(100.0 * aff / tot, 1))
+            pct_rel_ns[code] = round(100.0 * ns / tot, 1)
             counts = []
             for col, label in RELIGION_COLS:
-                try:
-                    val = int(row.get(col, 0) or 0)
-                except ValueError:
-                    val = 0
+                val = _int_val(row, col)
                 if val > 0:
                     counts.append((label, val))
             counts.sort(key=lambda x: x[1], reverse=True)
             top_rel[code] = [[lbl, cnt, round(100.0 * cnt / tot, 1)] for lbl, cnt in counts[:5]]
-    return pct_no_rel, top_rel
+    return pct_affiliated, pct_rel_ns, top_rel
+
+
+def clean_seat_name(name: str) -> str:
+    return re.sub(r"\s*\([^)]*\)$", "", name).strip().lower()
+
+
+def load_2021_electoral_name_maps() -> tuple[
+    dict[tuple[str, str], str],
+    dict[str, str],
+    dict[tuple[str, str], str],
+    dict[tuple[str, str], str],
+]:
+    import openpyxl
+
+    wb = openpyxl.load_workbook(
+        BASE / "Metadata" / "2021Census_geog_desc_1st_2nd_3rd_release.xlsx",
+        read_only=True,
+        data_only=True,
+    )
+    ws = wb["2021_ASGS_Non_ABS_Structures"]
+    ced_exact: dict[tuple[str, str], str] = {}
+    ced_by_name: dict[str, str] = {}
+    sed_exact: dict[tuple[str, str], str] = {}
+    sed_clean_counts: dict[tuple[str, str], int] = {}
+    sed_clean_raw: dict[tuple[str, str], str] = {}
+
+    for r in ws.iter_rows(values_only=True):
+        if not r or not r[0]:
+            continue
+        kind = str(r[0])
+        if kind == "CED":
+            code = str(r[1])
+            name = str(r[3]).strip()
+            ste_digit = code.replace("CED", "")[0]
+            ced_exact[(ste_digit, name.lower())] = code
+            if "no usual address" not in name.lower() and "migratory" not in name.lower():
+                ced_by_name[clean_seat_name(name)] = code
+        elif kind == "SED":
+            code = str(r[1])
+            name = str(r[3]).strip()
+            ste_digit = code.replace("SED", "")[0]
+            sed_exact[(ste_digit, name.lower())] = code
+            ck = (ste_digit, clean_seat_name(name))
+            sed_clean_counts[ck] = sed_clean_counts.get(ck, 0) + 1
+            sed_clean_raw[ck] = code
+
+    sed_clean = {k: v for k, v in sed_clean_raw.items() if sed_clean_counts.get(k, 0) == 1}
+    return ced_exact, ced_by_name, sed_exact, sed_clean
 
 
 EDU_COLS = [
@@ -493,11 +553,7 @@ def main() -> None:
     abs_prices = load_abs_dwelling_prices()
     crime_path = BASE / "crime" / "lga_crime.json"
     lga_crime = json.loads(crime_path.read_text(encoding="utf-8")) if crime_path.exists() else {}
-    ced21_geo = json.loads((WEB_DATA / "ced_2021.geojson").read_text(encoding="utf-8"))
-    ced21_name_to_code = {
-        f["properties"]["CED_NAME21"].strip().lower(): f"CED{f['properties']['CED_CODE21']}"
-        for f in ced21_geo["features"]
-    }
+    ced_exact, ced_by_name, sed_exact, sed_clean = load_2021_electoral_name_maps()
 
     for cfg in LAYERS:
         g01 = load_csv_by_code(cfg["csv_dir"] / cfg["g01"], cfg["csv_code_col"])
@@ -509,7 +565,7 @@ def main() -> None:
         }
         cob_prefix = f"AUST_{cfg['key'].upper()}"
         top_cob = load_top_cob(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"], pop_map)
-        pct_no_rel, top_rel = load_religion(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"])
+        pct_aff, pct_rel_ns, top_rel = load_religion(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"])
         pct_uni, edu_bd = load_uni_pct(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"], pop15_map, g01)
         age_gender = load_age_by_gender(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"])
         inc_gender = load_income_by_gender(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"])
@@ -520,8 +576,17 @@ def main() -> None:
             props = feat["properties"]
             raw_code = str(props[cfg["code_prop"]])
             name = props[cfg["name_prop"]]
+            ste_str = str(props["STE_CODE21"])
             if cfg["key"] == "ced":
-                csv_key = ced21_name_to_code.get(name.strip().lower(), "")
+                csv_key = (
+                    ced_exact.get((ste_str, name.strip().lower()))
+                    or ced_by_name.get(clean_seat_name(name), "")
+                )
+            elif cfg["key"] == "sed":
+                csv_key = (
+                    sed_exact.get((ste_str, name.strip().lower()))
+                    or sed_clean.get((ste_str, clean_seat_name(name)), "")
+                )
             else:
                 csv_key = raw_code if not cfg["code_prefix"] or raw_code.startswith(cfg["code_prefix"]) else f"{cfg['code_prefix']}{raw_code}"
             area = float(props.get(cfg.get("area_prop", "AREASQKM21")) or 0)
@@ -536,8 +601,9 @@ def main() -> None:
             }
             if csv_key in top_cob:
                 out_props["top_cob"] = top_cob[csv_key]
-            if csv_key in pct_no_rel:
-                out_props["pct_no_religion"] = pct_no_rel[csv_key]
+            if csv_key in pct_aff:
+                out_props["pct_affiliated"] = pct_aff[csv_key]
+                out_props["pct_religion_ns"] = pct_rel_ns.get(csv_key, 0.0)
                 out_props["top_rel"] = top_rel[csv_key]
             if csv_key in pct_uni:
                 out_props["pct_uni"] = pct_uni[csv_key]
@@ -558,9 +624,7 @@ def main() -> None:
                 elec = aec_2025.get(name.strip().lower(), {})
                 out_props.update(elec)
             elif cfg["key"] == "sed":
-                import re as _re
-                clean_sed = _re.sub(r"\s*\([^)]*\)$", "", name).strip().lower()
-                st_key = f"{props['STE_NAME21'].strip().lower()}::{clean_sed}"
+                st_key = f"{props['STE_NAME21'].strip().lower()}::{clean_seat_name(name)}"
                 st_elec = state_elec.get(st_key, {})
                 out_props.update(st_elec)
             elif cfg["key"] == "lga":
@@ -579,8 +643,9 @@ def main() -> None:
     g02_aus = load_csv_by_code(csv_aus / "2021Census_G02_AUS_AUS.csv", "AUS_CODE_2021")["AUS"]
     national = extract_metrics(g01_aus, g02_aus, 7688095.0)
     national["top_cob"] = load_top_cob(csv_aus, "AUS_AUS", "AUS_CODE_2021", {"AUS": national["pop"]}).get("AUS", [])
-    aus_no_rel, aus_top_rel = load_religion(csv_aus, "AUS_AUS", "AUS_CODE_2021")
-    national["pct_no_religion"] = aus_no_rel.get("AUS", 0.0)
+    aus_aff, aus_rel_ns, aus_top_rel = load_religion(csv_aus, "AUS_AUS", "AUS_CODE_2021")
+    national["pct_affiliated"] = aus_aff.get("AUS", 0.0)
+    national["pct_religion_ns"] = aus_rel_ns.get("AUS", 0.0)
     national["top_rel"] = aus_top_rel.get("AUS", [])
     aus_pop15 = max(1, national["pop"] - int(g01_aus.get("Age_0_4_yr_P", 0) or 0) - int(g01_aus.get("Age_5_14_yr_P", 0) or 0))
     aus_uni, aus_edu_bd = load_uni_pct(csv_aus, "AUS_AUS", "AUS_CODE_2021", {"AUS": aus_pop15}, {"AUS": g01_aus})
@@ -605,7 +670,7 @@ def main() -> None:
         for k, v in g01_gcc.items()
     }
     cob_gcc = load_top_cob(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021", pop_gcc)
-    gcc_no_rel, gcc_top_rel = load_religion(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021")
+    gcc_aff, gcc_rel_ns, gcc_top_rel = load_religion(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021")
     gcc_uni, gcc_edu_bd = load_uni_pct(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021", pop15_gcc, g01_gcc)
     gcc_age_g = load_age_by_gender(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021")
     gcc_inc_g = load_income_by_gender(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021")
@@ -624,7 +689,8 @@ def main() -> None:
         m["ste_name"] = ste_name
         m["area_sqkm"] = area_km2
         m["top_cob"] = cob_gcc.get(gcc_code, [])
-        m["pct_no_religion"] = gcc_no_rel.get(gcc_code, 0.0)
+        m["pct_affiliated"] = gcc_aff.get(gcc_code, 0.0)
+        m["pct_religion_ns"] = gcc_rel_ns.get(gcc_code, 0.0)
         m["top_rel"] = gcc_top_rel.get(gcc_code, [])
         m["pct_uni"] = gcc_uni.get(gcc_code, 0.0)
         m["edu_bd"] = gcc_edu_bd.get(gcc_code, [])
@@ -644,8 +710,10 @@ def main() -> None:
         for k, v in g01_ste.items()
     }
     cob_ste = load_top_cob(csv_ste, "AUST_STE", "STE_CODE_2021", pop_ste)
-    ste_no_rel, ste_top_rel = load_religion(csv_ste, "AUST_STE", "STE_CODE_2021")
+    ste_aff, ste_rel_ns, ste_top_rel = load_religion(csv_ste, "AUST_STE", "STE_CODE_2021")
     ste_uni, ste_edu_bd = load_uni_pct(csv_ste, "AUST_STE", "STE_CODE_2021", pop15_ste, g01_ste)
+    ste_age_g = load_age_by_gender(csv_ste, "AUST_STE", "STE_CODE_2021")
+    ste_inc_g = load_income_by_gender(csv_ste, "AUST_STE", "STE_CODE_2021")
 
     ste_geo = json.loads((WEB_DATA / "ste_2021.geojson").read_text(encoding="utf-8"))
     ste_areas = {}
@@ -676,10 +744,13 @@ def main() -> None:
         m["ste_name"] = "State / Territory"
         m["area_sqkm"] = area_km2
         m["top_cob"] = cob_ste.get(ste_code, [])
-        m["pct_no_religion"] = ste_no_rel.get(ste_code, 0.0)
+        m["pct_affiliated"] = ste_aff.get(ste_code, 0.0)
+        m["pct_religion_ns"] = ste_rel_ns.get(ste_code, 0.0)
         m["top_rel"] = ste_top_rel.get(ste_code, [])
         m["pct_uni"] = ste_uni.get(ste_code, 0.0)
         m["edu_bd"] = ste_edu_bd.get(ste_code, [])
+        m["median_age_m"], m["median_age_f"] = ste_age_g.get(ste_code, (None, None))
+        m["median_prsnl_inc_m"], m["median_prsnl_inc_f"] = ste_inc_g.get(ste_code, (None, None))
         if abbr in abs_prices:
             m["mean_dwelling_price"] = abs_prices[abbr]
         states_out[abbr] = m

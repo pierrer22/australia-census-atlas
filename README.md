@@ -15,10 +15,11 @@ Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G
   - `State Seats` (433 State Electoral Divisions + 410 results across NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
   - `LGA` (547 Local Government Areas)
   - `Suburbs` (`SA2`, 2,454 suburb-level areas)
-- **11 Census Lenses:** Household Income, Personal Income, Weekly Rent, Monthly Mortgage, Household Size, Median Age, Born Overseas (%), Religion (% Affiliated), Education (% Uni Degree + hover qualification breakdown table), Citizenship (% Aus Citizen), and Population Density.
-- **Crime Lens (`LGA` layer):** 12-month Crime Rate (`/100k` residents) across 278 LGAs in NSW, VIC, QLD, and NT.
-- **Election Lenses:** `2025 Winner` & `2025 ALP 2PP` (Federal), `State Winner` (State Seats), with actual 2CP Winner vs Runner-up cards in the sidebar.
-- **Interactive Dossier:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), state/territory quick-zoom (`NSW`, `VIC`, `QLD`, `WA`, `SA`, `TAS`, `NT`, `ACT` — includes ABS June 2026 Mean Dwelling Price), search result, or leaderboard item to view benchmarks against Australian medians, age structure, Top 5 overseas countries of birth, and Top 5 religions.
+- **Grouped Metric Switcher:** 15 lenses organized into `Housing & Income`, `Demographics`, and `Elections & Crime` (auto-switching layers when needed):
+  - `Housing & Income`: Household Income, Personal Income, Weekly Rent, Monthly Mortgage, and Household Size.
+  - `Demographics`: Median Age, Born Overseas (%), Religion (% Affiliated, excluding Not Stated), Education (% Uni Degree + hover qualification breakdown table), Citizenship (% Aus Citizen), and Population Density.
+  - `Elections & Crime`: `2025 Winner` & `2025 ALP 2PP` (`Federal`), `State Winner` (`State Seats`), and `Crime Rate` (`LGA` layer — 12-month rate across 278 LGAs in NSW, VIC, QLD, and NT, ranked within state due to differing police offence definitions and population bases).
+- **Interactive Dossier & Shareable URLs:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), state/territory quick-zoom (`NSW`–`ACT` with ABS June 2026 Mean Dwelling Price), search result, or leaderboard item, and share the exact view via the URL hash (`#layer=...&metric=...&code=...`).
 - **Dynamic Map Labels:** Zoom-responsive region names with boundary-fit and 2D collision avoidance so labels appear cleanly as you zoom in without overlapping text or borders.
 - **Dark / Light Mode:** Persisted in `localStorage`.
 
@@ -34,12 +35,14 @@ Then open `http://localhost:8765/`.
 
 ## Rebuilding from Raw Sources
 
-To re-fetch state election data and rebuild `web/data/*.geojson` from raw ABS 2021 DataPacks and ASGS Edition 3 shapefiles:
+Install Python dependencies and ensure ABS 2021 GCP DataPacks and ASGS Edition 3 shapefiles (simplified to `web/data/*.geojson` with `mapshaper`) are present locally, then rebuild and validate:
 
 ```bash
+pip install -r requirements.txt
 python3 scripts/fetch_state_elections.py
 python3 scripts/build_crime_data.py
 python3 scripts/build_census_data.py
+python3 scripts/validate_site.py
 ```
 
 ## Sources

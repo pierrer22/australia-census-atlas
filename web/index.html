@@ -7,9 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=19" />
+  <link rel="stylesheet" href="styles.css?v=20" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" defer></script>
-  <script src="app.js?v=25" defer></script>
+  <script src="app.js?v=26" defer></script>
 </head>
 <body>
   <div class="app-shell">
@@ -24,7 +24,10 @@
 
       <div class="layer-switch" id="layer-switch" role="group" aria-label="Geography layer"></div>
 
-      <nav class="metric-tabs" id="metric-tabs" aria-label="Census and election metrics"></nav>
+      <div class="metric-nav">
+        <div class="metric-groups" id="metric-groups" role="tablist" aria-label="Metric categories"></div>
+        <nav class="metric-tabs" id="metric-tabs" aria-label="Census and election metrics"></nav>
+      </div>
 
       <div class="topbar-right">
         <div class="search-wrap">
@@ -50,6 +53,11 @@
 
         <svg id="australia-map" tabindex="-1" role="img" aria-label="Choropleth map of Australia"></svg>
 
+        <div id="map-loading" class="map-loading" hidden>
+          <span class="loading-spinner" aria-hidden="true"></span>
+          <span id="map-loading-text">Loading layer…</span>
+        </div>
+
         <div class="zoom-controls" aria-label="Map zoom controls">
           <button id="zoom-in" type="button" title="Zoom in">+</button>
           <button id="zoom-out" type="button" title="Zoom out">−</button>
@@ -64,6 +72,7 @@
           <div class="legend-bar" id="legend-bar"></div>
           <div class="legend-ticks mono" id="legend-ticks"></div>
           <div class="legend-parties" id="legend-parties" hidden></div>
+          <div class="legend-note" id="legend-note" hidden></div>
         </aside>
 
         <div id="tooltip" class="tooltip" hidden></div>

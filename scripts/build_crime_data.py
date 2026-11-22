@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 import openpyxl
 
-BASE = Path("/home/pierre/census")
+BASE = Path(__file__).resolve().parent.parent
 CRIME_DIR = BASE / "crime"
 LGA_GEO = BASE / "web" / "data" / "lga_census_2021.geojson"
 
