@@ -270,13 +270,18 @@ const state = {
   selectedNhw: "",
   selectedPinId: null,
   userToggledPinsOff: false,
+  showFuel: false,
+  fuelType: "E10",
+  fuelData: null,
+  selectedFuelCode: null,
 };
 
-let svg, mapGroup, regionLayer, nhwLayer, pinLayer, labelLayer, pathGen, projection, zoomBehavior;
+let svg, mapGroup, regionLayer, nhwLayer, fuelLayer, fuelLabelLayer, pinLayer, labelLayer, pathGen, projection, zoomBehavior;
 let currentTransform = d3.zoomIdentity;
 let labelCandidates = [];
 let labelRaf = null;
 let pinRaf = null;
+let fuelRaf = null;
 let layerLoadSeq = 0;
 let qldFetchSeq = 0;
 const rankCache = new Map();
@@ -291,7 +296,7 @@ function metricsInGroup(groupKey) {
   return ALL_METRICS.filter((m) => m.group === groupKey);
 }
 
-const DATA_VERSION = "20261123a";
+const DATA_VERSION = "20261123b";
 
 function showLoading(msg) {
   const el = document.getElementById("map-loading");
@@ -316,6 +321,8 @@ function parseHash() {
     city: params.get("city") || "",
     stateAbbr: (params.get("state") || "").toUpperCase(),
     pins: params.get("pins") === "1",
+    fuel: params.get("fuel") === "1",
+    ftype: (params.get("ftype") || "").toUpperCase(),
   };
 }
 
@@ -331,6 +338,10 @@ function syncHash() {
     params.set("state", state.activeState);
   }
   if (state.showIncidents) params.set("pins", "1");
+  if (state.showFuel) {
+    params.set("fuel", "1");
+    if (state.fuelType && state.fuelType !== "E10") params.set("ftype", state.fuelType);
+  }
   const qs = params.toString();
   const hashStr = qs ? `#${qs}` : "";
   if (hashStr !== window.location.hash) {
@@ -403,6 +414,7 @@ async function init() {
   buildCityBar();
   buildStateBar();
   initIncidentControls();
+  initFuelControls();
   initSearch();
   initMap(initialGeo);
   renderLayerPaths();
@@ -427,6 +439,16 @@ async function init() {
   if (initial.pins || state.metric.key === "crime_rate_100k") {
     await setIncidentsEnabled(true, { skipSync: true });
   }
+  if (initial.fuel) {
+    if (initial.ftype) {
+      const sel = document.getElementById("fuel-type-select");
+      if ([...sel.options].some((o) => o.value === initial.ftype)) {
+        state.fuelType = initial.ftype;
+        sel.value = initial.ftype;
+      }
+    }
+    await setFuelEnabled(true, { skipSync: true });
+  }
 
   renderDossier();
 
@@ -435,10 +457,12 @@ async function init() {
     state.activeCity = "Australia";
     state.activeState = null;
     clearActiveQld();
+    state.selectedFuelCode = null;
     document.querySelectorAll(".city-btn").forEach((b) => b.classList.toggle("active", b.textContent === "Australia"));
     updateSelectionHighlight();
     zoomToCity(CITIES[0]);
     renderPins();
+    renderFuelPins();
     renderDossier();
     syncHash();
   });
@@ -683,10 +707,12 @@ function initMap(initialGeo) {
       mapGroup.attr("transform", event.transform);
       scheduleLabels();
       schedulePins();
+      scheduleFuel();
     })
     .on("end", () => {
       scheduleLabels();
       schedulePins();
+      scheduleFuel();
       clearTimeout(repaintTimer);
       repaintTimer = setTimeout(() => {
         svg.style("shape-rendering", "crispEdges");
@@ -698,16 +724,18 @@ function initMap(initialGeo) {
   svg.call(zoomBehavior);
   svg.on("click", (event) => {
     if (event.defaultPrevented || event.target !== svg.node()) return;
-    if (!state.selectedCode && !state.activeState && state.activeCity === "Australia" && !state.selectedPinId) return;
+    if (!state.selectedCode && !state.activeState && state.activeCity === "Australia" && !state.selectedPinId && !state.selectedFuelCode) return;
     state.selectedCode = null;
     state.activeState = null;
     state.activeCity = "Australia";
     clearActiveQld();
+    state.selectedFuelCode = null;
     document.querySelectorAll(".quick-bars .city-btn").forEach((b) => {
       b.classList.toggle("active", b.textContent === "Australia");
     });
     updateSelectionHighlight();
     renderPins();
+    renderFuelPins();
     renderDossier();
     syncHash();
   });
@@ -729,6 +757,8 @@ function initMap(initialGeo) {
     .attr("d", pathGen);
 
   nhwLayer = mapGroup.append("g").attr("class", "nhw-layer");
+  fuelLayer = svg.append("g").attr("class", "fuel-layer");
+  fuelLabelLayer = svg.append("g").attr("class", "fuel-label-layer");
   pinLayer = svg.append("g").attr("class", "pin-layer");
   labelLayer = svg.append("g").attr("class", "label-layer");
 
@@ -798,6 +828,7 @@ function handleResize() {
   if (nhwLayer) nhwLayer.selectAll("path").attr("d", pathGen);
   buildLabelCandidates();
   reprojectPins();
+  reprojectFuel();
 
   if (centerLonLat && Number.isFinite(centerLonLat[0]) && Number.isFinite(centerLonLat[1])) {
     const [nx, ny] = projection(centerLonLat);
@@ -811,6 +842,7 @@ function handleResize() {
   }
   renderLabels();
   renderPins();
+  renderFuelPins();
 }
 
 function showToast(msg) {
@@ -947,6 +979,7 @@ function selectRegion(code) {
   state.activeCity = null;
   state.activeState = null;
   clearActiveQld();
+  state.selectedFuelCode = null;
   document.querySelectorAll(".quick-bars .city-btn").forEach((b) => b.classList.remove("active"));
   updateSelectionHighlight();
   const feat = currentGeo().features.find((f) => f.properties.code === code);
@@ -954,6 +987,7 @@ function selectRegion(code) {
     fetchQldLiveOffences(code, "");
   }
   renderPins();
+  renderFuelPins();
   renderDossier();
   syncHash();
 }
@@ -1456,6 +1490,7 @@ function renderDossier() {
   }
 
   renderIncidentsPanel(feat, p);
+  renderFuelPanel(feat, p);
 
   const comparisons = [
     { label: "Household Income", val: p.median_hhd_inc_wk, aus: aus.median_hhd_inc_wk, fmt: (v) => `$${v.toLocaleString()}/wk` },
@@ -2441,6 +2476,386 @@ function renderIncidentsPanel(feat, p) {
     `<div class="inc-note">Showing geocoded QLD/TAS/NT police RSS &amp; SA 30-day suburb pins. Switch to <strong>LGA</strong> and click any <strong>Queensland</strong> council for live QPS street-block &amp; 852 Neighbourhood Watch pins.</div>`;
   listEl.innerHTML = renderRssRows(shownRss);
   attachIncidentListHandlers(listEl, summaryEl, itemsById);
+}
+
+const FUEL_LABELS = {
+  E10: "E10",
+  U91: "Unleaded 91",
+  P95: "Premium 95",
+  P98: "Premium 98",
+  DL: "Diesel",
+  PDL: "Prem Diesel",
+  LPG: "LPG",
+  E85: "E85",
+};
+
+const FUEL_INTERP = d3.interpolateRgbBasis(["#16a34a", "#eab308", "#dc2626"]);
+
+function fuelColor(price, st) {
+  if (!st || price == null) return "#64748b";
+  const lo = st.p10 ?? st.min;
+  const mid = st.median ?? (lo + (st.p90 ?? st.max)) / 2;
+  const hi = st.p90 ?? st.max;
+  if (!(hi > lo)) return "#16a34a";
+  const scale = d3.scaleLinear().domain([lo, mid, hi]).range([0, 0.5, 1]).clamp(true);
+  return FUEL_INTERP(scale(price));
+}
+
+function initFuelControls() {
+  const toggleBtn = document.getElementById("fuel-toggle");
+  const typeSel = document.getElementById("fuel-type-select");
+
+  toggleBtn.addEventListener("click", async () => {
+    await setFuelEnabled(!state.showFuel);
+  });
+
+  typeSel.addEventListener("change", () => {
+    state.fuelType = typeSel.value || "E10";
+    renderFuelPins();
+    renderDossier();
+    syncHash();
+  });
+}
+
+async function setFuelEnabled(enabled, opts = {}) {
+  state.showFuel = Boolean(enabled);
+  const toggleBtn = document.getElementById("fuel-toggle");
+  const filtersEl = document.getElementById("fuel-filters");
+  toggleBtn.classList.toggle("active", state.showFuel);
+  toggleBtn.setAttribute("aria-pressed", String(state.showFuel));
+  filtersEl.hidden = !state.showFuel;
+
+  if (!state.showFuel) {
+    state.selectedFuelCode = null;
+    renderFuelPins();
+    renderDossier();
+    if (!opts.skipSync) syncHash();
+    return;
+  }
+
+  await loadFuelData();
+  renderFuelPins();
+  renderDossier();
+  if (!opts.skipSync) syncHash();
+}
+
+async function loadFuelData() {
+  if (state.fuelData) return state.fuelData;
+  try {
+    const data = await d3.json(`data/nsw_fuel_prices.json?v=${DATA_VERSION}`);
+    state.fuelData = data;
+    reprojectFuel();
+  } catch (err) {
+    console.warn("Failed to load nsw_fuel_prices.json:", err);
+  }
+  return state.fuelData;
+}
+
+function reprojectFuel() {
+  if (!projection || !state.fuelData?.stations) return;
+  for (const s of state.fuelData.stations) {
+    const pt = projection([s.lon, s.lat]);
+    if (pt) {
+      s.px = pt[0];
+      s.py = pt[1];
+    }
+  }
+}
+
+function scheduleFuel() {
+  if (!state.showFuel || fuelRaf) return;
+  fuelRaf = requestAnimationFrame(() => {
+    fuelRaf = null;
+    renderFuelPins();
+    if (currentTransform.k >= 4 && !state.selectedCode && state.fuelData) {
+      renderFuelPanel(null, state.national);
+    }
+  });
+}
+
+function visibleFuelStations() {
+  if (!state.showFuel || !state.fuelData?.stations) return [];
+  const ft = state.fuelType;
+  const { x: tx, y: ty, k } = currentTransform;
+  const inView = [];
+
+  for (const s of state.fuelData.stations) {
+    if (s.p?.[ft] == null || !Number.isFinite(s.px) || !Number.isFinite(s.py)) continue;
+    const sx = s.px * k + tx;
+    const sy = s.py * k + ty;
+    if (sx >= -18 && sx <= width + 18 && sy >= -18 && sy <= height + 18) {
+      inView.push(s);
+    }
+  }
+
+  if (k < 5 && inView.length > 320) {
+    const sorted = [...inView].sort((a, b) => a.p[ft] - b.p[ft]);
+    const picked = new Set(sorted.slice(0, 40));
+    const step = Math.ceil(inView.length / 280);
+    for (let i = 0; i < inView.length && picked.size < 320; i += step) {
+      picked.add(inView[i]);
+    }
+    if (state.selectedFuelCode) {
+      const sel = inView.find((s) => s.code === state.selectedFuelCode);
+      if (sel) picked.add(sel);
+    }
+    return Array.from(picked);
+  }
+
+  if (k < 14 && inView.length > 800) {
+    const sorted = [...inView].sort((a, b) => a.p[ft] - b.p[ft]);
+    const out = sorted.slice(0, 800);
+    if (state.selectedFuelCode && !out.some((s) => s.code === state.selectedFuelCode)) {
+      const sel = inView.find((s) => s.code === state.selectedFuelCode);
+      if (sel) out.push(sel);
+    }
+    return out;
+  }
+
+  return inView;
+}
+
+function renderFuelPins() {
+  const legEl = document.getElementById("legend-fuel");
+  const ft = state.fuelType;
+  const st = state.fuelData?.stats?.[ft];
+
+  if (legEl) {
+    if (state.showFuel && st) {
+      legEl.hidden = false;
+      legEl.innerHTML = `
+        <div class="legend-fuel-head">
+          <span>NSW Fuel · ${escapeHtml(FUEL_LABELS[ft] || ft)}</span>
+          <span class="mono" style="color:var(--muted)">¢/L</span>
+        </div>
+        <div class="legend-fuel-bar"></div>
+        <div class="legend-ticks mono">
+          <span>${st.min.toFixed(1)}</span>
+          <span>med ${st.median.toFixed(1)}</span>
+          <span>${st.max.toFixed(1)}</span>
+        </div>
+      `;
+    } else {
+      legEl.hidden = true;
+      legEl.innerHTML = "";
+    }
+  }
+
+  if (!fuelLayer || !fuelLabelLayer) return;
+  if (!state.showFuel || !state.fuelData) {
+    fuelLayer.selectAll("circle").remove();
+    fuelLabelLayer.selectAll("text").remove();
+    return;
+  }
+
+  const { x: tx, y: ty, k } = currentTransform;
+  const stations = visibleFuelStations();
+
+  fuelLayer
+    .selectAll("circle")
+    .data(stations, (d) => d.code)
+    .join("circle")
+    .attr("class", (d) => `fuel-dot${d.code === state.selectedFuelCode ? " active-pin" : ""}`)
+    .attr("cx", (d) => d.px * k + tx)
+    .attr("cy", (d) => d.py * k + ty)
+    .attr("r", (d) => (d.code === state.selectedFuelCode ? 7 : 4.5))
+    .attr("fill", (d) => fuelColor(d.p[ft], st))
+    .on("mousemove", handleFuelHover)
+    .on("mouseleave", () => {
+      document.getElementById("tooltip").hidden = true;
+    })
+    .on("click", handleFuelClick);
+
+  if (k >= 38) {
+    const sorted = [...stations].sort((a, b) => a.p[ft] - b.p[ft]);
+    const placed = [];
+    const labels = [];
+    for (const s of sorted) {
+      if (labels.length >= 45) break;
+      const sx = s.px * k + tx;
+      const sy = s.py * k + ty - 11;
+      const box = { x0: sx - 21, y0: sy - 7, x1: sx + 21, y1: sy + 6 };
+      if (placed.some((p) => box.x0 < p.x1 && box.x1 > p.x0 && box.y0 < p.y1 && box.y1 > p.y0)) continue;
+      placed.push(box);
+      labels.push({ code: s.code, sx, sy, txt: s.p[ft].toFixed(1) });
+    }
+    fuelLabelLayer
+      .selectAll("text")
+      .data(labels, (d) => d.code)
+      .join("text")
+      .attr("class", "fuel-price-lbl")
+      .attr("x", (d) => d.sx)
+      .attr("y", (d) => d.sy)
+      .text((d) => d.txt);
+  } else {
+    fuelLabelLayer.selectAll("text").remove();
+  }
+}
+
+function handleFuelHover(event, d) {
+  const tip = document.getElementById("tooltip");
+  const ft = state.fuelType;
+  const price = d.p?.[ft];
+  const st = state.fuelData?.stats?.[ft];
+  const diff = st && price != null ? price - st.median : null;
+  const diffStr = diff != null ? ` (${diff > 0 ? "+" : ""}${diff.toFixed(1)}¢ vs NSW med)` : "";
+  const allRows = Object.entries(d.p || {})
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([k, v]) => `<tr><td>${escapeHtml(FUEL_LABELS[k] || k)}</td><td>${v.toFixed(1)}¢</td></tr>`)
+    .join("");
+
+  tip.innerHTML = `
+    <div class="tooltip-title">${escapeHtml(d.name)}</div>
+    <div class="tooltip-meta">${escapeHtml(d.brand || "Fuel")} · ${escapeHtml(d.lga_name || "NSW")}</div>
+    <div class="tooltip-val" style="color:${fuelColor(price, st)}">${price != null ? price.toFixed(1) + "¢/L" : "N/A"} <span style="opacity:0.8;font-weight:400">${escapeHtml(diffStr)}</span></div>
+    <div class="tooltip-details">
+      <div style="opacity:0.8;margin-bottom:3px">${escapeHtml(d.addr)}</div>
+      ${allRows ? `<table class="tooltip-table"><thead><tr><th>Fuel</th><th>Price</th></tr></thead><tbody>${allRows}</tbody></table>` : ""}
+      ${d.upd ? `<div style="opacity:0.65;margin-top:3px">Updated ${escapeHtml(d.upd)}</div>` : ""}
+    </div>
+  `;
+  tip.hidden = false;
+  positionTooltip(event, tip);
+}
+
+function handleFuelClick(event, d) {
+  event.stopPropagation();
+  state.selectedFuelCode = d.code;
+  zoomToCoords(d.lon, d.lat, 40);
+  renderFuelPins();
+  renderDossier();
+}
+
+function renderFuelDetailCard(station) {
+  if (!station) return "";
+  const prices = Object.entries(station.p || {})
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([k, v]) => `<span class="inc-chip">${escapeHtml(k)}: <strong class="mono">${v.toFixed(1)}¢</strong></span>`)
+    .join("");
+  return `
+    <div class="inc-detail-card">
+      <div class="inc-detail-top">
+        <strong>${escapeHtml(station.name)}</strong>
+        <button id="clear-fuel-detail" class="inc-detail-close" type="button" aria-label="Close station detail">×</button>
+      </div>
+      <div class="inc-item-top">
+        <span>${escapeHtml(station.brand || "Fuel")} · ${escapeHtml(station.lga_name || "NSW")}</span>
+        <span class="mono">${escapeHtml(station.upd || "")}</span>
+      </div>
+      <p class="inc-detail-summary">${escapeHtml(station.addr)}</p>
+      <div class="inc-cat-chips">${prices}</div>
+    </div>
+  `;
+}
+
+function renderFuelPanel(feat, p) {
+  const panel = document.getElementById("fuel-panel");
+  if (!panel) return;
+  if (!state.showFuel) {
+    panel.hidden = true;
+    return;
+  }
+  panel.hidden = false;
+
+  const titleEl = document.getElementById("fuel-panel-title");
+  const badgeEl = document.getElementById("fuel-panel-badge");
+  const summaryEl = document.getElementById("fuel-summary");
+  const listEl = document.getElementById("fuel-list");
+  const ft = state.fuelType;
+  const ftLabel = FUEL_LABELS[ft] || ft;
+  titleEl.textContent = `NSW Fuel · ${ftLabel}`;
+
+  if (!state.fuelData?.stations) {
+    badgeEl.textContent = "Loading…";
+    summaryEl.innerHTML = `<div class="inc-note">Loading NSW FuelCheck station prices…</div>`;
+    listEl.innerHTML = "";
+    return;
+  }
+
+  const allWithFuel = state.fuelData.stations.filter((s) => s.p?.[ft] != null);
+  const selectedSt = state.selectedFuelCode
+    ? state.fuelData.stations.find((s) => s.code === state.selectedFuelCode)
+    : null;
+  const detailHtml = renderFuelDetailCard(selectedSt);
+  const stStats = state.fuelData.stats?.[ft];
+
+  let scoped = allWithFuel;
+  let noteHtml = "";
+  const isNswLga = state.layerKey === "lga" && feat && p.ste_name === "New South Wales";
+
+  if (isNswLga) {
+    scoped = allWithFuel.filter((s) => s.lga_code === p.code);
+    badgeEl.textContent = `${scoped.length} stations in LGA`;
+  } else if (feat && p.ste_name !== "New South Wales") {
+    noteHtml = `<div class="inc-note">NSW FuelCheck covers NSW stations — select Sydney or any NSW LGA to filter locally. Cheapest across NSW:</div>`;
+    badgeEl.textContent = `${allWithFuel.length.toLocaleString()} NSW stations`;
+  } else if (currentTransform.k >= 4) {
+    const inView = visibleFuelStations();
+    if (inView.length >= 3) {
+      scoped = inView;
+      badgeEl.textContent = `${scoped.length} in view`;
+    } else {
+      badgeEl.textContent = `${allWithFuel.length.toLocaleString()} NSW`;
+    }
+  } else {
+    badgeEl.textContent = `${allWithFuel.length.toLocaleString()} NSW`;
+  }
+
+  const sorted = [...scoped].sort((a, b) => a.p[ft] - b.p[ft]);
+  if (!sorted.length) {
+    summaryEl.innerHTML = detailHtml + noteHtml + `<div class="inc-note">No stations selling ${escapeHtml(ftLabel)} in this area.</div>`;
+    listEl.innerHTML = "";
+  } else {
+    const lo = sorted[0].p[ft];
+    const hi = sorted[sorted.length - 1].p[ft];
+    const mid = sorted[Math.floor(sorted.length / 2)].p[ft];
+    summaryEl.innerHTML =
+      detailHtml +
+      noteHtml +
+      `<div class="fuel-stats-row">
+        <div class="fuel-stat-box"><div class="k">Cheapest</div><div class="v mono" style="color:#16a34a">${lo.toFixed(1)}¢</div></div>
+        <div class="fuel-stat-box"><div class="k">Median</div><div class="v mono">${mid.toFixed(1)}¢</div></div>
+        <div class="fuel-stat-box"><div class="k">Highest</div><div class="v mono" style="color:#dc2626">${hi.toFixed(1)}¢</div></div>
+      </div>`;
+
+    const byCode = new Map();
+    listEl.innerHTML = sorted
+      .slice(0, 15)
+      .map((s) => {
+        byCode.set(s.code, s);
+        const col = fuelColor(s.p[ft], stStats);
+        return `
+          <button type="button" class="inc-item${s.code === state.selectedFuelCode ? " active" : ""}" data-fuel-code="${escapeHtml(s.code)}">
+            <div class="inc-item-top">
+              <span class="inc-item-left"><span class="inc-chip-dot" style="background:${col}"></span>${escapeHtml(s.brand || "Fuel")} · ${escapeHtml(s.lga_name || "NSW")}</span>
+              <span class="mono" style="color:${col}"><strong>${s.p[ft].toFixed(1)}¢</strong></span>
+            </div>
+            <div class="inc-item-title">${escapeHtml(s.name)}</div>
+            <div class="inc-item-sub"><span>${escapeHtml(s.addr)}</span></div>
+          </button>`;
+      })
+      .join("");
+
+    listEl.querySelectorAll(".inc-item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const st = byCode.get(btn.dataset.fuelCode);
+        if (!st) return;
+        state.selectedFuelCode = st.code;
+        zoomToCoords(st.lon, st.lat, 40);
+        renderFuelPins();
+        renderDossier();
+      });
+    });
+  }
+
+  const closeBtn = summaryEl.querySelector("#clear-fuel-detail");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      state.selectedFuelCode = null;
+      renderFuelPins();
+      renderDossier();
+    });
+  }
 }
 
 window.addEventListener("DOMContentLoaded", init);

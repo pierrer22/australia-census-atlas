@@ -18,7 +18,8 @@ web/data/ced_2021.geojson
 web/data/ced_2025.geojson
 web/data/sed_2025.geojson
 
-# OS / editor
+# OS / editor / local secrets
+.env
 .DS_Store
 __pycache__/
 *.pyc

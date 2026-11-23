@@ -160,6 +160,27 @@ def main() -> int:
             errors.append(f"recent_incidents.json invalid category on {pin.get('id')}: {pin.get('cat')}")
             break
 
+    # Regression guard: NSW FuelCheck prices
+    fuel_data = load_json(WEB_DATA / "nsw_fuel_prices.json")
+    fuel_stations = fuel_data.get("stations", [])
+    fuel_stats = fuel_data.get("stats", {})
+    if len(fuel_stations) < 1500:
+        errors.append(f"nsw_fuel_prices.json only has {len(fuel_stations)} stations (< 1500)")
+    if "E10" not in fuel_stats or "U91" not in fuel_stats:
+        errors.append("nsw_fuel_prices.json stats missing E10 or U91")
+    for st in fuel_stations:
+        lon, lat = st.get("lon", 0), st.get("lat", 0)
+        if not (140.0 <= lon <= 154.5 and -44.0 <= lat <= -28.0):
+            errors.append(f"nsw_fuel_prices.json out-of-bounds coord on {st.get('code')}: ({lon}, {lat})")
+            break
+        if not st.get("lga_code"):
+            errors.append(f"nsw_fuel_prices.json missing lga_code on {st.get('code')}")
+            break
+        prices = st.get("p") or {}
+        if not prices or any(not (50.0 <= float(v) <= 600.0) for v in prices.values()):
+            errors.append(f"nsw_fuel_prices.json invalid prices on {st.get('code')}: {prices}")
+            break
+
     if errors:
         for err in errors:
             print(f"FAIL: {err}", file=sys.stderr)
@@ -168,7 +189,8 @@ def main() -> int:
     print(
         f"OK: 6 layers validated | national pct_affiliated={aff}% | "
         f"SED pop={sed_pop_count}/{len(sed_feats)} | crime LGAs={crime_count} | "
-        f"QLD MBs={len(mb_data):,} | NHW={nhw_count} | pins=({len(rss_pins)} RSS, {len(sa_pins)} SA)"
+        f"QLD MBs={len(mb_data):,} | NHW={nhw_count} | pins=({len(rss_pins)} RSS, {len(sa_pins)} SA) | "
+        f"fuel={len(fuel_stations):,}"
     )
     return 0
 

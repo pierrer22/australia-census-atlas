@@ -22,7 +22,8 @@ Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G
 - **Recent Crime & Neighbourhood Watch Incident Pins:** Toggleable map pins (`Incident Pins` or auto-enabled on `Crime Rate`) combining:
   - **Queensland live street-block & Neighbourhood Watch pins:** Live browser fetch from the official QPS Open Data Crime Map API across all 78 QLD LGAs and 852 Neighbourhood Watch (NHW) areas (with NHW boundary overlays and ABS 2021 Mesh Block coordinate translation).
   - **Multi-state geocoded police RSS & SA suburb pins:** Daily GitHub Actions refresh geocoding myPolice QLD, Tasmania Police, and NT Police (PFES) releases (via OpenStreetMap Nominatim + ABS SAL centroids) alongside SA SAPOL 30-day suburb offence hotspots.
-- **Interactive Dossier & Shareable URLs:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), state/territory quick-zoom (`NSW`–`ACT` with ABS June 2026 Mean Dwelling Price), search result, or leaderboard item, and share the exact view via the URL hash (`#layer=...&metric=...&code=...&pins=1`).
+- **NSW FuelCheck Petrol Prices:** Toggleable `NSW Fuel` overlay showing **2,390** NSW service stations color-coded from cheapest (green) to highest (red) across `E10`, `U91`, `P95`, `P98`, `DL`, `PDL`, and `LPG`, with zoom-in price labels, station tooltips, and cheapest-station rankings by NSW LGA or viewport (refreshed twice daily via GitHub Actions).
+- **Interactive Dossier & Shareable URLs:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), state/territory quick-zoom (`NSW`–`ACT` with ABS June 2026 Mean Dwelling Price), search result, or leaderboard item, and share the exact view via the URL hash (`#layer=...&metric=...&code=...&pins=1&fuel=1`).
 - **Dynamic Map Labels:** Zoom-responsive region names with boundary-fit and 2D collision avoidance so labels appear cleanly as you zoom in without overlapping text or borders.
 - **Dark / Light Mode:** Persisted in `localStorage`.
 
@@ -47,6 +48,7 @@ python3 scripts/build_crime_data.py
 python3 scripts/build_census_data.py
 python3 scripts/build_geo_centroids.py
 python3 scripts/fetch_recent_incidents.py
+python3 scripts/fetch_nsw_fuel.py   # requires NSW_FUEL_API_KEY & NSW_FUEL_API_SECRET
 python3 scripts/validate_site.py
 ```
 
@@ -57,6 +59,7 @@ python3 scripts/validate_site.py
 - State/Territory Legislative Assembly & House of Assembly election results (NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
 - State/Territory Crime Data: NSW BOCSAR, Crime Statistics Agency Victoria (CSA), Queensland Police Service (QPS), NT Police, and South Australia Police (SAPOL via Data.SA)
 - Live & Recent Incident Feeds: QPS Online Crime Map Open Data API (LGAs & Neighbourhood Watch areas), myPolice QLD RSS, Tasmania Police Media Releases RSS, NT Police (PFES) Newsroom RSS, and OpenStreetMap Nominatim geocoding
+- Fuel Prices: NSW Government FuelCheck v2 API (`api.nsw.gov.au`)
 
 ## License
 
