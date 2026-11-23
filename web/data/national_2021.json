@@ -121,5 +121,13 @@
   "median_age_m": 37,
   "median_age_f": 39,
   "median_prsnl_inc_m": 992,
-  "median_prsnl_inc_f": 672
+  "median_prsnl_inc_f": 672,
+  "pct_owner": 66.9,
+  "pct_renter": 31.1,
+  "pct_social_housing": 3.8,
+  "pct_owned_outright": 31.4,
+  "pct_mortgage": 35.5,
+  "pct_public_housing": 3.0,
+  "pct_community_housing": 0.8,
+  "pct_private_rent": 27.1
 }

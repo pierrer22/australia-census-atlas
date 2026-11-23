@@ -371,6 +371,42 @@ def load_income_by_gender(csv_dir: Path, prefix: str, code_col: str) -> dict[str
     return out
 
 
+def load_tenure(csv_dir: Path, prefix: str, code_col: str) -> dict[str, dict]:
+    """Extract G37 dwelling tenure & landlord percentages (denominator: stated tenure)."""
+    path = csv_dir / f"2021Census_G37_{prefix}.csv"
+    out: dict[str, dict] = {}
+    with path.open(newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            code = row[code_col].strip()
+            tot = int(row.get("Total_Total", 0) or 0)
+            ns = int(row.get("Ten_type_NS_Total", 0) or 0)
+            stated = tot - ns
+            if stated <= 0:
+                continue
+            outright = int(row.get("O_OR_Total", 0) or 0)
+            mortgage = int(row.get("O_MTG_Total", 0) or 0)
+            r_tot = int(row.get("R_Tot_Total", 0) or 0)
+            pub_h = int(row.get("R_ST_h_auth_Total", 0) or 0)
+            com_h = int(row.get("R_Com_Hp_Total", 0) or 0)
+            priv_r = (
+                int(row.get("R_RE_Agt_Total", 0) or 0)
+                + int(row.get("R_Psn_not_in_s_hh_Total", 0) or 0)
+                + int(row.get("R_Ot_landld_typ_Total", 0) or 0)
+            )
+            pct = lambda n: min(100.0, max(0.0, round(100.0 * n / stated, 1)))
+            out[code] = {
+                "pct_owner": pct(outright + mortgage),
+                "pct_renter": pct(r_tot),
+                "pct_social_housing": pct(pub_h + com_h),
+                "pct_owned_outright": pct(outright),
+                "pct_mortgage": pct(mortgage),
+                "pct_public_housing": pct(pub_h),
+                "pct_community_housing": pct(com_h),
+                "pct_private_rent": pct(priv_r),
+            }
+    return out
+
+
 def load_aec_2025() -> dict[str, dict]:
     tpp_rows: dict[str, dict] = {}
     with (AEC_ROOT / "HouseTppByDivisionDownload-31496.csv").open(newline="", encoding="utf-8") as f:
@@ -569,6 +605,7 @@ def main() -> None:
         pct_uni, edu_bd = load_uni_pct(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"], pop15_map, g01)
         age_gender = load_age_by_gender(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"])
         inc_gender = load_income_by_gender(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"])
+        tenure = load_tenure(cfg["csv_dir"], cob_prefix, cfg["csv_code_col"])
 
         geo = json.loads((WEB_DATA / cfg["in_geo"]).read_text(encoding="utf-8"))
         for feat in geo["features"]:
@@ -620,6 +657,8 @@ def main() -> None:
                     out_props["median_prsnl_inc_m"] = in_m
                 if in_f is not None:
                     out_props["median_prsnl_inc_f"] = in_f
+            if csv_key in tenure:
+                out_props.update(tenure[csv_key])
             if cfg["key"] == "ced":
                 elec = aec_2025.get(name.strip().lower(), {})
                 out_props.update(elec)
@@ -657,6 +696,7 @@ def main() -> None:
     aus_inc_g = load_income_by_gender(csv_aus, "AUS_AUS", "AUS_CODE_2021").get("AUS", (None, None))
     national["median_age_m"], national["median_age_f"] = aus_age_g
     national["median_prsnl_inc_m"], national["median_prsnl_inc_f"] = aus_inc_g
+    national.update(load_tenure(csv_aus, "AUS_AUS", "AUS_CODE_2021").get("AUS", {}))
     (WEB_DATA / "national_2021.json").write_text(
         json.dumps(national, indent=2), encoding="utf-8"
     )
@@ -674,6 +714,7 @@ def main() -> None:
     gcc_uni, gcc_edu_bd = load_uni_pct(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021", pop15_gcc, g01_gcc)
     gcc_age_g = load_age_by_gender(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021")
     gcc_inc_g = load_income_by_gender(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021")
+    gcc_tenure = load_tenure(csv_gcc, "AUST_GCCSA", "GCCSA_CODE_2021")
     city_map = {
         "Sydney": ("1GSYD", "Greater Sydney", "New South Wales", 12368.7),
         "Melbourne": ("2GMEL", "Greater Melbourne", "Victoria", 9992.5),
@@ -696,6 +737,7 @@ def main() -> None:
         m["edu_bd"] = gcc_edu_bd.get(gcc_code, [])
         m["median_age_m"], m["median_age_f"] = gcc_age_g.get(gcc_code, (None, None))
         m["median_prsnl_inc_m"], m["median_prsnl_inc_f"] = gcc_inc_g.get(gcc_code, (None, None))
+        m.update(gcc_tenure.get(gcc_code, {}))
         cities_out[city_key] = m
     (WEB_DATA / "cities_2021.json").write_text(
         json.dumps(cities_out, indent=2), encoding="utf-8"
@@ -714,6 +756,7 @@ def main() -> None:
     ste_uni, ste_edu_bd = load_uni_pct(csv_ste, "AUST_STE", "STE_CODE_2021", pop15_ste, g01_ste)
     ste_age_g = load_age_by_gender(csv_ste, "AUST_STE", "STE_CODE_2021")
     ste_inc_g = load_income_by_gender(csv_ste, "AUST_STE", "STE_CODE_2021")
+    ste_tenure = load_tenure(csv_ste, "AUST_STE", "STE_CODE_2021")
 
     ste_geo = json.loads((WEB_DATA / "ste_2021.geojson").read_text(encoding="utf-8"))
     ste_areas = {}
@@ -751,6 +794,7 @@ def main() -> None:
         m["edu_bd"] = ste_edu_bd.get(ste_code, [])
         m["median_age_m"], m["median_age_f"] = ste_age_g.get(ste_code, (None, None))
         m["median_prsnl_inc_m"], m["median_prsnl_inc_f"] = ste_inc_g.get(ste_code, (None, None))
+        m.update(ste_tenure.get(ste_code, {}))
         if abbr in abs_prices:
             m["mean_dwelling_price"] = abs_prices[abbr]
         states_out[abbr] = m

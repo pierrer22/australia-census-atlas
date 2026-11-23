@@ -97,6 +97,34 @@ const CENSUS_METRICS = [
     scale: "linear",
   },
   {
+    key: "pct_owner",
+    group: "housing",
+    label: "Owner-Occupiers",
+    unit: "% Dwellings",
+    format: (v) => `${v.toFixed(1)}%`,
+    colors: ["#ecfdf5", "#6ee7b7", "#059669", "#064e3b"],
+    scale: "linear",
+  },
+  {
+    key: "pct_renter",
+    group: "housing",
+    label: "Renters",
+    unit: "% Dwellings",
+    format: (v) => `${v.toFixed(1)}%`,
+    colors: ["#eff6ff", "#93c5fd", "#2563eb", "#1e3a8a"],
+    scale: "linear",
+  },
+  {
+    key: "pct_social_housing",
+    group: "housing",
+    label: "Social Housing",
+    unit: "% Dwellings",
+    format: (v) => `${v.toFixed(1)}%`,
+    colors: ["#fffbeb", "#fcd34d", "#ea580c", "#7c2d12"],
+    scale: "sqrt",
+    note: "ABS 2021 Census G37: dwellings rented from a State/Territory Housing Authority or Community Housing Provider (% of stated tenure).",
+  },
+  {
     key: "median_age",
     group: "people",
     label: "Median Age",
@@ -347,7 +375,7 @@ function metricsInGroup(groupKey) {
   return ALL_METRICS.filter((m) => m.group === groupKey);
 }
 
-const DATA_VERSION = "20261123e";
+const DATA_VERSION = "20261123f";
 
 function showLoading(msg) {
   const el = document.getElementById("map-loading");
@@ -1224,6 +1252,19 @@ function getColorScale() {
     };
   }
 
+  if (m.scale === "sqrt") {
+    const vals = features.filter(isRankable).map((f) => f.properties[m.key]).filter((v) => v != null && v >= 0);
+    const max = d3.max(vals) || 1;
+    const interp = d3.interpolateRgbBasis(m.colors);
+    const s = d3.scaleSqrt().domain([0, max]).range([0, 1]).clamp(true);
+    return {
+      color: (v) => (v == null || v < 0 ? "#94a3b8" : interp(s(v))),
+      min: 0,
+      mid: max / 4,
+      max,
+    };
+  }
+
   const vals = features.filter(isRankable).map((f) => f.properties[m.key]).filter((v) => v > 0);
   const min = d3.min(vals);
   const max = d3.max(vals);
@@ -1278,7 +1319,9 @@ function renderChoropleth() {
     partiesEl.hidden = true;
     barEl.style.background = `linear-gradient(90deg, ${m.colors.join(", ")})`;
     const mid = scaleMid ?? (m.scale === "log" ? Math.sqrt(min * max) : (min + max) / 2);
-    const midVal = (m.scale === "fuel" || m.scale === "rai") ? mid : (max <= 20 ? mid : Math.round(mid));
+    const midVal = (m.scale === "fuel" || m.scale === "rai" || m.scale === "sqrt")
+      ? (m.scale === "sqrt" ? Math.round(mid * 10) / 10 : mid)
+      : (max <= 20 ? mid : Math.round(mid));
     ticksEl.innerHTML =
       `<span>${m.format(min)}</span>` +
       `<span>${m.format(midVal)}</span>` +
@@ -1438,6 +1481,18 @@ function buildTooltipDetails(p, metricKey) {
         ["Median Age", p.median_age != null ? `${p.median_age} yrs` : "—"],
         ["Male Income", fmtMoney(p.median_prsnl_inc_m, "/wk")],
         ["Female Income", fmtMoney(p.median_prsnl_inc_f, "/wk")],
+      ]);
+      break;
+    case "pct_owner":
+    case "pct_renter":
+    case "pct_social_housing":
+      if (p.pct_owner == null) return "";
+      inner = tooltipRows([
+        ["Owned Outright", `${p.pct_owned_outright}%`],
+        ["With Mortgage", `${p.pct_mortgage}%`],
+        ["Private Renters", `${p.pct_private_rent}%`],
+        ["Public Housing", `${p.pct_public_housing}%`],
+        ["Community Housing", `${p.pct_community_housing}%`],
       ]);
       break;
     case "median_age":
@@ -1728,6 +1783,13 @@ function renderDossier() {
     { k: "Year 12+", v: p.pct_yr12 != null ? `${p.pct_yr12}%` : "N/A" },
     { k: "Uni Degree", v: p.pct_uni != null ? `${p.pct_uni}%` : "N/A" },
     { k: "Avg Household Size", v: p.avg_hhd_size != null ? `${p.avg_hhd_size}` : "N/A" },
+    ...(p.pct_owner != null
+      ? [
+          { k: "Owner-Occupiers", v: `${p.pct_owner}%` },
+          { k: "Renters", v: `${p.pct_renter}%` },
+          { k: "Social Housing", v: `${p.pct_social_housing}%` },
+        ]
+      : []),
     ...(p.mean_dwelling_price != null
       ? [{ k: "Mean Dwelling (Jun 26)", v: `$${(p.mean_dwelling_price / 1e6).toFixed(2)}M` }]
       : []),
@@ -1787,7 +1849,9 @@ function renderDossier() {
   }
   lbSection.hidden = false;
 
-  const valid = features.filter((f) => isRankable(f) && f.properties[m.key] != null && f.properties[m.key] > 0);
+  const valid = features.filter(
+    (f) => isRankable(f) && f.properties[m.key] != null && (m.scale === "sqrt" ? f.properties[m.key] >= 0 : f.properties[m.key] > 0)
+  );
   const sorted = [...valid].sort((a, b) =>
     m.invertRank ? a.properties[m.key] - b.properties[m.key] : b.properties[m.key] - a.properties[m.key]
   );

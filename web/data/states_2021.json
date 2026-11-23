@@ -127,6 +127,14 @@
     "median_age_f": 39,
     "median_prsnl_inc_m": 993,
     "median_prsnl_inc_f": 683,
+    "pct_owner": 65.0,
+    "pct_renter": 33.1,
+    "pct_social_housing": 4.2,
+    "pct_owned_outright": 32.0,
+    "pct_mortgage": 33.0,
+    "pct_public_housing": 3.2,
+    "pct_community_housing": 1.0,
+    "pct_private_rent": 28.6,
     "mean_dwelling_price": 1304900
   },
   "VIC": {
@@ -257,6 +265,14 @@
     "median_age_f": 39,
     "median_prsnl_inc_m": 988,
     "median_prsnl_inc_f": 663,
+    "pct_owner": 69.3,
+    "pct_renter": 28.9,
+    "pct_social_housing": 2.6,
+    "pct_owned_outright": 32.6,
+    "pct_mortgage": 36.6,
+    "pct_public_housing": 2.1,
+    "pct_community_housing": 0.5,
+    "pct_private_rent": 26.2,
     "mean_dwelling_price": 918400
   },
   "QLD": {
@@ -387,6 +403,14 @@
     "median_age_f": 39,
     "median_prsnl_inc_m": 960,
     "median_prsnl_inc_f": 672,
+    "pct_owner": 64.5,
+    "pct_renter": 33.6,
+    "pct_social_housing": 3.3,
+    "pct_owned_outright": 29.5,
+    "pct_mortgage": 35.0,
+    "pct_public_housing": 2.7,
+    "pct_community_housing": 0.6,
+    "pct_private_rent": 30.1,
     "mean_dwelling_price": 1130600
   },
   "SA": {
@@ -517,6 +541,14 @@
     "median_age_f": 42,
     "median_prsnl_inc_m": 890,
     "median_prsnl_inc_f": 624,
+    "pct_owner": 69.4,
+    "pct_renter": 27.9,
+    "pct_social_housing": 5.7,
+    "pct_owned_outright": 33.3,
+    "pct_mortgage": 36.1,
+    "pct_public_housing": 4.3,
+    "pct_community_housing": 1.4,
+    "pct_private_rent": 22.1,
     "mean_dwelling_price": 979600
   },
   "WA": {
@@ -647,6 +679,14 @@
     "median_age_f": 39,
     "median_prsnl_inc_m": 1134,
     "median_prsnl_inc_f": 659,
+    "pct_owner": 70.1,
+    "pct_renter": 27.7,
+    "pct_social_housing": 3.7,
+    "pct_owned_outright": 29.6,
+    "pct_mortgage": 40.5,
+    "pct_public_housing": 3.0,
+    "pct_community_housing": 0.8,
+    "pct_private_rent": 23.8,
     "mean_dwelling_price": 1123700
   },
   "TAS": {
@@ -777,6 +817,14 @@
     "median_age_f": 43,
     "median_prsnl_inc_m": 837,
     "median_prsnl_inc_f": 610,
+    "pct_owner": 71.3,
+    "pct_renter": 26.9,
+    "pct_social_housing": 5.4,
+    "pct_owned_outright": 37.7,
+    "pct_mortgage": 33.6,
+    "pct_public_housing": 4.1,
+    "pct_community_housing": 1.3,
+    "pct_private_rent": 21.2,
     "mean_dwelling_price": 733200
   },
   "NT": {
@@ -907,6 +955,14 @@
     "median_age_f": 33,
     "median_prsnl_inc_m": 1065,
     "median_prsnl_inc_f": 813,
+    "pct_owner": 47.1,
+    "pct_renter": 48.6,
+    "pct_social_housing": 13.8,
+    "pct_owned_outright": 16.2,
+    "pct_mortgage": 30.9,
+    "pct_public_housing": 10.6,
+    "pct_community_housing": 3.2,
+    "pct_private_rent": 34.4,
     "mean_dwelling_price": 614400
   },
   "ACT": {
@@ -1037,6 +1093,14 @@
     "median_age_f": 36,
     "median_prsnl_inc_m": 1362,
     "median_prsnl_inc_f": 1052,
+    "pct_owner": 67.4,
+    "pct_renter": 31.0,
+    "pct_social_housing": 5.7,
+    "pct_owned_outright": 26.9,
+    "pct_mortgage": 40.6,
+    "pct_public_housing": 5.1,
+    "pct_community_housing": 0.6,
+    "pct_private_rent": 25.1,
     "mean_dwelling_price": 981700
   }
 }

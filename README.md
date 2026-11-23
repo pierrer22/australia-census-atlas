@@ -2,7 +2,7 @@
 
 **Live Demo:** https://pierrer22.github.io/australia-census-atlas/
 
-Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G01`, `G02`, `G09`, `G14`, `G49`) with **2025 AEC Federal** and **410 State/Territory** election results across six geographic layers.
+Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G01`, `G02`, `G09`, `G14`, `G37`, `G49`) with **2025 AEC Federal** and **410 State/Territory** election results across six geographic layers.
 
 ![Australia Census & Election Atlas](docs/preview.png)
 
@@ -15,8 +15,8 @@ Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G
   - `State Seats` (433 State Electoral Divisions + 410 results across NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
   - `LGA` (547 Local Government Areas)
   - `Suburbs` (`SA2`, 2,454 suburb-level areas)
-- **Grouped Metric Switcher:** 23 lenses organized into `Housing & Income`, `Demographics`, `Elections & Crime`, and `NSW Fuel` (auto-switching layers when needed):
-  - `Housing & Income`: Household Income, Personal Income, Weekly Rent, Rental Affordability (SGS RAI 2025 Q2 across all 6 layers), Monthly Mortgage, and Household Size.
+- **Grouped Metric Switcher:** 26 lenses organized into `Housing & Income`, `Demographics`, `Elections & Crime`, and `NSW Fuel` (auto-switching layers when needed):
+  - `Housing & Income`: Household Income, Personal Income, Weekly Rent, Rental Affordability (SGS RAI 2025 Q2 across all 6 layers), Monthly Mortgage, Household Size, Owner-Occupiers (%), Renters (%), and Social Housing (%).
   - `Demographics`: Median Age, Born Overseas (%), Religion (% Affiliated, excluding Not Stated), Education (% Uni Degree + hover qualification breakdown table), Citizenship (% Aus Citizen), and Population Density.
   - `Elections & Crime`: `2025 Winner` & `2025 ALP 2PP` (`Federal`), `State Winner` (`State Seats`), and `Crime Rate` (`LGA` layer — 12-month rate across 278 LGAs in NSW, VIC, QLD, and NT, ranked within state due to differing police offence definitions and population bases).
   - `NSW Fuel`: `E10`, `Unleaded 91`, `Premium 95`, `Premium 98`, `Diesel`, `Prem Diesel`, and `LPG` (`LGA` & `Suburbs (SA2)` layers — NSW regions shaded by cheapest FuelCheck station, overlaid with **2,390** station pins, zoom-in price labels, and cheapest-station dossier rankings, refreshed twice daily via GitHub Actions).

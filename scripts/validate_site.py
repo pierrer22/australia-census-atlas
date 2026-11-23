@@ -22,6 +22,8 @@ CENSUS_KEYS = (
     "density_sqkm",
 )
 
+TENURE_KEYS = ("pct_owner", "pct_renter", "pct_social_housing")
+
 LAYER_MIN_COUNTS = {
     "sa4": 85,
     "ced": 145,
@@ -50,18 +52,27 @@ def main() -> int:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 1
 
-    for key in CENSUS_KEYS:
+    for key in CENSUS_KEYS + TENURE_KEYS:
         if key not in national:
             errors.append(f"national_2021.json missing key {key}")
 
     aff = national.get("pct_affiliated")
     if aff is None or not (50.0 <= aff <= 57.0):
         errors.append(f"national pct_affiliated out of expected range [50.0, 57.0]: {aff}")
+    for key, lo, hi in (
+        ("pct_owner", 65.0, 69.0),
+        ("pct_renter", 29.0, 33.0),
+        ("pct_social_housing", 3.0, 5.0),
+    ):
+        val = national.get(key)
+        if val is None or not (lo <= val <= hi):
+            errors.append(f"national {key} out of expected range [{lo}, {hi}]: {val}")
 
     for label, coll in (("cities_2021.json", cities), ("states_2021.json", states)):
         for entry_name, entry in coll.items():
-            if "pct_affiliated" not in entry:
-                errors.append(f"{label}[{entry_name}] missing pct_affiliated")
+            for key in ("pct_affiliated", *TENURE_KEYS):
+                if key not in entry:
+                    errors.append(f"{label}[{entry_name}] missing {key}")
 
     layers: dict[str, list[dict]] = {}
     for layer, min_count in LAYER_MIN_COUNTS.items():
@@ -79,6 +90,13 @@ def main() -> int:
                 if p.get(key) is None:
                     errors.append(f"{layer} {p.get('code')} ({p.get('name')}) missing {key}")
                     break
+        tenure_ok = [
+            f for f in rankable
+            if all(f["properties"].get(k) is not None and 0.0 <= f["properties"][k] <= 100.0 for k in TENURE_KEYS)
+        ]
+        min_tenure = len(rankable) - (1 if layer == "sa2" else 0)
+        if len(tenure_ok) < min_tenure:
+            errors.append(f"{layer}_census_2021.geojson only has {len(tenure_ok)}/{len(rankable)} valid tenure features")
 
     # Regression guard: SED join by name must cover >= 400 seats and align NSW North Shore accurately
     sed_feats = layers.get("sed", [])
