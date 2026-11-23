@@ -176,6 +176,9 @@ def main() -> int:
         if not st.get("lga_code"):
             errors.append(f"nsw_fuel_prices.json missing lga_code on {st.get('code')}")
             break
+        if not st.get("sa2_code"):
+            errors.append(f"nsw_fuel_prices.json missing sa2_code on {st.get('code')}")
+            break
         prices = st.get("p") or {}
         if not prices or any(not (50.0 <= float(v) <= 600.0) for v in prices.values()):
             errors.append(f"nsw_fuel_prices.json invalid prices on {st.get('code')}: {prices}")

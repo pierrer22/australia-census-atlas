@@ -208,13 +208,25 @@ const FUEL_METRICS = [
   format: (v) => `${v.toFixed(1)}¢/L`,
   colors: ["#16a34a", "#eab308", "#dc2626"],
   scale: "fuel",
-  layerOnly: "lga",
+  allowedLayers: ["lga", "sa2"],
   invertRank: true,
-  note: "Shaded by cheapest FuelCheck station in each NSW LGA; pins show individual petrol stations (zoom in for price labels).",
+  note: "Shaded by cheapest FuelCheck station in each NSW LGA or Suburb (SA2); pins show individual stations (zoom in for price labels).",
 }));
 
 function isFuelMetric(m = state.metric) {
   return Boolean(m && m.group === "fuel");
+}
+
+function metricSupportsLayer(m, layerKey) {
+  if (!m) return true;
+  if (m.allowedLayers) return m.allowedLayers.includes(layerKey);
+  return m.layerOnly ? m.layerOnly === layerKey : true;
+}
+
+function defaultLayerForMetric(m) {
+  if (!m) return null;
+  if (m.layerOnly) return m.layerOnly;
+  return m.allowedLayers ? m.allowedLayers[0] : null;
 }
 
 const ALL_METRICS = [
@@ -324,7 +336,7 @@ function metricsInGroup(groupKey) {
   return ALL_METRICS.filter((m) => m.group === groupKey);
 }
 
-const DATA_VERSION = "20261123c";
+const DATA_VERSION = "20261123d";
 
 function showLoading(msg) {
   const el = document.getElementById("map-loading");
@@ -380,7 +392,7 @@ async function loadLayer(key) {
   const cfg = LAYERS.find((l) => l.key === key);
   const data = await d3.json(`${cfg.file}?v=${DATA_VERSION}`);
   state.cache[key] = data;
-  if (key === "lga" && state.fuelData) attachFuelToLgas();
+  if ((key === "lga" || key === "sa2") && state.fuelData) attachFuelToLayer(key);
   return data;
 }
 
@@ -391,8 +403,8 @@ async function init() {
   const hashMetric = ALL_METRICS.find((m) => m.key === initial.metric);
   if (hashLayer) state.layerKey = hashLayer.key;
   if (hashMetric) state.metric = hashMetric;
-  if (state.metric.layerOnly && state.layerKey !== state.metric.layerOnly) {
-    state.layerKey = state.metric.layerOnly;
+  if (!metricSupportsLayer(state.metric, state.layerKey)) {
+    state.layerKey = defaultLayerForMetric(state.metric) || state.layerKey;
   }
   state.activeGroup = state.metric.group || "housing";
 
@@ -449,7 +461,7 @@ async function init() {
     state.showFuel = true;
     state.fuelType = state.metric.fuelType;
     await loadFuelData();
-    attachFuelToLgas();
+    attachFuelToLayer(state.layerKey);
   }
 
   renderChoropleth();
@@ -534,7 +546,7 @@ async function switchLayer(targetKey, opts = {}) {
   });
   document.getElementById("subtitle").textContent = `ABS 2021 · ${l.desc}`;
 
-  if (state.metric.layerOnly && state.metric.layerOnly !== l.key) {
+  if (!metricSupportsLayer(state.metric, l.key)) {
     state.metric = CENSUS_METRICS[0];
     state.activeGroup = state.metric.group;
     state.showFuel = false;
@@ -587,10 +599,10 @@ async function selectMetric(m) {
         hideLoading();
       }
     }
-    if (state.layerKey !== "lga") {
-      await switchLayer("lga");
+    if (!metricSupportsLayer(m, state.layerKey)) {
+      await switchLayer(defaultLayerForMetric(m) || "lga");
     } else {
-      attachFuelToLgas();
+      attachFuelToLayer(state.layerKey);
       buildMetricGroups();
       buildMetricTabs();
       renderChoropleth();
@@ -611,8 +623,8 @@ async function selectMetric(m) {
     renderFuelPins();
   }
 
-  if (m.layerOnly && state.layerKey !== m.layerOnly) {
-    await switchLayer(m.layerOnly);
+  if (!metricSupportsLayer(m, state.layerKey)) {
+    await switchLayer(defaultLayerForMetric(m));
   } else {
     buildMetricGroups();
     buildMetricTabs();
@@ -1444,10 +1456,11 @@ function buildTooltipDetails(p, metricKey) {
         const ft = metricKey.slice(5);
         const meta = p._fuelMeta?.[ft];
         if (!meta) return "";
+        const scope = state.layerKey === "sa2" ? "Suburb" : "LGA";
         inner = tooltipRows([
           ["Cheapest Station", `${escapeHtml(meta.cheapestName)} (${meta.min.toFixed(1)}¢)`],
-          ["LGA Median", `${meta.median.toFixed(1)}¢/L`],
-          ["LGA Highest", `${meta.max.toFixed(1)}¢/L`],
+          [`${scope} Median`, `${meta.median.toFixed(1)}¢/L`],
+          [`${scope} Highest`, `${meta.max.toFixed(1)}¢/L`],
           ["Stations", String(meta.count)],
         ]);
         break;
@@ -2620,31 +2633,33 @@ function fuelColor(price, st) {
   return FUEL_INTERP(scale(price));
 }
 
-function attachFuelToLgas() {
-  const lgaGeo = state.cache.lga;
-  if (!lgaGeo || !state.fuelData?.stations) return;
-  const byLgaFuel = new Map();
+function attachFuelToLayer(layerKey) {
+  const geo = state.cache[layerKey];
+  if (!geo || !state.fuelData?.stations) return;
+  const codeField = layerKey === "sa2" ? "sa2_code" : "lga_code";
+  const byAreaFuel = new Map();
 
   for (const s of state.fuelData.stations) {
-    if (!s.lga_code || !s.p) continue;
+    const areaCode = s[codeField];
+    if (!areaCode || !s.p) continue;
     for (const [ft, price] of Object.entries(s.p)) {
-      const key = `${s.lga_code}:${ft}`;
-      let list = byLgaFuel.get(key);
+      const key = `${areaCode}:${ft}`;
+      let list = byAreaFuel.get(key);
       if (!list) {
         list = [];
-        byLgaFuel.set(key, list);
+        byAreaFuel.set(key, list);
       }
       list.push({ price, name: s.name, brand: s.brand });
     }
   }
 
-  for (const f of lgaGeo.features) {
+  for (const f of geo.features) {
     const props = f.properties;
     const code = String(props.code);
     const metaMap = {};
     for (const fm of FUEL_METRICS) {
       const ft = fm.fuelType;
-      const entries = byLgaFuel.get(`${code}:${ft}`);
+      const entries = byAreaFuel.get(`${code}:${ft}`);
       if (entries && entries.length) {
         entries.sort((a, b) => a.price - b.price);
         const mid = entries[Math.floor(entries.length / 2)].price;
@@ -2665,7 +2680,7 @@ function attachFuelToLgas() {
   }
 
   for (const fm of FUEL_METRICS) {
-    rankCache.delete(`lga:${fm.key}`);
+    rankCache.delete(`${layerKey}:${fm.key}`);
   }
 }
 
@@ -2675,7 +2690,8 @@ async function loadFuelData() {
     const data = await d3.json(`data/nsw_fuel_prices.json?v=${DATA_VERSION}`);
     state.fuelData = data;
     reprojectFuel();
-    attachFuelToLgas();
+    attachFuelToLayer("lga");
+    attachFuelToLayer("sa2");
   } catch (err) {
     console.warn("Failed to load nsw_fuel_prices.json:", err);
   }
@@ -2890,13 +2906,15 @@ function renderFuelPanel(feat, p) {
 
   let scoped = allWithFuel;
   let noteHtml = "";
-  const isNswLga = state.layerKey === "lga" && feat && p.ste_name === "New South Wales";
+  const isNswScoped = (state.layerKey === "lga" || state.layerKey === "sa2") && feat && p.ste_name === "New South Wales";
+  const scopeLabel = state.layerKey === "sa2" ? "suburb" : "LGA";
 
-  if (isNswLga) {
-    scoped = allWithFuel.filter((s) => s.lga_code === p.code);
-    badgeEl.textContent = `${scoped.length} stations in LGA`;
+  if (isNswScoped) {
+    const field = state.layerKey === "sa2" ? "sa2_code" : "lga_code";
+    scoped = allWithFuel.filter((s) => s[field] === p.code);
+    badgeEl.textContent = `${scoped.length} stations in ${scopeLabel}`;
   } else if (feat && p.ste_name !== "New South Wales") {
-    noteHtml = `<div class="inc-note">NSW FuelCheck covers NSW stations — select Sydney or any NSW LGA to filter locally. Cheapest across NSW:</div>`;
+    noteHtml = `<div class="inc-note">NSW FuelCheck covers NSW stations — select Sydney or any NSW LGA/suburb to filter locally. Cheapest across NSW:</div>`;
     badgeEl.textContent = `${allWithFuel.length.toLocaleString()} NSW stations`;
   } else if (currentTransform.k >= 4) {
     const inView = visibleFuelStations();

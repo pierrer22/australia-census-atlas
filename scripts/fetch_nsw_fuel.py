@@ -16,6 +16,7 @@ from fetch_recent_incidents import build_lga_spatial_index, find_lga
 BASE = Path(__file__).resolve().parent.parent
 WEB_DATA = BASE / "web" / "data"
 LGA_GEO = WEB_DATA / "lga_census_2021.geojson"
+SA2_GEO = WEB_DATA / "sa2_census_2021.geojson"
 OUT_PATH = WEB_DATA / "nsw_fuel_prices.json"
 ENV_PATH = BASE / ".env"
 
@@ -116,6 +117,11 @@ def main() -> int:
         x for x in full_idx
         if x["ste_name"] in {"New South Wales", "Tasmania", "Australian Capital Territory"}
     ]
+    full_sa2_idx = build_lga_spatial_index(SA2_GEO)
+    nsw_tas_act_sa2_idx = [
+        x for x in full_sa2_idx
+        if x["ste_name"] in {"New South Wales", "Tasmania", "Australian Capital Territory"}
+    ]
 
     stations_out: list[dict] = []
     vals_by_fuel: dict[str, list[float]] = {}
@@ -144,6 +150,10 @@ def main() -> int:
         if not lga_code:
             continue
 
+        sa2_code, sa2_name = find_lga(lon_r, lat_r, nsw_tas_act_sa2_idx, ste_name=ste_hint)
+        if not sa2_code:
+            sa2_code, sa2_name = find_lga(lon_r, lat_r, nsw_tas_act_sa2_idx, ste_name=None)
+
         for ft, pv in pmap.items():
             vals_by_fuel.setdefault(ft, []).append(pv)
 
@@ -156,6 +166,8 @@ def main() -> int:
             "lat": lat_r,
             "lga_code": lga_code,
             "lga_name": lga_name,
+            "sa2_code": sa2_code,
+            "sa2_name": sa2_name,
             "p": pmap,
             "upd": latest_by_station.get(scode, ""),
         })
