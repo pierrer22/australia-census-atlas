@@ -184,6 +184,21 @@ def main() -> int:
             errors.append(f"nsw_fuel_prices.json invalid prices on {st.get('code')}: {prices}")
             break
 
+    # Regression guard: SGS Rental Affordability Index (RAI)
+    rai_data = load_json(WEB_DATA / "rai_2025.json")
+    rai_sa2 = rai_data.get("sa2", {})
+    rai_lga = rai_data.get("lga", {})
+    if len(rai_sa2) < 1500:
+        errors.append(f"rai_2025.json only has {len(rai_sa2)} SA2 entries (< 1500)")
+    if len(rai_lga) < 350:
+        errors.append(f"rai_2025.json only has {len(rai_lga)} LGA entries (< 350)")
+    for layer_k in ("sa2", "lga", "sa3", "sa4", "ced", "sed"):
+        for rcode, entry in list(rai_data.get(layer_k, {}).items())[:200]:
+            val = entry[0] if isinstance(entry, list) and entry else 0
+            if not (20 <= val <= 1000):
+                errors.append(f"rai_2025.json invalid score on {layer_k}[{rcode}]: {entry}")
+                break
+
     if errors:
         for err in errors:
             print(f"FAIL: {err}", file=sys.stderr)
@@ -193,7 +208,7 @@ def main() -> int:
         f"OK: 6 layers validated | national pct_affiliated={aff}% | "
         f"SED pop={sed_pop_count}/{len(sed_feats)} | crime LGAs={crime_count} | "
         f"QLD MBs={len(mb_data):,} | NHW={nhw_count} | pins=({len(rss_pins)} RSS, {len(sa_pins)} SA) | "
-        f"fuel={len(fuel_stations):,}"
+        f"fuel={len(fuel_stations):,} | RAI=({len(rai_sa2):,} SA2, {len(rai_lga)} LGA)"
     )
     return 0
 

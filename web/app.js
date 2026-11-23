@@ -69,6 +69,16 @@ const CENSUS_METRICS = [
     scale: "linear",
   },
   {
+    key: "rai",
+    group: "housing",
+    label: "Rental Affordability",
+    unit: "RAI (2025 Q2)",
+    format: (v) => `${Math.round(v)}`,
+    colors: ["#7f1d1d", "#dc2626", "#f97316", "#eab308", "#84cc16", "#15803d"],
+    scale: "rai",
+    note: "SGS Rental Affordability Index (2025 Q2). 100 = rent is 30% of average rental household income; lower = less affordable (NT unavailable).",
+  },
+  {
     key: "median_mortgage_mo",
     group: "housing",
     label: "Monthly Mortgage",
@@ -314,6 +324,7 @@ const state = {
   fuelType: "E10",
   fuelData: null,
   selectedFuelCode: null,
+  raiData: null,
 };
 
 let svg, mapGroup, regionLayer, nhwLayer, fuelLayer, fuelLabelLayer, pinLayer, labelLayer, pathGen, projection, zoomBehavior;
@@ -336,7 +347,7 @@ function metricsInGroup(groupKey) {
   return ALL_METRICS.filter((m) => m.group === groupKey);
 }
 
-const DATA_VERSION = "20261123d";
+const DATA_VERSION = "20261123e";
 
 function showLoading(msg) {
   const el = document.getElementById("map-loading");
@@ -393,6 +404,7 @@ async function loadLayer(key) {
   const data = await d3.json(`${cfg.file}?v=${DATA_VERSION}`);
   state.cache[key] = data;
   if ((key === "lga" || key === "sa2") && state.fuelData) attachFuelToLayer(key);
+  if (state.raiData) attachRaiToLayer(key);
   return data;
 }
 
@@ -462,6 +474,9 @@ async function init() {
     state.fuelType = state.metric.fuelType;
     await loadFuelData();
     attachFuelToLayer(state.layerKey);
+  } else if (state.metric.key === "rai") {
+    await loadRaiData();
+    attachRaiToLayer(state.layerKey);
   }
 
   renderChoropleth();
@@ -621,6 +636,18 @@ async function selectMetric(m) {
     state.showFuel = false;
     state.selectedFuelCode = null;
     renderFuelPins();
+  }
+
+  if (m.key === "rai" && !state.raiData) {
+    showLoading("Loading Rental Affordability Index…");
+    try {
+      await loadRaiData();
+    } finally {
+      hideLoading();
+    }
+  }
+  if (m.key === "rai" && state.raiData) {
+    attachRaiToLayer(state.layerKey);
   }
 
   if (!metricSupportsLayer(m, state.layerKey)) {
@@ -1160,6 +1187,17 @@ function getColorScale() {
     };
   }
 
+  if (m.scale === "rai") {
+    const interp = d3.interpolateRgbBasis(m.colors);
+    const s = d3.scaleLinear().domain([50, 80, 100, 120, 150, 180]).range([0, 0.2, 0.4, 0.6, 0.8, 1]).clamp(true);
+    return {
+      color: (v) => (v == null || v <= 0 ? "#94a3b8" : interp(s(v))),
+      min: 50,
+      mid: 100,
+      max: 180,
+    };
+  }
+
   if (m.scale === "fuel") {
     const vals = features
       .map((f) => f.properties[m.key])
@@ -1240,7 +1278,7 @@ function renderChoropleth() {
     partiesEl.hidden = true;
     barEl.style.background = `linear-gradient(90deg, ${m.colors.join(", ")})`;
     const mid = scaleMid ?? (m.scale === "log" ? Math.sqrt(min * max) : (min + max) / 2);
-    const midVal = m.scale === "fuel" ? mid : (max <= 20 ? mid : Math.round(mid));
+    const midVal = (m.scale === "fuel" || m.scale === "rai") ? mid : (max <= 20 ? mid : Math.round(mid));
     ticksEl.innerHTML =
       `<span>${m.format(min)}</span>` +
       `<span>${m.format(midVal)}</span>` +
@@ -1369,6 +1407,21 @@ function buildTooltipDetails(p, metricKey) {
         ["Personal Income", prsnlInc],
       ]);
       break;
+    case "rai": {
+      if (p.rai == null) return "";
+      const rows = [
+        ["Rating", raiRating(p.rai)],
+        ["Est. Rent Share", `~${Math.round(3000 / p.rai)}% of income`],
+      ];
+      if (p.rai_chg5y != null) {
+        rows.push(["5-Yr Change", `${p.rai_chg5y > 0 ? "+" : ""}${p.rai_chg5y} pts (vs 2020)`]);
+      }
+      if (p.rai_basis) {
+        rows.push(["Basis", p.rai_basis]);
+      }
+      inner = tooltipRows(rows);
+      break;
+    }
     case "median_mortgage_mo":
       inner = tooltipRows([
         ["Avg Household Size", hhdSize],
@@ -1553,6 +1606,9 @@ function renderDossier() {
     document.getElementById("hero-kpi-value").textContent = "55.2% ALP";
   } else if (m.key === "crime_rate_100k") {
     document.getElementById("hero-kpi-value").textContent = "4 States/Terr.";
+  } else if (m.key === "rai") {
+    const natMed = state.raiData?.national_med ?? 107;
+    document.getElementById("hero-kpi-value").textContent = `med ${natMed}`;
   } else if (isFuelMetric(m)) {
     const fStats = state.fuelData?.stats?.[m.fuelType];
     document.getElementById("hero-kpi-value").textContent = fStats ? `med ${m.format(fStats.median)}` : "NSW FuelCheck";
@@ -1678,6 +1734,9 @@ function renderDossier() {
     ...(p.crime_rate_100k != null
       ? [{ k: `Crime Rate (${p.crime_period || "12 mo"})`, v: `${Math.round(p.crime_rate_100k).toLocaleString()}/100k` }]
       : []),
+    ...(p.rai != null
+      ? [{ k: "Rental Affordability (RAI)", v: `${p.rai} · ${raiRating(p.rai)}` }]
+      : []),
   ]
     .map((s) => `<div class="stat-cell"><div class="k">${s.k}</div><div class="v mono">${s.v}</div></div>`)
     .join("");
@@ -1738,9 +1797,11 @@ function renderDossier() {
   lb.innerHTML = m.withinState
     ? `<div class="lb-note">State police definitions differ — compare within each state.</div>`
     : "";
+  const highTitle = m.key === "rai" ? "Most Affordable" : (m.invertRank ? "Cheapest" : "Highest");
+  const lowTitle = m.key === "rai" ? "Least Affordable" : (m.invertRank ? "Most Expensive" : "Lowest");
   [
-    { title: m.invertRank ? "Cheapest" : "Highest", rows: top3 },
-    { title: m.invertRank ? "Most Expensive" : "Lowest", rows: bot3 },
+    { title: highTitle, rows: top3 },
+    { title: lowTitle, rows: bot3 },
   ].forEach((grp) => {
     const lbl = document.createElement("div");
     lbl.className = "lb-group-label";
@@ -2983,6 +3044,52 @@ function renderFuelPanel(feat, p) {
       renderDossier();
     });
   }
+}
+
+function raiRating(v) {
+  if (v == null) return "N/A";
+  if (v < 50) return "Extremely Unaffordable";
+  if (v < 80) return "Severely Unaffordable";
+  if (v < 100) return "Unaffordable";
+  if (v < 120) return "Moderately Unaffordable";
+  if (v < 150) return "Acceptable";
+  return "Affordable";
+}
+
+function attachRaiToLayer(layerKey) {
+  const geo = state.cache[layerKey];
+  const mapObj = state.raiData?.[layerKey];
+  if (!geo || !mapObj) return;
+  for (const f of geo.features) {
+    const props = f.properties;
+    const entry = mapObj[String(props.code)];
+    if (entry && entry[0] > 0) {
+      props.rai = entry[0];
+      props.rai_period = entry[1];
+      props.rai_chg5y = entry[2];
+      props.rai_basis = layerKey === "sa2" ? `Postcode ${entry[3]}` : `${entry[3]} suburbs (pop-weighted)`;
+    } else {
+      delete props.rai;
+      delete props.rai_period;
+      delete props.rai_chg5y;
+      delete props.rai_basis;
+    }
+  }
+  rankCache.delete(`${layerKey}:rai`);
+}
+
+async function loadRaiData() {
+  if (state.raiData) return state.raiData;
+  try {
+    const data = await d3.json(`data/rai_2025.json?v=${DATA_VERSION}`);
+    state.raiData = data;
+    for (const key of Object.keys(state.cache)) {
+      attachRaiToLayer(key);
+    }
+  } catch (err) {
+    console.warn("Failed to load rai_2025.json:", err);
+  }
+  return state.raiData;
 }
 
 window.addEventListener("DOMContentLoaded", init);

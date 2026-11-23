@@ -8,6 +8,7 @@ crime/*.csv
 crime/*.xlsx
 crime/*.xlsm
 housing/*.xlsx
+housing/*.csv
 
 # Intermediate unmerged GeoJSONs
 web/data/sa4_2021.geojson

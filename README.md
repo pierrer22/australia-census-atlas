@@ -15,8 +15,8 @@ Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G
   - `State Seats` (433 State Electoral Divisions + 410 results across NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
   - `LGA` (547 Local Government Areas)
   - `Suburbs` (`SA2`, 2,454 suburb-level areas)
-- **Grouped Metric Switcher:** 22 lenses organized into `Housing & Income`, `Demographics`, `Elections & Crime`, and `NSW Fuel` (auto-switching layers when needed):
-  - `Housing & Income`: Household Income, Personal Income, Weekly Rent, Monthly Mortgage, and Household Size.
+- **Grouped Metric Switcher:** 23 lenses organized into `Housing & Income`, `Demographics`, `Elections & Crime`, and `NSW Fuel` (auto-switching layers when needed):
+  - `Housing & Income`: Household Income, Personal Income, Weekly Rent, Rental Affordability (SGS RAI 2025 Q2 across all 6 layers), Monthly Mortgage, and Household Size.
   - `Demographics`: Median Age, Born Overseas (%), Religion (% Affiliated, excluding Not Stated), Education (% Uni Degree + hover qualification breakdown table), Citizenship (% Aus Citizen), and Population Density.
   - `Elections & Crime`: `2025 Winner` & `2025 ALP 2PP` (`Federal`), `State Winner` (`State Seats`), and `Crime Rate` (`LGA` layer — 12-month rate across 278 LGAs in NSW, VIC, QLD, and NT, ranked within state due to differing police offence definitions and population bases).
   - `NSW Fuel`: `E10`, `Unleaded 91`, `Premium 95`, `Premium 98`, `Diesel`, `Prem Diesel`, and `LPG` (`LGA` & `Suburbs (SA2)` layers — NSW regions shaded by cheapest FuelCheck station, overlaid with **2,390** station pins, zoom-in price labels, and cheapest-station dossier rankings, refreshed twice daily via GitHub Actions).
@@ -47,6 +47,7 @@ python3 scripts/fetch_state_elections.py
 python3 scripts/build_crime_data.py
 python3 scripts/build_census_data.py
 python3 scripts/build_geo_centroids.py
+python3 scripts/build_rai_data.py
 python3 scripts/fetch_recent_incidents.py
 python3 scripts/fetch_nsw_fuel.py   # requires NSW_FUEL_API_KEY & NSW_FUEL_API_SECRET
 python3 scripts/validate_site.py
@@ -54,12 +55,13 @@ python3 scripts/validate_site.py
 
 ## Sources
 
-- Australian Bureau of Statistics (ABS) 2021 Census General Community Profile (GCP), ASGS Edition 3 Digital Boundary Files (including Mesh Blocks & Suburbs and Localities), and *Total Value of Dwellings* (June Quarter 2026)
+- Australian Bureau of Statistics (ABS) 2021 Census General Community Profile (GCP), ASGS Edition 3 Digital Boundary Files (including Mesh Blocks, Postcodes/POA, & Suburbs and Localities), and *Total Value of Dwellings* (June Quarter 2026)
 - Australian Electoral Commission (AEC) 2025 Federal Election Tally Room (`Event 31496`)
 - State/Territory Legislative Assembly & House of Assembly election results (NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
 - State/Territory Crime Data: NSW BOCSAR, Crime Statistics Agency Victoria (CSA), Queensland Police Service (QPS), NT Police, and South Australia Police (SAPOL via Data.SA)
 - Live & Recent Incident Feeds: QPS Online Crime Map Open Data API (LGAs & Neighbourhood Watch areas), myPolice QLD RSS, Tasmania Police Media Releases RSS, NT Police (PFES) Newsroom RSS, and OpenStreetMap Nominatim geocoding
 - Fuel Prices: NSW Government FuelCheck v2 API (`api.nsw.gov.au`)
+- Rental Affordability Index (RAI, 2025 Q2): SGS Economics & Planning via National Housing Data Exchange (AHDAP)
 
 ## License
 
