@@ -1043,23 +1043,6 @@ body {
   gap: 6px;
 }
 
-.overlay-toggles {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.fuel-toggle:hover {
-  border-color: #16a34a;
-}
-
-.fuel-toggle.active {
-  background: #15803d;
-  color: #ffffff;
-  border-color: #15803d;
-}
-
 .fuel-dot {
   cursor: pointer;
   stroke: #ffffff;
@@ -1090,27 +1073,6 @@ body {
   text-anchor: middle;
   pointer-events: none;
   user-select: none;
-}
-
-.legend-fuel {
-  margin-top: 8px;
-  padding-top: 7px;
-  border-top: 1px solid var(--border);
-}
-
-.legend-fuel-head {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.69rem;
-  font-weight: 700;
-  margin-bottom: 5px;
-}
-
-.legend-fuel-bar {
-  height: 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: linear-gradient(90deg, #16a34a, #eab308, #dc2626);
 }
 
 .fuel-stats-row {
@@ -1577,7 +1539,6 @@ body {
     right: auto;
     align-items: flex-start;
   }
-  .overlay-toggles,
   .incident-filters {
     justify-content: flex-start;
   }

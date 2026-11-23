@@ -37,6 +37,7 @@ const METRIC_GROUPS = [
   { key: "housing", label: "Housing & Income" },
   { key: "people", label: "Demographics" },
   { key: "politics", label: "Elections & Crime" },
+  { key: "fuel", label: "NSW Fuel" },
 ];
 
 const CENSUS_METRICS = [
@@ -190,11 +191,38 @@ const CRIME_METRICS = [
   },
 ];
 
+const FUEL_METRICS = [
+  ["E10", "E10"],
+  ["U91", "Unleaded 91"],
+  ["P95", "Premium 95"],
+  ["P98", "Premium 98"],
+  ["DL", "Diesel"],
+  ["PDL", "Prem Diesel"],
+  ["LPG", "LPG"],
+].map(([code, label]) => ({
+  key: `fuel_${code}`,
+  fuelType: code,
+  group: "fuel",
+  label,
+  unit: "¢/L (cheapest)",
+  format: (v) => `${v.toFixed(1)}¢/L`,
+  colors: ["#16a34a", "#eab308", "#dc2626"],
+  scale: "fuel",
+  layerOnly: "lga",
+  invertRank: true,
+  note: "Shaded by cheapest FuelCheck station in each NSW LGA; pins show individual petrol stations (zoom in for price labels).",
+}));
+
+function isFuelMetric(m = state.metric) {
+  return Boolean(m && m.group === "fuel");
+}
+
 const ALL_METRICS = [
   ...CENSUS_METRICS,
   ...ELECTION_METRICS,
   ...STATE_ELECTION_METRICS,
   ...CRIME_METRICS,
+  ...FUEL_METRICS,
 ];
 
 const CITIES = [
@@ -296,7 +324,7 @@ function metricsInGroup(groupKey) {
   return ALL_METRICS.filter((m) => m.group === groupKey);
 }
 
-const DATA_VERSION = "20261123b";
+const DATA_VERSION = "20261123c";
 
 function showLoading(msg) {
   const el = document.getElementById("map-loading");
@@ -314,6 +342,10 @@ function parseHash() {
   const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   let metric = params.get("metric") || "";
   if (metric === "pct_no_religion") metric = "pct_affiliated";
+  if (!metric && params.get("fuel") === "1") {
+    const ftype = (params.get("ftype") || "E10").toUpperCase();
+    metric = `fuel_${ftype}`;
+  }
   return {
     layer: params.get("layer") || "",
     metric,
@@ -321,8 +353,6 @@ function parseHash() {
     city: params.get("city") || "",
     stateAbbr: (params.get("state") || "").toUpperCase(),
     pins: params.get("pins") === "1",
-    fuel: params.get("fuel") === "1",
-    ftype: (params.get("ftype") || "").toUpperCase(),
   };
 }
 
@@ -338,10 +368,6 @@ function syncHash() {
     params.set("state", state.activeState);
   }
   if (state.showIncidents) params.set("pins", "1");
-  if (state.showFuel) {
-    params.set("fuel", "1");
-    if (state.fuelType && state.fuelType !== "E10") params.set("ftype", state.fuelType);
-  }
   const qs = params.toString();
   const hashStr = qs ? `#${qs}` : "";
   if (hashStr !== window.location.hash) {
@@ -354,6 +380,7 @@ async function loadLayer(key) {
   const cfg = LAYERS.find((l) => l.key === key);
   const data = await d3.json(`${cfg.file}?v=${DATA_VERSION}`);
   state.cache[key] = data;
+  if (key === "lga" && state.fuelData) attachFuelToLgas();
   return data;
 }
 
@@ -414,10 +441,17 @@ async function init() {
   buildCityBar();
   buildStateBar();
   initIncidentControls();
-  initFuelControls();
   initSearch();
   initMap(initialGeo);
   renderLayerPaths();
+
+  if (isFuelMetric(state.metric)) {
+    state.showFuel = true;
+    state.fuelType = state.metric.fuelType;
+    await loadFuelData();
+    attachFuelToLgas();
+  }
+
   renderChoropleth();
 
   let selectedFeat = null;
@@ -436,18 +470,11 @@ async function init() {
     if (steFeat) focusFeature(steFeat, true);
   }
 
-  if (initial.pins || state.metric.key === "crime_rate_100k") {
+  if (!isFuelMetric(state.metric) && (initial.pins || state.metric.key === "crime_rate_100k")) {
     await setIncidentsEnabled(true, { skipSync: true });
   }
-  if (initial.fuel) {
-    if (initial.ftype) {
-      const sel = document.getElementById("fuel-type-select");
-      if ([...sel.options].some((o) => o.value === initial.ftype)) {
-        state.fuelType = initial.ftype;
-        sel.value = initial.ftype;
-      }
-    }
-    await setFuelEnabled(true, { skipSync: true });
+  if (state.showFuel) {
+    renderFuelPins();
   }
 
   renderDossier();
@@ -510,12 +537,15 @@ async function switchLayer(targetKey, opts = {}) {
   if (state.metric.layerOnly && state.metric.layerOnly !== l.key) {
     state.metric = CENSUS_METRICS[0];
     state.activeGroup = state.metric.group;
+    state.showFuel = false;
+    state.selectedFuelCode = null;
   }
   buildMetricGroups();
   buildMetricTabs();
   renderLayerPaths();
   renderChoropleth();
   renderPins();
+  renderFuelPins();
   renderDossier();
   syncHash();
 }
@@ -538,6 +568,63 @@ function buildLayerSwitch() {
   });
 }
 
+async function selectMetric(m) {
+  state.metric = m;
+  state.activeGroup = m.group;
+
+  if (isFuelMetric(m)) {
+    state.showFuel = true;
+    state.fuelType = m.fuelType;
+    state.selectedFuelCode = null;
+    if (state.showIncidents) {
+      await setIncidentsEnabled(false, { skipSync: true });
+    }
+    if (!state.fuelData) {
+      showLoading("Loading NSW FuelCheck…");
+      try {
+        await loadFuelData();
+      } finally {
+        hideLoading();
+      }
+    }
+    if (state.layerKey !== "lga") {
+      await switchLayer("lga");
+    } else {
+      attachFuelToLgas();
+      buildMetricGroups();
+      buildMetricTabs();
+      renderChoropleth();
+      renderFuelPins();
+      renderDossier();
+      syncHash();
+    }
+    if (currentTransform.k <= 1.2 && !state.selectedCode && !state.activeState) {
+      const nswFeat = state.ste?.features?.find((f) => String(f.properties.STE_CODE21) === "1");
+      if (nswFeat) focusFeature(nswFeat);
+    }
+    return;
+  }
+
+  if (state.showFuel) {
+    state.showFuel = false;
+    state.selectedFuelCode = null;
+    renderFuelPins();
+  }
+
+  if (m.layerOnly && state.layerKey !== m.layerOnly) {
+    await switchLayer(m.layerOnly);
+  } else {
+    buildMetricGroups();
+    buildMetricTabs();
+    renderChoropleth();
+    renderDossier();
+    syncHash();
+  }
+  if (m.key === "crime_rate_100k" && !state.userToggledPinsOff && !state.showIncidents) {
+    await setIncidentsEnabled(true);
+  }
+}
+
 function buildMetricGroups() {
   const wrap = document.getElementById("metric-groups");
   wrap.innerHTML = "";
@@ -550,7 +637,11 @@ function buildMetricGroups() {
     btn.setAttribute("role", "tab");
     btn.setAttribute("aria-selected", String(isActive));
     btn.textContent = g.label;
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
+      if (g.key === "fuel" && !isFuelMetric()) {
+        await selectMetric(FUEL_METRICS[0]);
+        return;
+      }
       if (state.activeGroup === g.key) return;
       state.activeGroup = g.key;
       buildMetricGroups();
@@ -569,20 +660,7 @@ function buildMetricTabs() {
     btn.className = "metric-btn" + (m.key === state.metric.key ? " active" : "");
     btn.textContent = m.label;
     btn.addEventListener("click", async () => {
-      state.metric = m;
-      state.activeGroup = m.group;
-      if (m.layerOnly && state.layerKey !== m.layerOnly) {
-        await switchLayer(m.layerOnly);
-      } else {
-        buildMetricGroups();
-        container.querySelectorAll(".metric-btn").forEach((b) => b.classList.toggle("active", b === btn));
-        renderChoropleth();
-        renderDossier();
-        syncHash();
-      }
-      if (m.key === "crime_rate_100k" && !state.userToggledPinsOff && !state.showIncidents) {
-        await setIncidentsEnabled(true);
-      }
+      await selectMetric(m);
     });
     container.appendChild(btn);
   });
@@ -1070,6 +1148,32 @@ function getColorScale() {
     };
   }
 
+  if (m.scale === "fuel") {
+    const vals = features
+      .map((f) => f.properties[m.key])
+      .filter((v) => v != null && v > 0)
+      .sort((a, b) => a - b);
+    if (!vals.length) {
+      return { color: () => "#94a3b8", min: 0, mid: 0, max: 0 };
+    }
+    const min = vals[0];
+    const max = vals[vals.length - 1];
+    const p10 = d3.quantile(vals, 0.1) ?? min;
+    const med = d3.quantile(vals, 0.5) ?? (min + max) / 2;
+    const p90 = d3.quantile(vals, 0.9) ?? max;
+    const interp = d3.interpolateRgbBasis(m.colors);
+    if (!(p90 > p10)) {
+      return { color: (v) => (v == null ? "#94a3b8" : interp(0.5)), min, mid: med, max };
+    }
+    const s = d3.scaleLinear().domain([p10, med, p90]).range([0, 0.5, 1]).clamp(true);
+    return {
+      color: (v) => (v == null || v <= 0 ? "#94a3b8" : interp(s(v))),
+      min,
+      mid: med,
+      max,
+    };
+  }
+
   const vals = features.filter(isRankable).map((f) => f.properties[m.key]).filter((v) => v > 0);
   const min = d3.min(vals);
   const max = d3.max(vals);
@@ -1083,7 +1187,7 @@ function getColorScale() {
 }
 
 function renderChoropleth() {
-  const { color, min, max } = getColorScale();
+  const { color, min, mid: scaleMid, max } = getColorScale();
   const m = state.metric;
 
   regionLayer
@@ -1123,8 +1227,8 @@ function renderChoropleth() {
     ticksEl.hidden = false;
     partiesEl.hidden = true;
     barEl.style.background = `linear-gradient(90deg, ${m.colors.join(", ")})`;
-    const mid = m.scale === "log" ? Math.sqrt(min * max) : (min + max) / 2;
-    const midVal = max <= 20 ? mid : Math.round(mid);
+    const mid = scaleMid ?? (m.scale === "log" ? Math.sqrt(min * max) : (min + max) / 2);
+    const midVal = m.scale === "fuel" ? mid : (max <= 20 ? mid : Math.round(mid));
     ticksEl.innerHTML =
       `<span>${m.format(min)}</span>` +
       `<span>${m.format(midVal)}</span>` +
@@ -1336,6 +1440,18 @@ function buildTooltipDetails(p, metricKey) {
       break;
     }
     default:
+      if (metricKey.startsWith("fuel_")) {
+        const ft = metricKey.slice(5);
+        const meta = p._fuelMeta?.[ft];
+        if (!meta) return "";
+        inner = tooltipRows([
+          ["Cheapest Station", `${escapeHtml(meta.cheapestName)} (${meta.min.toFixed(1)}¢)`],
+          ["LGA Median", `${meta.median.toFixed(1)}¢/L`],
+          ["LGA Highest", `${meta.max.toFixed(1)}¢/L`],
+          ["Stations", String(meta.count)],
+        ]);
+        break;
+      }
       return "";
   }
   return inner ? `<div class="tooltip-details">${inner}</div>` : "";
@@ -1424,6 +1540,9 @@ function renderDossier() {
     document.getElementById("hero-kpi-value").textContent = "55.2% ALP";
   } else if (m.key === "crime_rate_100k") {
     document.getElementById("hero-kpi-value").textContent = "4 States/Terr.";
+  } else if (isFuelMetric(m)) {
+    const fStats = state.fuelData?.stats?.[m.fuelType];
+    document.getElementById("hero-kpi-value").textContent = fStats ? `med ${m.format(fStats.median)}` : "NSW FuelCheck";
   } else {
     document.getElementById("hero-kpi-value").textContent = p[m.key] != null ? m.format(p[m.key]) : "N/A";
   }
@@ -1607,8 +1726,8 @@ function renderDossier() {
     ? `<div class="lb-note">State police definitions differ — compare within each state.</div>`
     : "";
   [
-    { title: "Highest", rows: top3 },
-    { title: "Lowest", rows: bot3 },
+    { title: m.invertRank ? "Cheapest" : "Highest", rows: top3 },
+    { title: m.invertRank ? "Most Expensive" : "Lowest", rows: bot3 },
   ].forEach((grp) => {
     const lbl = document.createElement("div");
     lbl.className = "lb-group-label";
@@ -2501,42 +2620,53 @@ function fuelColor(price, st) {
   return FUEL_INTERP(scale(price));
 }
 
-function initFuelControls() {
-  const toggleBtn = document.getElementById("fuel-toggle");
-  const typeSel = document.getElementById("fuel-type-select");
+function attachFuelToLgas() {
+  const lgaGeo = state.cache.lga;
+  if (!lgaGeo || !state.fuelData?.stations) return;
+  const byLgaFuel = new Map();
 
-  toggleBtn.addEventListener("click", async () => {
-    await setFuelEnabled(!state.showFuel);
-  });
-
-  typeSel.addEventListener("change", () => {
-    state.fuelType = typeSel.value || "E10";
-    renderFuelPins();
-    renderDossier();
-    syncHash();
-  });
-}
-
-async function setFuelEnabled(enabled, opts = {}) {
-  state.showFuel = Boolean(enabled);
-  const toggleBtn = document.getElementById("fuel-toggle");
-  const filtersEl = document.getElementById("fuel-filters");
-  toggleBtn.classList.toggle("active", state.showFuel);
-  toggleBtn.setAttribute("aria-pressed", String(state.showFuel));
-  filtersEl.hidden = !state.showFuel;
-
-  if (!state.showFuel) {
-    state.selectedFuelCode = null;
-    renderFuelPins();
-    renderDossier();
-    if (!opts.skipSync) syncHash();
-    return;
+  for (const s of state.fuelData.stations) {
+    if (!s.lga_code || !s.p) continue;
+    for (const [ft, price] of Object.entries(s.p)) {
+      const key = `${s.lga_code}:${ft}`;
+      let list = byLgaFuel.get(key);
+      if (!list) {
+        list = [];
+        byLgaFuel.set(key, list);
+      }
+      list.push({ price, name: s.name, brand: s.brand });
+    }
   }
 
-  await loadFuelData();
-  renderFuelPins();
-  renderDossier();
-  if (!opts.skipSync) syncHash();
+  for (const f of lgaGeo.features) {
+    const props = f.properties;
+    const code = String(props.code);
+    const metaMap = {};
+    for (const fm of FUEL_METRICS) {
+      const ft = fm.fuelType;
+      const entries = byLgaFuel.get(`${code}:${ft}`);
+      if (entries && entries.length) {
+        entries.sort((a, b) => a.price - b.price);
+        const mid = entries[Math.floor(entries.length / 2)].price;
+        props[fm.key] = entries[0].price;
+        metaMap[ft] = {
+          min: entries[0].price,
+          median: mid,
+          max: entries[entries.length - 1].price,
+          count: entries.length,
+          cheapestName: entries[0].name,
+          cheapestBrand: entries[0].brand,
+        };
+      } else {
+        delete props[fm.key];
+      }
+    }
+    props._fuelMeta = metaMap;
+  }
+
+  for (const fm of FUEL_METRICS) {
+    rankCache.delete(`lga:${fm.key}`);
+  }
 }
 
 async function loadFuelData() {
@@ -2545,6 +2675,7 @@ async function loadFuelData() {
     const data = await d3.json(`data/nsw_fuel_prices.json?v=${DATA_VERSION}`);
     state.fuelData = data;
     reprojectFuel();
+    attachFuelToLgas();
   } catch (err) {
     console.warn("Failed to load nsw_fuel_prices.json:", err);
   }
@@ -2616,30 +2747,8 @@ function visibleFuelStations() {
 }
 
 function renderFuelPins() {
-  const legEl = document.getElementById("legend-fuel");
   const ft = state.fuelType;
   const st = state.fuelData?.stats?.[ft];
-
-  if (legEl) {
-    if (state.showFuel && st) {
-      legEl.hidden = false;
-      legEl.innerHTML = `
-        <div class="legend-fuel-head">
-          <span>NSW Fuel · ${escapeHtml(FUEL_LABELS[ft] || ft)}</span>
-          <span class="mono" style="color:var(--muted)">¢/L</span>
-        </div>
-        <div class="legend-fuel-bar"></div>
-        <div class="legend-ticks mono">
-          <span>${st.min.toFixed(1)}</span>
-          <span>med ${st.median.toFixed(1)}</span>
-          <span>${st.max.toFixed(1)}</span>
-        </div>
-      `;
-    } else {
-      legEl.hidden = true;
-      legEl.innerHTML = "";
-    }
-  }
 
   if (!fuelLayer || !fuelLabelLayer) return;
   if (!state.showFuel || !state.fuelData) {

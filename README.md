@@ -15,15 +15,15 @@ Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G
   - `State Seats` (433 State Electoral Divisions + 410 results across NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
   - `LGA` (547 Local Government Areas)
   - `Suburbs` (`SA2`, 2,454 suburb-level areas)
-- **Grouped Metric Switcher:** 15 lenses organized into `Housing & Income`, `Demographics`, and `Elections & Crime` (auto-switching layers when needed):
+- **Grouped Metric Switcher:** 22 lenses organized into `Housing & Income`, `Demographics`, `Elections & Crime`, and `NSW Fuel` (auto-switching layers when needed):
   - `Housing & Income`: Household Income, Personal Income, Weekly Rent, Monthly Mortgage, and Household Size.
   - `Demographics`: Median Age, Born Overseas (%), Religion (% Affiliated, excluding Not Stated), Education (% Uni Degree + hover qualification breakdown table), Citizenship (% Aus Citizen), and Population Density.
   - `Elections & Crime`: `2025 Winner` & `2025 ALP 2PP` (`Federal`), `State Winner` (`State Seats`), and `Crime Rate` (`LGA` layer — 12-month rate across 278 LGAs in NSW, VIC, QLD, and NT, ranked within state due to differing police offence definitions and population bases).
+  - `NSW Fuel`: `E10`, `Unleaded 91`, `Premium 95`, `Premium 98`, `Diesel`, `Prem Diesel`, and `LPG` (`LGA` layer — NSW LGAs shaded by cheapest FuelCheck station, overlaid with **2,390** station pins, zoom-in price labels, and cheapest-station dossier rankings, refreshed twice daily via GitHub Actions).
 - **Recent Crime & Neighbourhood Watch Incident Pins:** Toggleable map pins (`Incident Pins` or auto-enabled on `Crime Rate`) combining:
   - **Queensland live street-block & Neighbourhood Watch pins:** Live browser fetch from the official QPS Open Data Crime Map API across all 78 QLD LGAs and 852 Neighbourhood Watch (NHW) areas (with NHW boundary overlays and ABS 2021 Mesh Block coordinate translation).
   - **Multi-state geocoded police RSS & SA suburb pins:** Daily GitHub Actions refresh geocoding myPolice QLD, Tasmania Police, and NT Police (PFES) releases (via OpenStreetMap Nominatim + ABS SAL centroids) alongside SA SAPOL 30-day suburb offence hotspots.
-- **NSW FuelCheck Petrol Prices:** Toggleable `NSW Fuel` overlay showing **2,390** NSW service stations color-coded from cheapest (green) to highest (red) across `E10`, `U91`, `P95`, `P98`, `DL`, `PDL`, and `LPG`, with zoom-in price labels, station tooltips, and cheapest-station rankings by NSW LGA or viewport (refreshed twice daily via GitHub Actions).
-- **Interactive Dossier & Shareable URLs:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), state/territory quick-zoom (`NSW`–`ACT` with ABS June 2026 Mean Dwelling Price), search result, or leaderboard item, and share the exact view via the URL hash (`#layer=...&metric=...&code=...&pins=1&fuel=1`).
+- **Interactive Dossier & Shareable URLs:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), state/territory quick-zoom (`NSW`–`ACT` with ABS June 2026 Mean Dwelling Price), search result, or leaderboard item, and share the exact view via the URL hash (`#layer=...&metric=...&code=...&pins=1`).
 - **Dynamic Map Labels:** Zoom-responsive region names with boundary-fit and 2D collision avoidance so labels appear cleanly as you zoom in without overlapping text or borders.
 - **Dark / Light Mode:** Persisted in `localStorage`.
 

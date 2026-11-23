@@ -7,9 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=22" />
+  <link rel="stylesheet" href="styles.css?v=23" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" defer></script>
-  <script src="app.js?v=28" defer></script>
+  <script src="app.js?v=29" defer></script>
 </head>
 <body>
   <div class="app-shell">
@@ -51,17 +51,11 @@
           <div class="city-bar" id="city-bar" aria-label="Quick zoom to cities"></div>
         </div>
 
-        <div class="incident-bar" id="incident-bar" aria-label="Map pin overlays">
-          <div class="overlay-toggles">
-            <button id="incidents-toggle" class="incident-toggle" type="button" aria-pressed="false" title="Toggle recent crime &amp; Neighbourhood Watch incident pins">
-              <span class="incident-dot" aria-hidden="true"></span>
-              <span>Incident Pins</span>
-            </button>
-            <button id="fuel-toggle" class="incident-toggle fuel-toggle" type="button" aria-pressed="false" title="Toggle NSW FuelCheck petrol station prices">
-              <span class="incident-dot" aria-hidden="true"></span>
-              <span>NSW Fuel</span>
-            </button>
-          </div>
+        <div class="incident-bar" id="incident-bar" aria-label="Recent crime incident pins">
+          <button id="incidents-toggle" class="incident-toggle" type="button" aria-pressed="false" title="Toggle recent crime &amp; Neighbourhood Watch incident pins">
+            <span class="incident-dot" aria-hidden="true"></span>
+            <span>Incident Pins</span>
+          </button>
           <div id="incident-filters" class="incident-filters" hidden>
             <select id="incident-cat-filter" aria-label="Filter incident category">
               <option value="all">All categories</option>
@@ -75,17 +69,6 @@
               <option value="7">QLD: 7d</option>
               <option value="14" selected>QLD: 14d</option>
               <option value="30">QLD: 30d</option>
-            </select>
-          </div>
-          <div id="fuel-filters" class="incident-filters" hidden>
-            <select id="fuel-type-select" aria-label="Select fuel type">
-              <option value="E10" selected>Fuel: E10</option>
-              <option value="U91">Fuel: Unleaded 91</option>
-              <option value="P95">Fuel: Premium 95</option>
-              <option value="P98">Fuel: Premium 98</option>
-              <option value="DL">Fuel: Diesel</option>
-              <option value="PDL">Fuel: Premium Diesel</option>
-              <option value="LPG">Fuel: LPG</option>
             </select>
           </div>
         </div>
@@ -112,7 +95,6 @@
           <div class="legend-ticks mono" id="legend-ticks"></div>
           <div class="legend-parties" id="legend-parties" hidden></div>
           <div class="legend-incidents" id="legend-incidents" hidden></div>
-          <div class="legend-fuel" id="legend-fuel" hidden></div>
           <div class="legend-note" id="legend-note" hidden></div>
         </aside>
 
