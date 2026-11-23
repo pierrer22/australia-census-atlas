@@ -19,7 +19,10 @@ Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G
   - `Housing & Income`: Household Income, Personal Income, Weekly Rent, Monthly Mortgage, and Household Size.
   - `Demographics`: Median Age, Born Overseas (%), Religion (% Affiliated, excluding Not Stated), Education (% Uni Degree + hover qualification breakdown table), Citizenship (% Aus Citizen), and Population Density.
   - `Elections & Crime`: `2025 Winner` & `2025 ALP 2PP` (`Federal`), `State Winner` (`State Seats`), and `Crime Rate` (`LGA` layer — 12-month rate across 278 LGAs in NSW, VIC, QLD, and NT, ranked within state due to differing police offence definitions and population bases).
-- **Interactive Dossier & Shareable URLs:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), state/territory quick-zoom (`NSW`–`ACT` with ABS June 2026 Mean Dwelling Price), search result, or leaderboard item, and share the exact view via the URL hash (`#layer=...&metric=...&code=...`).
+- **Recent Crime & Neighbourhood Watch Incident Pins:** Toggleable map pins (`Incident Pins` or auto-enabled on `Crime Rate`) combining:
+  - **Queensland live street-block & Neighbourhood Watch pins:** Live browser fetch from the official QPS Open Data Crime Map API across all 78 QLD LGAs and 852 Neighbourhood Watch (NHW) areas (with NHW boundary overlays and ABS 2021 Mesh Block coordinate translation).
+  - **Multi-state geocoded police RSS & SA suburb pins:** Daily GitHub Actions refresh geocoding myPolice QLD, Tasmania Police, and NT Police (PFES) releases (via OpenStreetMap Nominatim + ABS SAL centroids) alongside SA SAPOL 30-day suburb offence hotspots.
+- **Interactive Dossier & Shareable URLs:** Click any region, city quick-zoom (`Sydney`, `Melbourne`, `Brisbane`, `Perth`, `Adelaide`, `Canberra`), state/territory quick-zoom (`NSW`–`ACT` with ABS June 2026 Mean Dwelling Price), search result, or leaderboard item, and share the exact view via the URL hash (`#layer=...&metric=...&code=...&pins=1`).
 - **Dynamic Map Labels:** Zoom-responsive region names with boundary-fit and 2D collision avoidance so labels appear cleanly as you zoom in without overlapping text or borders.
 - **Dark / Light Mode:** Persisted in `localStorage`.
 
@@ -42,15 +45,18 @@ pip install -r requirements.txt
 python3 scripts/fetch_state_elections.py
 python3 scripts/build_crime_data.py
 python3 scripts/build_census_data.py
+python3 scripts/build_geo_centroids.py
+python3 scripts/fetch_recent_incidents.py
 python3 scripts/validate_site.py
 ```
 
 ## Sources
 
-- Australian Bureau of Statistics (ABS) 2021 Census General Community Profile (GCP), ASGS Edition 3 Digital Boundary Files, and *Total Value of Dwellings* (June Quarter 2026)
+- Australian Bureau of Statistics (ABS) 2021 Census General Community Profile (GCP), ASGS Edition 3 Digital Boundary Files (including Mesh Blocks & Suburbs and Localities), and *Total Value of Dwellings* (June Quarter 2026)
 - Australian Electoral Commission (AEC) 2025 Federal Election Tally Room (`Event 31496`)
 - State/Territory Legislative Assembly & House of Assembly election results (NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
-- State/Territory Crime Data: NSW BOCSAR, Crime Statistics Agency Victoria (CSA), Queensland Police Service (QPS), and NT Police
+- State/Territory Crime Data: NSW BOCSAR, Crime Statistics Agency Victoria (CSA), Queensland Police Service (QPS), NT Police, and South Australia Police (SAPOL via Data.SA)
+- Live & Recent Incident Feeds: QPS Online Crime Map Open Data API (LGAs & Neighbourhood Watch areas), myPolice QLD RSS, Tasmania Police Media Releases RSS, NT Police (PFES) Newsroom RSS, and OpenStreetMap Nominatim geocoding
 
 ## License
 
@@ -59,4 +65,4 @@ python3 scripts/validate_site.py
   - **ABS data:** Based on Australian Bureau of Statistics data ([abs.gov.au](https://www.abs.gov.au)), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). ABS data used with permission from the Australian Bureau of Statistics.
   - **AEC federal election data (`aec/House*.csv`):** © Commonwealth of Australia (Australian Electoral Commission), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
   - **State/Territory election summaries (`aec/state_elections.json`):** Derived from Wikipedia Legislative Assembly / House of Assembly election result tables, licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
-  - **Crime datasets (`crime/lga_crime.json`):** Derived from NSW BOCSAR, Crime Statistics Agency Victoria (CSA), Queensland Police Service (QPS), and NT Police open datasets ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)).
+  - **Crime & incident datasets (`crime/`, `web/data/recent_incidents.json`, `web/data/qld_nhw_by_lga.json`):** Derived from NSW BOCSAR, Crime Statistics Agency Victoria (CSA), Queensland Police Service (QPS Open Data API & myPolice), NT Police, Tasmania Police, and SAPOL open datasets ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)). Street-level coordinates geocoded via OpenStreetMap Nominatim ([ODbL](https://opendatacommons.org/licenses/odbl/)).

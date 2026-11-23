@@ -119,6 +119,47 @@ def main() -> int:
     if crime_count < 270:
         errors.append(f"lga_census_2021.geojson only has {crime_count} crime LGAs (< 270)")
 
+    # Regression guard: QLD Mesh Block centroids
+    mb_path = WEB_DATA / "qld_mb_centroids.json"
+    mb_data = load_json(mb_path)
+    if len(mb_data) < 65000:
+        errors.append(f"qld_mb_centroids.json has only {len(mb_data)} entries (< 65,000)")
+    for mb_code, coords in list(mb_data.items())[:200]:
+        lon, lat = coords
+        if not (137.0 <= lon <= 154.5 and -30.0 <= lat <= -9.0):
+            errors.append(f"qld_mb_centroids.json out-of-bounds coord for {mb_code}: {coords}")
+            break
+
+    # Regression guard: QLD NHW-to-LGA mapping
+    nhw_data = load_json(WEB_DATA / "qld_nhw_by_lga.json")
+    nhw_by_lga = nhw_data.get("by_lga", {})
+    nhw_count = nhw_data.get("nhw_count", 0)
+    if len(nhw_by_lga) != 78:
+        errors.append(f"qld_nhw_by_lga.json has {len(nhw_by_lga)} QLD LGAs (expected 78)")
+    if nhw_count < 800:
+        errors.append(f"qld_nhw_by_lga.json only has {nhw_count} NHW areas (< 800)")
+    bris = nhw_by_lga.get("31000")
+    if not bris or bris.get("qps_name") != "Brisbane" or not bris.get("nhw"):
+        errors.append("qld_nhw_by_lga.json missing valid Brisbane (31000) NHW mapping")
+
+    # Regression guard: Recent incidents (RSS + SA)
+    inc_data = load_json(WEB_DATA / "recent_incidents.json")
+    rss_pins = inc_data.get("rss", [])
+    sa_pins = inc_data.get("sa", [])
+    valid_cats = {"violent", "property", "vehicle", "drugs_weapons", "other"}
+    if len(rss_pins) < 20:
+        errors.append(f"recent_incidents.json only has {len(rss_pins)} RSS pins (< 20)")
+    if len(sa_pins) < 200:
+        errors.append(f"recent_incidents.json only has {len(sa_pins)} SA pins (< 200)")
+    for pin in rss_pins + sa_pins:
+        lon, lat = pin.get("lon", 0), pin.get("lat", 0)
+        if not (112.0 <= lon <= 155.0 and -44.0 <= lat <= -9.0):
+            errors.append(f"recent_incidents.json out-of-bounds coord: {pin.get('id')} ({lon}, {lat})")
+            break
+        if pin.get("cat") not in valid_cats:
+            errors.append(f"recent_incidents.json invalid category on {pin.get('id')}: {pin.get('cat')}")
+            break
+
     if errors:
         for err in errors:
             print(f"FAIL: {err}", file=sys.stderr)
@@ -126,7 +167,8 @@ def main() -> int:
 
     print(
         f"OK: 6 layers validated | national pct_affiliated={aff}% | "
-        f"SED pop={sed_pop_count}/{len(sed_feats)} | crime LGAs={crime_count}"
+        f"SED pop={sed_pop_count}/{len(sed_feats)} | crime LGAs={crime_count} | "
+        f"QLD MBs={len(mb_data):,} | NHW={nhw_count} | pins=({len(rss_pins)} RSS, {len(sa_pins)} SA)"
     )
     return 0
 

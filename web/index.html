@@ -7,9 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20" />
+  <link rel="stylesheet" href="styles.css?v=21" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" defer></script>
-  <script src="app.js?v=26" defer></script>
+  <script src="app.js?v=27" defer></script>
 </head>
 <body>
   <div class="app-shell">
@@ -51,6 +51,28 @@
           <div class="city-bar" id="city-bar" aria-label="Quick zoom to cities"></div>
         </div>
 
+        <div class="incident-bar" id="incident-bar" aria-label="Recent crime incident pins">
+          <button id="incidents-toggle" class="incident-toggle" type="button" aria-pressed="false" title="Toggle recent crime &amp; Neighbourhood Watch incident pins">
+            <span class="incident-dot" aria-hidden="true"></span>
+            <span>Incident Pins</span>
+          </button>
+          <div id="incident-filters" class="incident-filters" hidden>
+            <select id="incident-cat-filter" aria-label="Filter incident category">
+              <option value="all">All categories</option>
+              <option value="violent">Violent</option>
+              <option value="property">Property</option>
+              <option value="vehicle">Vehicle / Traffic</option>
+              <option value="drugs_weapons">Drugs &amp; Weapons</option>
+              <option value="other">Other</option>
+            </select>
+            <select id="qld-window-select" aria-label="QLD live timeframe" title="QLD live QPS offences timeframe">
+              <option value="7">QLD: 7d</option>
+              <option value="14" selected>QLD: 14d</option>
+              <option value="30">QLD: 30d</option>
+            </select>
+          </div>
+        </div>
+
         <svg id="australia-map" tabindex="-1" role="img" aria-label="Choropleth map of Australia"></svg>
 
         <div id="map-loading" class="map-loading" hidden>
@@ -72,6 +94,7 @@
           <div class="legend-bar" id="legend-bar"></div>
           <div class="legend-ticks mono" id="legend-ticks"></div>
           <div class="legend-parties" id="legend-parties" hidden></div>
+          <div class="legend-incidents" id="legend-incidents" hidden></div>
           <div class="legend-note" id="legend-note" hidden></div>
         </aside>
 
@@ -99,6 +122,19 @@
         <section class="panel-section" id="election-panel" hidden>
           <h3>2025 Federal Election (AEC)</h3>
           <div class="election-card" id="election-card"></div>
+        </section>
+
+        <section class="panel-section" id="incidents-panel" hidden>
+          <div class="incidents-head">
+            <h3 id="incidents-panel-title">Recent Incidents</h3>
+            <span id="incidents-panel-badge" class="inc-status mono"></span>
+          </div>
+          <div id="nhw-controls" class="nhw-controls" hidden>
+            <label for="nhw-select" class="nhw-label">Neighbourhood Watch Area (QLD)</label>
+            <select id="nhw-select" class="nhw-select"></select>
+          </div>
+          <div id="incidents-summary" class="incidents-summary"></div>
+          <div id="incidents-list" class="incidents-list"></div>
         </section>
 
         <section class="panel-section">

@@ -207,6 +207,44 @@ const CITIES = [
   { name: "Canberra", coords: [149.13, -35.28], scale: 14 },
 ];
 
+const INCIDENT_CATS = {
+  violent: { label: "Violent", color: "#dc2626" },
+  property: { label: "Property", color: "#d97706" },
+  vehicle: { label: "Vehicle/Traffic", color: "#2563eb" },
+  drugs_weapons: { label: "Drugs & Weapons", color: "#9333ea" },
+  other: { label: "Other", color: "#64748b" },
+};
+
+const QPS_API_BASE = "https://a5c7zwf7e5.execute-api.ap-southeast-2.amazonaws.com/dev";
+
+const QPS_VIOLENT_RE = /assault|homicide|robbery|against the person/i;
+const QPS_VEHICLE_RE = /traffic|motor vehicle/i;
+const QPS_DRUG_WEAPON_RE = /drug|weapon/i;
+const QPS_PROPERTY_RE = /arson|fraud|stolen goods|damage|theft|trespass|unlawful entry|stock/i;
+
+function classifyQpsOffence(typeStr) {
+  const s = String(typeStr || "");
+  if (QPS_VIOLENT_RE.test(s)) return "violent";
+  if (QPS_VEHICLE_RE.test(s)) return "vehicle";
+  if (QPS_DRUG_WEAPON_RE.test(s)) return "drugs_weapons";
+  if (QPS_PROPERTY_RE.test(s)) return "property";
+  return "other";
+}
+
+function escapeHtml(str) {
+  return String(str ?? "").replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[ch]));
+}
+
+function safeUrl(url) {
+  return typeof url === "string" && /^https?:\/\//i.test(url) ? url : "";
+}
+
 const state = {
   layerKey: "sa4",
   cache: {},
@@ -219,13 +257,28 @@ const state = {
   selectedCode: null,
   activeCity: "Australia",
   activeState: null,
+  showIncidents: false,
+  incidentCat: "all",
+  qldDays: 14,
+  incidentsData: null,
+  qldMbCentroids: null,
+  qldNhwByLga: null,
+  qldLiveCache: new Map(),
+  qldNhwGeoCache: new Map(),
+  activeQldPins: [],
+  activeQldMeta: null,
+  selectedNhw: "",
+  selectedPinId: null,
+  userToggledPinsOff: false,
 };
 
-let svg, mapGroup, regionLayer, labelLayer, pathGen, projection, zoomBehavior;
+let svg, mapGroup, regionLayer, nhwLayer, pinLayer, labelLayer, pathGen, projection, zoomBehavior;
 let currentTransform = d3.zoomIdentity;
 let labelCandidates = [];
 let labelRaf = null;
+let pinRaf = null;
 let layerLoadSeq = 0;
+let qldFetchSeq = 0;
 const rankCache = new Map();
 let width = 900;
 let height = 650;
@@ -238,7 +291,7 @@ function metricsInGroup(groupKey) {
   return ALL_METRICS.filter((m) => m.group === groupKey);
 }
 
-const DATA_VERSION = "20261122a";
+const DATA_VERSION = "20261123a";
 
 function showLoading(msg) {
   const el = document.getElementById("map-loading");
@@ -262,6 +315,7 @@ function parseHash() {
     code: params.get("code") || "",
     city: params.get("city") || "",
     stateAbbr: (params.get("state") || "").toUpperCase(),
+    pins: params.get("pins") === "1",
   };
 }
 
@@ -276,6 +330,7 @@ function syncHash() {
   } else if (state.activeState) {
     params.set("state", state.activeState);
   }
+  if (state.showIncidents) params.set("pins", "1");
   const qs = params.toString();
   const hashStr = qs ? `#${qs}` : "";
   if (hashStr !== window.location.hash) {
@@ -347,17 +402,19 @@ async function init() {
   buildMetricTabs();
   buildCityBar();
   buildStateBar();
+  initIncidentControls();
   initSearch();
   initMap(initialGeo);
   renderLayerPaths();
   renderChoropleth();
 
+  let selectedFeat = null;
   if (initial.code) {
-    const feat = initialGeo.features.find((f) => String(f.properties.code) === String(initial.code));
-    if (feat) {
-      state.selectedCode = feat.properties.code;
+    selectedFeat = initialGeo.features.find((f) => String(f.properties.code) === String(initial.code));
+    if (selectedFeat) {
+      state.selectedCode = selectedFeat.properties.code;
       updateSelectionHighlight();
-      focusFeature(feat, true);
+      focusFeature(selectedFeat, true);
     }
   } else if (matchedCity) {
     zoomToCity(matchedCity, true);
@@ -367,15 +424,21 @@ async function init() {
     if (steFeat) focusFeature(steFeat, true);
   }
 
+  if (initial.pins || state.metric.key === "crime_rate_100k") {
+    await setIncidentsEnabled(true, { skipSync: true });
+  }
+
   renderDossier();
 
   document.getElementById("clear-selection").addEventListener("click", () => {
     state.selectedCode = null;
     state.activeCity = "Australia";
     state.activeState = null;
+    clearActiveQld();
     document.querySelectorAll(".city-btn").forEach((b) => b.classList.toggle("active", b.textContent === "Australia"));
     updateSelectionHighlight();
     zoomToCity(CITIES[0]);
+    renderPins();
     renderDossier();
     syncHash();
   });
@@ -411,7 +474,10 @@ async function switchLayer(targetKey, opts = {}) {
   if (seq !== layerLoadSeq) return;
 
   state.layerKey = l.key;
-  if (!opts.preserveSelection) state.selectedCode = null;
+  if (!opts.preserveSelection) {
+    state.selectedCode = null;
+    clearActiveQld();
+  }
   document.querySelectorAll("#layer-switch .layer-btn").forEach((b) => {
     b.classList.toggle("active", b.dataset.layer === l.key);
   });
@@ -425,6 +491,7 @@ async function switchLayer(targetKey, opts = {}) {
   buildMetricTabs();
   renderLayerPaths();
   renderChoropleth();
+  renderPins();
   renderDossier();
   syncHash();
 }
@@ -482,13 +549,16 @@ function buildMetricTabs() {
       state.activeGroup = m.group;
       if (m.layerOnly && state.layerKey !== m.layerOnly) {
         await switchLayer(m.layerOnly);
-        return;
+      } else {
+        buildMetricGroups();
+        container.querySelectorAll(".metric-btn").forEach((b) => b.classList.toggle("active", b === btn));
+        renderChoropleth();
+        renderDossier();
+        syncHash();
       }
-      buildMetricGroups();
-      container.querySelectorAll(".metric-btn").forEach((b) => b.classList.toggle("active", b === btn));
-      renderChoropleth();
-      renderDossier();
-      syncHash();
+      if (m.key === "crime_rate_100k" && !state.userToggledPinsOff && !state.showIncidents) {
+        await setIncidentsEnabled(true);
+      }
     });
     container.appendChild(btn);
   });
@@ -505,10 +575,12 @@ function buildCityBar() {
       state.activeCity = c.name;
       state.activeState = null;
       state.selectedCode = null;
+      clearActiveQld();
       document.querySelectorAll(".quick-bars .city-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       updateSelectionHighlight();
       zoomToCity(c);
+      renderPins();
       renderDossier();
       syncHash();
     });
@@ -526,10 +598,12 @@ function buildStateBar() {
     state.activeCity = "Australia";
     state.activeState = null;
     state.selectedCode = null;
+    clearActiveQld();
     document.querySelectorAll(".quick-bars .city-btn").forEach((b) => b.classList.remove("active"));
     ausBtn.classList.add("active");
     updateSelectionHighlight();
     zoomToCity(CITIES[0]);
+    renderPins();
     renderDossier();
     syncHash();
   });
@@ -548,11 +622,13 @@ function buildStateBar() {
       state.activeState = abbr;
       state.activeCity = null;
       state.selectedCode = null;
+      clearActiveQld();
       document.querySelectorAll(".quick-bars .city-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       updateSelectionHighlight();
       const steFeat = state.ste.features.find((f) => String(f.properties.STE_CODE21) === String(info.code));
       if (steFeat) focusFeature(steFeat);
+      renderPins();
       renderDossier();
       syncHash();
     });
@@ -606,9 +682,11 @@ function initMap(initialGeo) {
       currentTransform = event.transform;
       mapGroup.attr("transform", event.transform);
       scheduleLabels();
+      schedulePins();
     })
     .on("end", () => {
       scheduleLabels();
+      schedulePins();
       clearTimeout(repaintTimer);
       repaintTimer = setTimeout(() => {
         svg.style("shape-rendering", "crispEdges");
@@ -620,14 +698,16 @@ function initMap(initialGeo) {
   svg.call(zoomBehavior);
   svg.on("click", (event) => {
     if (event.defaultPrevented || event.target !== svg.node()) return;
-    if (!state.selectedCode && !state.activeState && state.activeCity === "Australia") return;
+    if (!state.selectedCode && !state.activeState && state.activeCity === "Australia" && !state.selectedPinId) return;
     state.selectedCode = null;
     state.activeState = null;
     state.activeCity = "Australia";
+    clearActiveQld();
     document.querySelectorAll(".quick-bars .city-btn").forEach((b) => {
       b.classList.toggle("active", b.textContent === "Australia");
     });
     updateSelectionHighlight();
+    renderPins();
     renderDossier();
     syncHash();
   });
@@ -648,6 +728,8 @@ function initMap(initialGeo) {
     .attr("class", "ste-border")
     .attr("d", pathGen);
 
+  nhwLayer = mapGroup.append("g").attr("class", "nhw-layer");
+  pinLayer = svg.append("g").attr("class", "pin-layer");
   labelLayer = svg.append("g").attr("class", "label-layer");
 
   let resizeTimer;
@@ -713,7 +795,9 @@ function handleResize() {
 
   regionLayer.selectAll("path").attr("d", pathGen);
   mapGroup.selectAll(".ste-border").attr("d", pathGen);
+  if (nhwLayer) nhwLayer.selectAll("path").attr("d", pathGen);
   buildLabelCandidates();
+  reprojectPins();
 
   if (centerLonLat && Number.isFinite(centerLonLat[0]) && Number.isFinite(centerLonLat[1])) {
     const [nx, ny] = projection(centerLonLat);
@@ -726,6 +810,7 @@ function handleResize() {
     svg.call(zoomBehavior.transform, d3.zoomIdentity);
   }
   renderLabels();
+  renderPins();
 }
 
 function showToast(msg) {
@@ -861,8 +946,14 @@ function selectRegion(code) {
   state.selectedCode = code;
   state.activeCity = null;
   state.activeState = null;
+  clearActiveQld();
   document.querySelectorAll(".quick-bars .city-btn").forEach((b) => b.classList.remove("active"));
   updateSelectionHighlight();
+  const feat = currentGeo().features.find((f) => f.properties.code === code);
+  if (state.showIncidents && state.layerKey === "lga" && feat && feat.properties.ste_name === "Queensland") {
+    fetchQldLiveOffences(code, "");
+  }
+  renderPins();
   renderDossier();
   syncHash();
 }
@@ -1216,6 +1307,18 @@ function buildTooltipDetails(p, metricKey) {
   return inner ? `<div class="tooltip-details">${inner}</div>` : "";
 }
 
+function positionTooltip(event, tip) {
+  const stageRect = document.querySelector(".map-stage").getBoundingClientRect();
+  const tipW = tip.offsetWidth || 260;
+  const tipH = tip.offsetHeight || 120;
+  const rawX = event.clientX - stageRect.left + 14;
+  const rawY = event.clientY - stageRect.top + 14;
+  const x = rawX + tipW > stageRect.width - 10 ? Math.max(10, event.clientX - stageRect.left - tipW - 14) : rawX;
+  const y = rawY + tipH > stageRect.height - 10 ? Math.max(10, stageRect.height - tipH - 10) : rawY;
+  tip.style.left = `${x}px`;
+  tip.style.top = `${y}px`;
+}
+
 function handleHover(event, d) {
   const tip = document.getElementById("tooltip");
   const p = d.properties;
@@ -1245,15 +1348,7 @@ function handleHover(event, d) {
     ${details}
   `;
   tip.hidden = false;
-  const stageRect = document.querySelector(".map-stage").getBoundingClientRect();
-  const tipW = tip.offsetWidth || 260;
-  const tipH = tip.offsetHeight || 120;
-  const rawX = event.clientX - stageRect.left + 14;
-  const rawY = event.clientY - stageRect.top + 14;
-  const x = rawX + tipW > stageRect.width - 10 ? Math.max(10, event.clientX - stageRect.left - tipW - 14) : rawX;
-  const y = rawY + tipH > stageRect.height - 10 ? Math.max(10, stageRect.height - tipH - 10) : rawY;
-  tip.style.left = `${x}px`;
-  tip.style.top = `${y}px`;
+  positionTooltip(event, tip);
 }
 
 function renderDossier() {
@@ -1359,6 +1454,8 @@ function renderDossier() {
   } else {
     elecPanel.hidden = true;
   }
+
+  renderIncidentsPanel(feat, p);
 
   const comparisons = [
     { label: "Household Income", val: p.median_hhd_inc_wk, aus: aus.median_hhd_inc_wk, fmt: (v) => `$${v.toLocaleString()}/wk` },
@@ -1624,6 +1721,726 @@ function initSearch() {
   document.addEventListener("click", (e) => {
     if (!e.target.closest(".search-wrap")) box.hidden = true;
   });
+}
+
+function clearNhwBoundary() {
+  if (nhwLayer) nhwLayer.selectAll("path").remove();
+}
+
+function clearActiveQld() {
+  qldFetchSeq += 1;
+  state.selectedNhw = "";
+  state.selectedPinId = null;
+  state.activeQldPins = [];
+  state.activeQldMeta = null;
+  clearNhwBoundary();
+}
+
+function initIncidentControls() {
+  const toggleBtn = document.getElementById("incidents-toggle");
+  const catSel = document.getElementById("incident-cat-filter");
+  const winSel = document.getElementById("qld-window-select");
+
+  toggleBtn.addEventListener("click", async () => {
+    const next = !state.showIncidents;
+    state.userToggledPinsOff = !next;
+    await setIncidentsEnabled(next);
+  });
+
+  catSel.addEventListener("change", () => {
+    state.incidentCat = catSel.value;
+    state.selectedPinId = null;
+    renderPins();
+    renderDossier();
+  });
+
+  winSel.addEventListener("change", async () => {
+    state.qldDays = Number(winSel.value) || 14;
+    state.selectedPinId = null;
+    if (state.showIncidents && state.layerKey === "lga" && state.selectedCode) {
+      const feat = currentGeo()?.features.find((f) => f.properties.code === state.selectedCode);
+      if (feat && feat.properties.ste_name === "Queensland") {
+        await fetchQldLiveOffences(state.selectedCode, state.selectedNhw);
+        return;
+      }
+    }
+    renderPins();
+    renderDossier();
+  });
+}
+
+async function setIncidentsEnabled(enabled, opts = {}) {
+  state.showIncidents = Boolean(enabled);
+  const toggleBtn = document.getElementById("incidents-toggle");
+  const filtersEl = document.getElementById("incident-filters");
+  toggleBtn.classList.toggle("active", state.showIncidents);
+  toggleBtn.setAttribute("aria-pressed", String(state.showIncidents));
+  filtersEl.hidden = !state.showIncidents;
+
+  if (!state.showIncidents) {
+    clearActiveQld();
+    renderPins();
+    renderDossier();
+    if (!opts.skipSync) syncHash();
+    return;
+  }
+
+  await loadRecentIncidents();
+  if (state.layerKey === "lga" && state.selectedCode) {
+    const feat = currentGeo()?.features.find((f) => f.properties.code === state.selectedCode);
+    if (feat && feat.properties.ste_name === "Queensland") {
+      fetchQldLiveOffences(state.selectedCode, state.selectedNhw);
+    }
+  }
+  renderPins();
+  renderDossier();
+  if (!opts.skipSync) syncHash();
+}
+
+async function loadRecentIncidents() {
+  if (state.incidentsData) return state.incidentsData;
+  try {
+    const data = await d3.json(`data/recent_incidents.json?v=${DATA_VERSION}`);
+    state.incidentsData = data;
+    reprojectPins();
+  } catch (err) {
+    console.warn("Failed to load recent_incidents.json:", err);
+  }
+  return state.incidentsData;
+}
+
+async function loadQldRefs() {
+  if (state.qldMbCentroids && state.qldNhwByLga) return;
+  const [mbs, nhw] = await Promise.all([
+    state.qldMbCentroids || d3.json(`data/qld_mb_centroids.json?v=${DATA_VERSION}`),
+    state.qldNhwByLga || d3.json(`data/qld_nhw_by_lga.json?v=${DATA_VERSION}`),
+  ]);
+  state.qldMbCentroids = mbs;
+  state.qldNhwByLga = nhw;
+}
+
+function projectPinList(list) {
+  if (!projection || !list) return;
+  for (const d of list) {
+    const pt = projection([d.lon, d.lat]);
+    if (pt) {
+      d.px = pt[0];
+      d.py = pt[1];
+    }
+  }
+}
+
+function reprojectPins() {
+  if (state.incidentsData) {
+    projectPinList(state.incidentsData.rss);
+    projectPinList(state.incidentsData.sa);
+  }
+  projectPinList(state.activeQldPins);
+}
+
+function schedulePins() {
+  if (!state.showIncidents || pinRaf) return;
+  pinRaf = requestAnimationFrame(() => {
+    pinRaf = null;
+    renderPins();
+  });
+}
+
+function formatQpsDate(d) {
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${mm}-${dd}-${d.getFullYear()}`;
+}
+
+async function fetchNhwBoundary(nhwName) {
+  if (!nhwName) {
+    clearNhwBoundary();
+    return null;
+  }
+  let fc = state.qldNhwGeoCache.get(nhwName);
+  if (!fc) {
+    const url = `${QPS_API_BASE}/locations?locationType=NHW&locationName=${encodeURIComponent(nhwName)}`;
+    const raw = await d3.json(url);
+    fc = Array.isArray(raw) ? raw[0] : raw;
+    if (fc && fc.features && fc.features.length) {
+      state.qldNhwGeoCache.set(nhwName, fc);
+    } else {
+      fc = null;
+    }
+  }
+  if (!fc || !nhwLayer) {
+    clearNhwBoundary();
+    return null;
+  }
+  nhwLayer
+    .selectAll("path")
+    .data(fc.features)
+    .join("path")
+    .attr("class", "nhw-boundary")
+    .attr("d", pathGen);
+  return fc.features[0] || null;
+}
+
+async function fetchQldLiveOffences(lgaCode, nhwName = "") {
+  const seq = ++qldFetchSeq;
+  const days = state.qldDays || 14;
+  state.selectedNhw = nhwName;
+  state.activeQldPins = [];
+  state.activeQldMeta = {
+    lgaCode,
+    nhwName,
+    days,
+    loading: true,
+    error: null,
+    totalOffences: 0,
+    blockCount: 0,
+    catCounts: {},
+    scopeLabel: nhwName || "LGA",
+  };
+  renderDossier();
+
+  try {
+    await loadQldRefs();
+    if (seq !== qldFetchSeq) return;
+
+    const lgaInfo = state.qldNhwByLga?.by_lga?.[String(lgaCode)];
+    if (!lgaInfo) {
+      state.activeQldMeta = { ...state.activeQldMeta, loading: false, error: "LGA missing in QPS lookup" };
+      renderDossier();
+      return;
+    }
+
+    const locationType = nhwName ? "NHW" : "LGA";
+    const locationName = nhwName || lgaInfo.qps_name;
+    const cacheKey = `${locationType}:${locationName}:${days}`;
+
+    if (nhwName) {
+      fetchNhwBoundary(nhwName).then((nhwFeat) => {
+        if (seq === qldFetchSeq && nhwFeat) focusFeature(nhwFeat);
+      }).catch(() => {});
+    } else {
+      clearNhwBoundary();
+    }
+
+    let cached = state.qldLiveCache.get(cacheKey);
+    if (!cached) {
+      const endD = new Date();
+      const startD = new Date(endD.getTime() - (days - 1) * 86400000);
+      const startStr = formatQpsDate(startD);
+      const endStr = formatQpsDate(endD);
+      const url =
+        `${QPS_API_BASE}/offences?locationType=${locationType}` +
+        `&locationName=${encodeURIComponent(locationName)}` +
+        `&startDate=${startStr}&endDate=${endStr}&format=JSON`;
+      const raw = await d3.json(url);
+      if (seq !== qldFetchSeq) return;
+
+      const byMb = new Map();
+      const catCounts = {};
+      let totalOffences = 0;
+
+      for (const row of Array.isArray(raw) ? raw : []) {
+        const mb = String(row["ABS Meshblock"] || "").trim();
+        const coords = state.qldMbCentroids[mb];
+        if (!coords) continue;
+        totalOffences += 1;
+        const offType = String(row.Type || "Other");
+        const cat = classifyQpsOffence(offType);
+        catCounts[cat] = (catCounts[cat] || 0) + 1;
+        const dateStr = String(row.Date || "").slice(0, 16);
+
+        let entry = byMb.get(mb);
+        if (!entry) {
+          entry = {
+            id: `qps-${mb}`,
+            source: "qps",
+            mb,
+            lon: coords[0],
+            lat: coords[1],
+            postcode: row.Postcode || "",
+            area: row["Area of Interest"] || locationName,
+            count: 0,
+            catCounts: {},
+            latestDate: dateStr,
+            items: [],
+          };
+          byMb.set(mb, entry);
+        }
+        entry.count += 1;
+        entry.catCounts[cat] = (entry.catCounts[cat] || 0) + 1;
+        if (dateStr > entry.latestDate) entry.latestDate = dateStr;
+        entry.items.push({ type: offType, date: dateStr, cat });
+      }
+
+      const pins = Array.from(byMb.values()).map((entry) => {
+        let domCat = "other";
+        let bestCnt = -1;
+        for (const [k, c] of Object.entries(entry.catCounts)) {
+          if (c > bestCnt) {
+            bestCnt = c;
+            domCat = k;
+          }
+        }
+        entry.cat = domCat;
+        entry.items.sort((a, b) => b.date.localeCompare(a.date));
+        entry.items = entry.items.slice(0, 20);
+        return entry;
+      });
+      pins.sort((a, b) => b.count - a.count || b.latestDate.localeCompare(a.latestDate));
+
+      cached = {
+        pins,
+        meta: {
+          lgaCode,
+          nhwName,
+          scopeLabel: locationName,
+          days,
+          startStr,
+          endStr,
+          totalOffences,
+          blockCount: pins.length,
+          catCounts,
+          loading: false,
+          error: null,
+        },
+      };
+      state.qldLiveCache.set(cacheKey, cached);
+    }
+
+    if (seq !== qldFetchSeq) return;
+    projectPinList(cached.pins);
+    state.activeQldPins = cached.pins;
+    state.activeQldMeta = cached.meta;
+    renderPins();
+    renderDossier();
+  } catch (err) {
+    if (seq !== qldFetchSeq) return;
+    console.warn("QPS live fetch failed:", err);
+    state.activeQldMeta = {
+      ...state.activeQldMeta,
+      loading: false,
+      error: "Live QPS request failed — check network or retry.",
+    };
+    renderPins();
+    renderDossier();
+  }
+}
+
+function zoomToCoords(lon, lat, minScale = 18) {
+  if (!projection || !svg || !zoomBehavior) return;
+  const pt = projection([lon, lat]);
+  if (!pt) return;
+  const targetScale = Math.max(currentTransform.k, minScale);
+  const t = d3.zoomIdentity
+    .translate(width / 2, height / 2)
+    .scale(targetScale)
+    .translate(-pt[0], -pt[1]);
+  svg.transition().duration(450).call(zoomBehavior.transform, t);
+}
+
+function visiblePins() {
+  if (!state.showIncidents) return [];
+  const { x: tx, y: ty, k } = currentTransform;
+  const cat = state.incidentCat;
+  const inView = (d) => {
+    if (!Number.isFinite(d.px) || !Number.isFinite(d.py)) return false;
+    if (cat !== "all" && d.cat !== cat) return false;
+    const sx = d.px * k + tx;
+    const sy = d.py * k + ty;
+    return sx >= -18 && sx <= width + 18 && sy >= -18 && sy <= height + 18;
+  };
+
+  const out = [];
+  if (state.incidentsData) {
+    const saSrc = state.incidentsData.sa || [];
+    const saPool = k < 4 ? saSrc.slice(0, 80) : saSrc;
+    for (const d of saPool) {
+      if (inView(d)) out.push(d);
+    }
+    for (const d of state.incidentsData.rss || []) {
+      if (inView(d)) out.push(d);
+    }
+  }
+
+  const qpsCap = k < 15 ? 600 : Infinity;
+  let qpsAdded = 0;
+  for (const d of state.activeQldPins || []) {
+    if (qpsAdded >= qpsCap) break;
+    if (inView(d)) {
+      out.push(d);
+      qpsAdded += 1;
+    }
+  }
+  return out;
+}
+
+function pinRadius(d) {
+  let r = 5.5;
+  if (d.source === "sa") {
+    r = Math.max(3.5, Math.min(10, 2.5 + Math.sqrt(d.count || 1) * 0.65));
+  } else if (d.source === "qps") {
+    r = Math.max(3.5, Math.min(8.5, 3 + Math.sqrt(d.count || 1) * 1.1));
+  }
+  return d.id === state.selectedPinId ? r + 2 : r;
+}
+
+function renderPins() {
+  const legInc = document.getElementById("legend-incidents");
+  if (legInc) {
+    if (state.showIncidents) {
+      legInc.hidden = false;
+      legInc.innerHTML = Object.values(INCIDENT_CATS)
+        .map((c) => `<span class="party-key"><span class="party-dot" style="background:${c.color}"></span>${c.label}</span>`)
+        .join("");
+    } else {
+      legInc.hidden = true;
+      legInc.innerHTML = "";
+    }
+  }
+
+  if (!pinLayer) return;
+  if (!state.showIncidents) {
+    pinLayer.selectAll("circle").remove();
+    return;
+  }
+
+  const { x: tx, y: ty, k } = currentTransform;
+  const pins = visiblePins();
+  pinLayer
+    .selectAll("circle")
+    .data(pins, (d) => d.id)
+    .join("circle")
+    .attr("class", (d) => `pin-dot pin-${d.source}${d.id === state.selectedPinId ? " active-pin" : ""}`)
+    .attr("cx", (d) => d.px * k + tx)
+    .attr("cy", (d) => d.py * k + ty)
+    .attr("r", pinRadius)
+    .attr("fill", (d) => (INCIDENT_CATS[d.cat] || INCIDENT_CATS.other).color)
+    .on("mousemove", handlePinHover)
+    .on("mouseleave", () => {
+      document.getElementById("tooltip").hidden = true;
+    })
+    .on("click", handlePinClick);
+}
+
+function handlePinHover(event, d) {
+  const tip = document.getElementById("tooltip");
+  const catInfo = INCIDENT_CATS[d.cat] || INCIDENT_CATS.other;
+
+  if (d.source === "rss") {
+    tip.innerHTML = `
+      <div class="tooltip-title">${escapeHtml(d.title)}</div>
+      <div class="tooltip-meta">${escapeHtml(d.agency)} · ${escapeHtml(d.date)} · ${escapeHtml(d.precision)}</div>
+      <div class="tooltip-val" style="color:${catInfo.color}">${escapeHtml(catInfo.label)} · ${escapeHtml(d.loc)}</div>
+      <div class="tooltip-details">
+        <div style="opacity:0.85">${escapeHtml(d.summary)}</div>
+        <div style="opacity:0.65;margin-top:3px">Click pin for details &amp; official link</div>
+      </div>
+    `;
+  } else if (d.source === "sa") {
+    const topRows = (d.top || [])
+      .map(([name, cnt]) => `<tr><td>${escapeHtml(name)}</td><td>${cnt}</td></tr>`)
+      .join("");
+    tip.innerHTML = `
+      <div class="tooltip-title">${escapeHtml(d.suburb)} (${escapeHtml(d.postcode || "SA")})</div>
+      <div class="tooltip-meta">SAPOL · ${escapeHtml(d.period)}</div>
+      <div class="tooltip-val">${d.count.toLocaleString()} offences <span style="opacity:0.75;font-weight:400">(${escapeHtml(catInfo.label)})</span></div>
+      ${topRows ? `<div class="tooltip-details"><table class="tooltip-table"><thead><tr><th>Top Offences</th><th>Count</th></tr></thead><tbody>${topRows}</tbody></table></div>` : ""}
+    `;
+  } else if (d.source === "qps") {
+    const days = state.activeQldMeta?.days || state.qldDays;
+    const rows = (d.items || [])
+      .slice(0, 5)
+      .map((it) => `<tr><td>${escapeHtml(it.type)}</td><td>${escapeHtml(it.date.slice(0, 10))}</td></tr>`)
+      .join("");
+    tip.innerHTML = `
+      <div class="tooltip-title">${escapeHtml(d.area)} · Mesh Block ${escapeHtml(d.mb)}</div>
+      <div class="tooltip-meta">Postcode ${escapeHtml(d.postcode || "QLD")} · Last ${days} days (QPS Live)</div>
+      <div class="tooltip-val">${d.count} ${d.count === 1 ? "offence" : "offences"} <span style="opacity:0.75;font-weight:400">(${escapeHtml(catInfo.label)})</span></div>
+      ${rows ? `<div class="tooltip-details"><table class="tooltip-table"><thead><tr><th>Recent Offence</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table></div>` : ""}
+    `;
+  }
+
+  tip.hidden = false;
+  positionTooltip(event, tip);
+}
+
+function handlePinClick(event, d) {
+  event.stopPropagation();
+  state.selectedPinId = d.id;
+  zoomToCoords(d.lon, d.lat, d.source === "qps" ? 32 : 18);
+  renderPins();
+  renderDossier();
+}
+
+function findPinById(id) {
+  if (!id) return null;
+  for (const d of state.activeQldPins || []) {
+    if (d.id === id) return d;
+  }
+  if (state.incidentsData) {
+    for (const d of state.incidentsData.rss || []) {
+      if (d.id === id) return d;
+    }
+    for (const d of state.incidentsData.sa || []) {
+      if (d.id === id) return d;
+    }
+  }
+  return null;
+}
+
+function renderCatChips(counts) {
+  const chips = Object.entries(INCIDENT_CATS)
+    .filter(([k]) => (counts[k] || 0) > 0)
+    .map(
+      ([k, info]) =>
+        `<span class="inc-chip"><span class="inc-chip-dot" style="background:${info.color}"></span>${info.label}: <span class="mono">${counts[k].toLocaleString()}</span></span>`
+    )
+    .join("");
+  return chips ? `<div class="inc-cat-chips">${chips}</div>` : "";
+}
+
+function renderPinDetailCard(pin) {
+  if (!pin) return "";
+  const catInfo = INCIDENT_CATS[pin.cat] || INCIDENT_CATS.other;
+  if (pin.source === "rss") {
+    const href = safeUrl(pin.url);
+    return `
+      <div class="inc-detail-card">
+        <div class="inc-detail-top">
+          <strong>${escapeHtml(pin.title)}</strong>
+          <button id="clear-pin-detail" class="inc-detail-close" type="button" aria-label="Close detail">×</button>
+        </div>
+        <div class="inc-item-top">
+          <span><span class="inc-chip-dot" style="display:inline-block;background:${catInfo.color};margin-right:4px"></span>${escapeHtml(pin.agency)} · ${escapeHtml(pin.date)}</span>
+          <span class="inc-prec">${escapeHtml(pin.precision)}</span>
+        </div>
+        <p class="inc-detail-summary">${escapeHtml(pin.summary)}</p>
+        ${href ? `<a class="inc-detail-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Read official police release ↗</a>` : ""}
+      </div>
+    `;
+  }
+  if (pin.source === "sa") {
+    const offs = (pin.top || []).map(([n, c]) => `${escapeHtml(n)} (${c})`).join(" · ");
+    return `
+      <div class="inc-detail-card">
+        <div class="inc-detail-top">
+          <strong>${escapeHtml(pin.suburb)} (${escapeHtml(pin.postcode || "SA")})</strong>
+          <button id="clear-pin-detail" class="inc-detail-close" type="button" aria-label="Close detail">×</button>
+        </div>
+        <div class="inc-item-top"><span>SAPOL ${escapeHtml(pin.period)}</span><span class="mono">${pin.count.toLocaleString()} offences</span></div>
+        <p class="inc-detail-summary">${offs}</p>
+      </div>
+    `;
+  }
+  const itemsHtml = (pin.items || [])
+    .slice(0, 6)
+    .map((it) => `<div>• ${escapeHtml(it.type)} <span class="mono" style="opacity:0.7">(${escapeHtml(it.date)})</span></div>`)
+    .join("");
+  return `
+    <div class="inc-detail-card">
+      <div class="inc-detail-top">
+        <strong>Mesh Block ${escapeHtml(pin.mb)} (${escapeHtml(pin.area)})</strong>
+        <button id="clear-pin-detail" class="inc-detail-close" type="button" aria-label="Close detail">×</button>
+      </div>
+      <div class="inc-item-top"><span>Postcode ${escapeHtml(pin.postcode || "QLD")}</span><span class="mono">${pin.count} offences</span></div>
+      <div class="inc-detail-summary">${itemsHtml}</div>
+    </div>
+  `;
+}
+
+function attachIncidentListHandlers(listEl, summaryEl, itemsById) {
+  const closeBtn = summaryEl.querySelector("#clear-pin-detail");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      state.selectedPinId = null;
+      renderPins();
+      renderDossier();
+    });
+  }
+  listEl.querySelectorAll(".inc-item").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const pin = itemsById.get(btn.dataset.pinId);
+      if (!pin) return;
+      state.selectedPinId = pin.id;
+      zoomToCoords(pin.lon, pin.lat, pin.source === "qps" ? 32 : 18);
+      renderPins();
+      renderDossier();
+    });
+  });
+}
+
+function renderIncidentsPanel(feat, p) {
+  const panel = document.getElementById("incidents-panel");
+  if (!panel) return;
+  if (!state.showIncidents) {
+    panel.hidden = true;
+    return;
+  }
+  panel.hidden = false;
+
+  const titleEl = document.getElementById("incidents-panel-title");
+  const badgeEl = document.getElementById("incidents-panel-badge");
+  const nhwWrap = document.getElementById("nhw-controls");
+  const nhwSelect = document.getElementById("nhw-select");
+  const summaryEl = document.getElementById("incidents-summary");
+  const listEl = document.getElementById("incidents-list");
+
+  const catFilter = state.incidentCat;
+  const matchesCat = (d) => catFilter === "all" || d.cat === catFilter;
+  const selectedPin = findPinById(state.selectedPinId);
+  const detailHtml = renderPinDetailCard(selectedPin);
+  const itemsById = new Map();
+
+  const renderRssRows = (rows) =>
+    rows
+      .map((d) => {
+        itemsById.set(d.id, d);
+        const col = (INCIDENT_CATS[d.cat] || INCIDENT_CATS.other).color;
+        return `
+          <button type="button" class="inc-item${d.id === state.selectedPinId ? " active" : ""}" data-pin-id="${escapeHtml(d.id)}">
+            <div class="inc-item-top">
+              <span class="inc-item-left"><span class="inc-chip-dot" style="background:${col}"></span>${escapeHtml(d.agency)} · ${escapeHtml(d.date)}</span>
+              <span class="inc-prec">${escapeHtml(d.precision)}</span>
+            </div>
+            <div class="inc-item-title">${escapeHtml(d.title)}</div>
+            <div class="inc-item-sub"><span>${escapeHtml(d.loc)}</span><span>${escapeHtml(d.lga_name || d.state)}</span></div>
+          </button>`;
+      })
+      .join("");
+
+  const isLga = state.layerKey === "lga" && feat;
+  const steName = feat ? p.ste_name : null;
+
+  if (isLga && steName === "Queensland") {
+    titleEl.textContent = "QLD Live Crime & NHW";
+    const nhwInfo = state.qldNhwByLga?.by_lga?.[String(p.code)];
+    if (nhwInfo && nhwInfo.nhw && nhwInfo.nhw.length) {
+      nhwWrap.hidden = false;
+      nhwSelect.innerHTML =
+        `<option value="">Entire LGA (${escapeHtml(p.name)} — ${nhwInfo.nhw.length} NHW)</option>` +
+        nhwInfo.nhw.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+      nhwSelect.value = state.selectedNhw || "";
+      nhwSelect.onchange = () => {
+        const nextNhw = nhwSelect.value;
+        state.selectedPinId = null;
+        if (!nextNhw) focusFeature(feat);
+        fetchQldLiveOffences(p.code, nextNhw);
+      };
+    } else {
+      nhwWrap.hidden = true;
+    }
+
+    const meta = state.activeQldMeta;
+    if (meta && meta.loading) {
+      badgeEl.textContent = "Loading live QPS…";
+      summaryEl.innerHTML = detailHtml + `<div class="inc-note">Fetching live offences from QPS Open Data…</div>`;
+      listEl.innerHTML = "";
+    } else if (meta && meta.error) {
+      badgeEl.textContent = "QPS unavailable";
+      summaryEl.innerHTML = detailHtml + `<div class="inc-note">${escapeHtml(meta.error)}</div>`;
+      listEl.innerHTML = "";
+    } else if (meta) {
+      badgeEl.textContent = `${meta.totalOffences.toLocaleString()} offences · ${meta.blockCount} blocks (${meta.days}d)`;
+      summaryEl.innerHTML = detailHtml + renderCatChips(meta.catCounts || {});
+      const qpsFiltered = (state.activeQldPins || []).filter(matchesCat).slice(0, 30);
+      const qpsRows = qpsFiltered
+        .map((d) => {
+          itemsById.set(d.id, d);
+          const col = (INCIDENT_CATS[d.cat] || INCIDENT_CATS.other).color;
+          const topOff = d.items?.[0]?.type || "Offence";
+          return `
+            <button type="button" class="inc-item${d.id === state.selectedPinId ? " active" : ""}" data-pin-id="${escapeHtml(d.id)}">
+              <div class="inc-item-top">
+                <span class="inc-item-left"><span class="inc-chip-dot" style="background:${col}"></span>${escapeHtml(d.latestDate.slice(0, 10))} · MB ${escapeHtml(d.mb)}</span>
+                <span class="mono"><strong>${d.count}</strong></span>
+              </div>
+              <div class="inc-item-title">${escapeHtml(topOff)}</div>
+              <div class="inc-item-sub"><span>${escapeHtml(d.area)} (${escapeHtml(d.postcode || "QLD")})</span><span>Street block</span></div>
+            </button>`;
+        })
+        .join("");
+      const localRss = (state.incidentsData?.rss || []).filter((d) => d.lga_code === p.code && matchesCat(d)).slice(0, 8);
+      listEl.innerHTML = renderRssRows(localRss) + qpsRows || `<div class="inc-note">No offences recorded in this timeframe/filter.</div>`;
+    } else {
+      badgeEl.textContent = "QLD Live";
+      summaryEl.innerHTML = detailHtml;
+      listEl.innerHTML = "";
+    }
+    attachIncidentListHandlers(listEl, summaryEl, itemsById);
+    return;
+  }
+
+  nhwWrap.hidden = true;
+
+  if (isLga && steName === "South Australia") {
+    titleEl.textContent = "SA Suburb Incidents (30d)";
+    const saMatches = (state.incidentsData?.sa || []).filter((d) => d.lga_code === p.code && matchesCat(d));
+    const total = saMatches.reduce((acc, d) => acc + d.count, 0);
+    const counts = {};
+    saMatches.forEach((d) => { counts[d.cat] = (counts[d.cat] || 0) + d.count; });
+    badgeEl.textContent = `${total.toLocaleString()} offences · ${saMatches.length} suburbs`;
+    summaryEl.innerHTML = detailHtml + renderCatChips(counts);
+    listEl.innerHTML = saMatches
+      .slice(0, 35)
+      .map((d) => {
+        itemsById.set(d.id, d);
+        const col = (INCIDENT_CATS[d.cat] || INCIDENT_CATS.other).color;
+        const topName = d.top?.[0]?.[0] || "Recorded offences";
+        return `
+          <button type="button" class="inc-item${d.id === state.selectedPinId ? " active" : ""}" data-pin-id="${escapeHtml(d.id)}">
+            <div class="inc-item-top">
+              <span class="inc-item-left"><span class="inc-chip-dot" style="background:${col}"></span>${escapeHtml(d.suburb)} (${escapeHtml(d.postcode || "SA")})</span>
+              <span class="mono"><strong>${d.count.toLocaleString()}</strong></span>
+            </div>
+            <div class="inc-item-title">${escapeHtml(topName)}</div>
+            <div class="inc-item-sub"><span>${escapeHtml(d.period)}</span><span>Suburb</span></div>
+          </button>`;
+      })
+      .join("") || `<div class="inc-note">No matching SAPOL suburb data for this filter.</div>`;
+    attachIncidentListHandlers(listEl, summaryEl, itemsById);
+    return;
+  }
+
+  if (isLga && (steName === "Tasmania" || steName === "Northern Territory")) {
+    const abbr = STATE_ABBR[steName];
+    titleEl.textContent = `${abbr} Police Releases`;
+    const allState = (state.incidentsData?.rss || []).filter((d) => d.state === abbr && matchesCat(d));
+    const inLga = allState.filter((d) => d.lga_code === p.code);
+    const shown = inLga.length ? inLga : allState.slice(0, 12);
+    badgeEl.textContent = `${inLga.length} in LGA · ${allState.length} in ${abbr}`;
+    const note = inLga.length
+      ? ""
+      : `<div class="inc-note">0 recent media releases in ${escapeHtml(p.name)} — showing latest ${abbr} releases:</div>`;
+    summaryEl.innerHTML = detailHtml + note;
+    listEl.innerHTML = renderRssRows(shown);
+    attachIncidentListHandlers(listEl, summaryEl, itemsById);
+    return;
+  }
+
+  if (isLga) {
+    titleEl.textContent = "Recent Incident Pins";
+    badgeEl.textContent = `${STATE_ABBR[steName] || steName} unavailable`;
+    summaryEl.innerHTML =
+      detailHtml +
+      `<div class="inc-note">No open address-level or Neighbourhood Watch feed is published for ${escapeHtml(steName)} (state police withhold live addresses for privacy). Select any <strong>QLD</strong>, <strong>SA</strong>, <strong>TAS</strong>, or <strong>NT</strong> LGA for live or geocoded pins.</div>`;
+    listEl.innerHTML = "";
+    attachIncidentListHandlers(listEl, summaryEl, itemsById);
+    return;
+  }
+
+  // National / State / City / non-LGA overview
+  titleEl.textContent = "Recent Incident Pins";
+  const allRss = (state.incidentsData?.rss || []).filter(matchesCat);
+  const stateFilterAbbr = state.activeState || (feat && STATE_ABBR[p.ste_name]) || null;
+  const rssFiltered = stateFilterAbbr ? allRss.filter((d) => d.state === stateFilterAbbr) : allRss;
+  const shownRss = (rssFiltered.length ? rssFiltered : allRss).slice(0, 15);
+  const saCount = (state.incidentsData?.sa || []).length;
+  badgeEl.textContent = `${allRss.length} RSS · ${saCount} SA suburbs`;
+  summaryEl.innerHTML =
+    detailHtml +
+    `<div class="inc-note">Showing geocoded QLD/TAS/NT police RSS &amp; SA 30-day suburb pins. Switch to <strong>LGA</strong> and click any <strong>Queensland</strong> council for live QPS street-block &amp; 852 Neighbourhood Watch pins.</div>`;
+  listEl.innerHTML = renderRssRows(shownRss);
+  attachIncidentListHandlers(listEl, summaryEl, itemsById);
 }
 
 window.addEventListener("DOMContentLoaded", init);
