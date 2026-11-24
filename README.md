@@ -53,6 +53,11 @@ python3 scripts/fetch_nsw_fuel.py   # requires NSW_FUEL_API_KEY & NSW_FUEL_API_S
 python3 scripts/validate_site.py
 ```
 
+## Validation & CI
+
+- **Local validation:** Run `node --check web/app.js`, `python3 -m py_compile scripts/*.py`, and `python3 scripts/validate_site.py` to check dataset bounds and verify every `getElementById(...)` reference in `web/app.js` exists in `web/index.html`.
+- **Pull request CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs syntax, dataset, and DOM ID checks automatically on pull requests to `main`, non-`main` pushes, and manual dispatch.
+
 ## Sources
 
 - Australian Bureau of Statistics (ABS) 2021 Census General Community Profile (GCP), ASGS Edition 3 Digital Boundary Files (including Mesh Blocks, Postcodes/POA, & Suburbs and Localities), and *Total Value of Dwellings* (June Quarter 2026)

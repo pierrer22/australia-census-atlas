@@ -2,11 +2,13 @@
 """Validate generated GeoJSON/JSON datasets for completeness and regression guards."""
 
 import json
+import re
 import sys
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent.parent
-WEB_DATA = BASE / "web" / "data"
+WEB_DIR = BASE / "web"
+WEB_DATA = WEB_DIR / "data"
 
 CENSUS_KEYS = (
     "median_hhd_inc_wk",
@@ -217,6 +219,13 @@ def main() -> int:
                 errors.append(f"rai_2025.json invalid score on {layer_k}[{rcode}]: {entry}")
                 break
 
+    # Verify all getElementById(...) targets in app.js exist in index.html
+    html_ids = set(re.findall(r'\bid="([^"]+)"', (WEB_DIR / "index.html").read_text(encoding="utf-8")))
+    js_ids = set(re.findall(r'getElementById\("([^"]+)"\)', (WEB_DIR / "app.js").read_text(encoding="utf-8")))
+    missing_ids = sorted(js_ids - html_ids)
+    if missing_ids:
+        errors.append(f"web/app.js references missing DOM IDs: {missing_ids}")
+
     if errors:
         for err in errors:
             print(f"FAIL: {err}", file=sys.stderr)
@@ -226,7 +235,8 @@ def main() -> int:
         f"OK: 6 layers validated | national pct_affiliated={aff}% | "
         f"SED pop={sed_pop_count}/{len(sed_feats)} | crime LGAs={crime_count} | "
         f"QLD MBs={len(mb_data):,} | NHW={nhw_count} | pins=({len(rss_pins)} RSS, {len(sa_pins)} SA) | "
-        f"fuel={len(fuel_stations):,} | RAI=({len(rai_sa2):,} SA2, {len(rai_lga)} LGA)"
+        f"fuel={len(fuel_stations):,} | RAI=({len(rai_sa2):,} SA2, {len(rai_lga)} LGA) | "
+        f"DOM IDs={len(js_ids)}"
     )
     return 0
 
