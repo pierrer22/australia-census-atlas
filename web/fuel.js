@@ -339,21 +339,21 @@ function updateSubtitle() {
   }
 }
 
-function renderLegend() {
+function renderLegend(customStats = null) {
   const titleEl = document.getElementById("legend-title");
   const barEl = document.getElementById("legend-bar");
   const ticksEl = document.getElementById("legend-ticks");
 
   if (state.mode === "fuel") {
     const cfg = getFuelTabCfg();
-    const st = state.fuelData?.stats?.[cfg.code];
-    titleEl.textContent = `${cfg.label} (¢/L · log scale)`;
+    const st = customStats || state.fuelData?.stats?.[cfg.code];
+    titleEl.textContent = customStats ? `${cfg.label} (¢/L · view)` : `${cfg.label} (¢/L · log scale)`;
     barEl.style.background = "linear-gradient(90deg, #15803d, #4ade80, #eab308, #dc2626)";
     if (st) {
       const lo = st.min ?? st.p10;
       const hi = st.p90 ?? st.max;
       const span = hi - lo;
-      const mid = lo + span * 0.15 * (Math.sqrt(1 + 1 / 0.15) - 1);
+      const mid = hi > lo ? lo + span * 0.15 * (Math.sqrt(1 + 1 / 0.15) - 1) : lo;
       ticksEl.innerHTML = `<span>${lo.toFixed(1)}¢</span><span>${mid.toFixed(1)}¢</span><span>${hi.toFixed(1)}¢</span>`;
     } else {
       ticksEl.innerHTML = "";
@@ -362,12 +362,19 @@ function renderLegend() {
   }
 
   if (state.evTab === "ev_price") {
-    const st = state.evData?.stats;
-    titleEl.textContent = "EV Fast Charging ($/kWh)";
+    const st = customStats || state.evData?.stats;
+    titleEl.textContent = customStats ? "EV Price ($/kWh · view)" : "EV Fast Charging ($/kWh)";
     barEl.style.background = "linear-gradient(90deg, #15803d, #4ade80, #eab308, #dc2626)";
-    ticksEl.innerHTML = st?.min_price != null
-      ? `<span>${evFormatPrice(st.min_price)}</span><span>$${st.median_price.toFixed(2)}</span><span>$${st.p90_price.toFixed(2)}</span>`
-      : "";
+    const lo = st?.min ?? st?.min_price;
+    const hi = st?.p90 ?? st?.p90_price;
+    if (lo != null && hi != null) {
+      const span = hi - lo;
+      const mid = hi > lo ? lo + span * 0.15 * (Math.sqrt(1 + 1 / 0.15) - 1) : lo;
+      const fmt = (v) => (v === 0 ? "Free" : `$${v.toFixed(2)}`);
+      ticksEl.innerHTML = `<span>${fmt(lo)}</span><span>${fmt(mid)}</span><span>${fmt(hi)}</span>`;
+    } else {
+      ticksEl.innerHTML = "";
+    }
   } else {
     titleEl.textContent = "Charger Power (kW)";
     barEl.style.background = "linear-gradient(90deg, #eab308, #0ea5e9, #10b981)";
@@ -474,23 +481,30 @@ function renderFuelView(bounds, zoom) {
   if (!inView.length) {
     kpiEl.innerHTML = "";
     listEl.innerHTML = `<div style="font-size:0.76rem;color:var(--muted);padding:8px">Pan to NSW, TAS, or WA (Sydney / Perth / Hobart) above.</div>`;
+    renderLegend(null);
     return;
   }
 
   const lo = inView[0].price;
   const mid = inView[Math.floor(inView.length / 2)].price;
-  const hi = inView[inView.length - 1].price;
+  const hiMax = inView[inView.length - 1].price;
+  const p90 = inView[Math.min(inView.length - 1, Math.floor((inView.length - 1) * 0.9))].price;
+  const hi = p90 > lo ? p90 : hiMax;
+  const hasViewRange = inView.length >= 2 && hi > lo;
+  const colorStats = hasViewRange ? { min: lo, median: mid, p90: hi, max: hiMax } : stStats;
+  renderLegend(hasViewRange ? colorStats : null);
+
   kpiEl.innerHTML = `
     <div class="kpi-box"><div class="k">Cheapest</div><div class="v mono" style="color:#15803d">${lo.toFixed(1)}¢</div></div>
     <div class="kpi-box"><div class="k">Median</div><div class="v mono">${mid.toFixed(1)}¢</div></div>
-    <div class="kpi-box"><div class="k">Highest</div><div class="v mono" style="color:#dc2626">${hi.toFixed(1)}¢</div></div>
+    <div class="kpi-box"><div class="k">Highest</div><div class="v mono" style="color:#dc2626">${hiMax.toFixed(1)}¢</div></div>
   `;
 
   const usePills = zoom >= 12 && inView.length <= 180;
   const toPlot = inView.length > 500 ? inView.slice(0, 500) : inView;
   for (let i = toPlot.length - 1; i >= 0; i--) {
     const item = toPlot[i];
-    const col = fuelColor(item.price, stStats);
+    const col = fuelColor(item.price, colorStats);
     const active = item.s.code === state.selectedId;
     const isCheapest = i === 0;
     let marker;
@@ -530,7 +544,7 @@ function renderFuelView(bounds, zoom) {
   listEl.innerHTML = listItems
     .slice(0, 35)
     .map((item) => {
-      const col = fuelColor(item.price, stStats);
+      const col = fuelColor(item.price, colorStats);
       const tag = isComposite ? ` · ${item.fuelType}` : "";
       const dist = item.s.distKm != null ? `${item.s.distKm.toFixed(1)} km` : (item.s.sa2_name || item.s.lga_name || "");
       return `
@@ -579,7 +593,26 @@ function renderEvView(bounds, zoom) {
   if (!inView.length) {
     kpiEl.innerHTML = "";
     listEl.innerHTML = `<div style="font-size:0.76rem;color:var(--muted);padding:8px">No matching fast chargers in this view. Pan out or jump to a city above.</div>`;
+    renderLegend(null);
     return;
+  }
+
+  let evColorStats = { min: evStats?.min_price ?? 0, p90: evStats?.p90_price ?? 0.66 };
+  if (state.evTab === "ev_price") {
+    const lo = inView[0].val;
+    const mid = inView[Math.floor(inView.length / 2)].val;
+    const hiMax = inView[inView.length - 1].val;
+    const p90 = inView[Math.min(inView.length - 1, Math.floor((inView.length - 1) * 0.9))].val;
+    const hi = p90 > lo ? p90 : hiMax;
+    const hasViewRange = inView.length >= 2 && hi > lo;
+    if (hasViewRange) {
+      evColorStats = { min: lo, median: mid, p90: hi, max: hiMax };
+      renderLegend(evColorStats);
+    } else {
+      renderLegend(null);
+    }
+  } else {
+    renderLegend(null);
   }
 
   const topKw = Math.max(...inView.map((x) => x.s.max_kw));
@@ -597,7 +630,7 @@ function renderEvView(bounds, zoom) {
     const item = inView[i];
     const col =
       state.evTab === "ev_price"
-        ? fuelColor(item.val, { min: evStats?.min_price ?? 0, p90: evStats?.p90_price ?? 0.66 })
+        ? fuelColor(item.val, evColorStats)
         : evPowerColor(item.val);
     const active = String(item.s.id) === String(state.selectedId);
     const isBest = i === 0;
@@ -644,7 +677,7 @@ function renderEvView(bounds, zoom) {
     .map((item) => {
       const col =
         state.evTab === "ev_price"
-          ? fuelColor(item.val, { min: evStats?.min_price ?? 0, p90: evStats?.p90_price ?? 0.66 })
+          ? fuelColor(item.val, evColorStats)
           : evPowerColor(item.val);
       const techs = (item.s.conns || []).map(([t, kw, q]) => `${t} ${kw}kW×${q}`).join(" · ");
       const priceTag = evFormatPrice(item.s.price_kwh);
