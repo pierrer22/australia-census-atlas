@@ -1,6 +1,6 @@
 # Australia Census & Election Atlas
 
-**Live Demo:** https://pierrer22.github.io/australia-census-atlas/
+**Live Demo:** https://pierrer22.github.io/australia-census-atlas/ · **Street-Level Fuel & EV Finder:** https://pierrer22.github.io/australia-census-atlas/fuel.html
 
 Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G01`, `G02`, `G09`, `G14`, `G37`, `G49`) with **2025 AEC Federal** and **410 State/Territory** election results across six geographic layers.
 
@@ -21,6 +21,7 @@ Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G
   - `Elections & Crime`: `2025 Winner` & `2025 ALP 2PP` (`Federal`), `State Winner` (`State Seats`), and `Crime Rate` (`LGA` layer — 12-month rate across 278 LGAs in NSW, VIC, QLD, and NT, ranked within state due to differing police offence definitions and population bases).
   - `NSW Fuel`: `E10 / U91` (cheapest of either), `E10`, `Unleaded 91`, `Premium 95`, `Premium 98`, `All Diesel` (cheapest of Diesel or Prem Diesel), `Diesel`, `Prem Diesel`, and `LPG` (auto-zooms to Sydney on `Suburbs (SA2)` with `LGA` also supported — NSW zones shaded by cheapest FuelCheck station with per-zone cheapest price labels, overlaid with **2,390** station pins and cheapest-station dossier rankings, refreshed twice daily via GitHub Actions).
   - `EV Fast Charging`: `All Fast (50+ kW)`, `Ultra-Fast (150+ kW)`, `CCS2`, `CHAdeMO`, `Tesla`, and `By Price ($/kWh)` (`Suburbs (SA2)` & `LGA` layers — Australia-wide DC fast chargers rated 50 kW+ from Open Charge Map with power rating, connector breakdown, listed $/kWh/Free tariffs, zone badges, and top-station dossier rankings).
+- **Standalone Street-Level Fuel & EV Finder ([`web/fuel.html`](web/fuel.html)):** Dedicated mobile-friendly Leaflet street map sharing `nsw_fuel_prices.json` and `au_ev_chargers.json` with `Near Me` GPS sorting, station search, price/power map pills, and one-tap Google Maps directions.
 - **Recent Crime & Neighbourhood Watch Incident Pins:** Toggleable map pins (`Incident Pins` or auto-enabled on `Crime Rate`) combining:
   - **Queensland live street-block & Neighbourhood Watch pins:** Live browser fetch from the official QPS Open Data Crime Map API across all 78 QLD LGAs and 852 Neighbourhood Watch (NHW) areas (with NHW boundary overlays and ABS 2021 Mesh Block coordinate translation).
   - **Multi-state geocoded police RSS & SA suburb pins:** Daily GitHub Actions refresh geocoding myPolice QLD, Tasmania Police, and NT Police (PFES) releases (via OpenStreetMap Nominatim + ABS SAL centroids) alongside SA SAPOL 30-day suburb offence hotspots.
@@ -57,7 +58,7 @@ python3 scripts/validate_site.py
 
 ## Validation & CI
 
-- **Local validation:** Run `node --check web/app.js`, `python3 -m py_compile scripts/*.py`, and `python3 scripts/validate_site.py` to check dataset bounds and verify every `getElementById(...)` reference in `web/app.js` exists in `web/index.html`.
+- **Local validation:** Run `node --check web/app.js`, `node --check web/fuel.js`, `python3 -m py_compile scripts/*.py`, and `python3 scripts/validate_site.py` to check dataset bounds and verify every `getElementById(...)` reference in `web/app.js` and `web/fuel.js` exists in its HTML page.
 - **Pull request CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs syntax, dataset, and DOM ID checks automatically on pull requests to `main`, non-`main` pushes, and manual dispatch.
 
 ## Sources

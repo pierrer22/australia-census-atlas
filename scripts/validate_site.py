@@ -236,12 +236,18 @@ def main() -> int:
                 errors.append(f"rai_2025.json invalid score on {layer_k}[{rcode}]: {entry}")
                 break
 
-    # Verify all getElementById(...) targets in app.js exist in index.html
+    # Verify all getElementById(...) targets in app.js/fuel.js exist in their HTML pages
     html_ids = set(re.findall(r'\bid="([^"]+)"', (WEB_DIR / "index.html").read_text(encoding="utf-8")))
     js_ids = set(re.findall(r'getElementById\("([^"]+)"\)', (WEB_DIR / "app.js").read_text(encoding="utf-8")))
     missing_ids = sorted(js_ids - html_ids)
     if missing_ids:
         errors.append(f"web/app.js references missing DOM IDs: {missing_ids}")
+
+    fuel_html_ids = set(re.findall(r'\bid="([^"]+)"', (WEB_DIR / "fuel.html").read_text(encoding="utf-8")))
+    fuel_js_ids = set(re.findall(r'getElementById\("([^"]+)"\)', (WEB_DIR / "fuel.js").read_text(encoding="utf-8")))
+    missing_fuel_ids = sorted(fuel_js_ids - fuel_html_ids)
+    if missing_fuel_ids:
+        errors.append(f"web/fuel.js references missing DOM IDs: {missing_fuel_ids}")
 
     if errors:
         for err in errors:
@@ -253,7 +259,7 @@ def main() -> int:
         f"SED pop={sed_pop_count}/{len(sed_feats)} | crime LGAs={crime_count} | "
         f"QLD MBs={len(mb_data):,} | NHW={nhw_count} | pins=({len(rss_pins)} RSS, {len(sa_pins)} SA) | "
         f"fuel={len(fuel_stations):,} | ev={len(ev_stations):,} | RAI=({len(rai_sa2):,} SA2, {len(rai_lga)} LGA) | "
-        f"DOM IDs={len(js_ids)}"
+        f"DOM IDs=({len(js_ids)}+{len(fuel_js_ids)})"
     )
     return 0
 
