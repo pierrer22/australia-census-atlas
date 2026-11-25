@@ -346,6 +346,12 @@ body {
   transform: translate(-50%, -50%);
 }
 
+.price-pill.cheapest {
+  font-size: 12px;
+  padding: 3px 8px;
+  box-shadow: 0 0 0 2px #facc15, 0 3px 10px rgba(0, 0, 0, 0.45);
+}
+
 .price-pill.active {
   outline: 2.5px solid var(--ink);
   transform: translate(-50%, -50%) scale(1.12);

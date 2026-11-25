@@ -492,13 +492,15 @@ function renderFuelView(bounds, zoom) {
     const item = toPlot[i];
     const col = fuelColor(item.price, stStats);
     const active = item.s.code === state.selectedId;
+    const isCheapest = i === 0;
     let marker;
-    if (usePills || active) {
+    if (usePills || active || isCheapest) {
+      const label = `${isCheapest ? "★ " : ""}${item.price.toFixed(1)}¢`;
       marker = L.marker([item.s.lat, item.s.lon], {
-        zIndexOffset: active ? 2000 : 1000 - i,
+        zIndexOffset: isCheapest ? 2500 : active ? 2000 : 1000 - i,
         icon: L.divIcon({
           className: "price-pill-icon",
-          html: `<span class="price-pill${active ? " active" : ""}" style="background:${col}">${item.price.toFixed(1)}¢</span>`,
+          html: `<span class="price-pill${isCheapest ? " cheapest" : ""}${active ? " active" : ""}" style="background:${col}">${label}</span>`,
           iconSize: [0, 0],
         }),
       });
@@ -598,18 +600,19 @@ function renderEvView(bounds, zoom) {
         ? fuelColor(item.val, { min: evStats?.min_price ?? 0, p90: evStats?.p90_price ?? 0.66 })
         : evPowerColor(item.val);
     const active = String(item.s.id) === String(state.selectedId);
+    const isBest = i === 0;
     const pillTxt =
       state.evTab === "ev_price"
         ? (item.val === 0 ? "Free" : `$${item.val.toFixed(2)}`)
         : `${Math.round(item.val)}kW`;
 
     let marker;
-    if (usePills || active) {
+    if (usePills || active || isBest) {
       marker = L.marker([item.s.lat, item.s.lon], {
-        zIndexOffset: active ? 2000 : 1000 - i,
+        zIndexOffset: isBest ? 2500 : active ? 2000 : 1000 - i,
         icon: L.divIcon({
           className: "price-pill-icon",
-          html: `<span class="price-pill${active ? " active" : ""}" style="background:${col}">${pillTxt}</span>`,
+          html: `<span class="price-pill${isBest ? " cheapest" : ""}${active ? " active" : ""}" style="background:${col}">${isBest ? "★ " : ""}${pillTxt}</span>`,
           iconSize: [0, 0],
         }),
       });
