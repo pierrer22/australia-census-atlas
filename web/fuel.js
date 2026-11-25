@@ -85,6 +85,16 @@ function openStationPopup(station, html) {
     .openOn(map);
 }
 
+function isFullyInView(lat, lon) {
+  if (!map) return true;
+  const size = map.getSize();
+  const pt = map.latLngToContainerPoint([lat, lon]);
+  const padX = Math.min(46, Math.floor(size.x * 0.15));
+  const padTop = Math.min(50, Math.floor(size.y * 0.16));
+  const padBottom = Math.min(26, Math.floor(size.y * 0.1));
+  return pt.x >= padX && pt.x <= size.x - padX && pt.y >= padTop && pt.y <= size.y - padBottom;
+}
+
 function escapeHtml(str) {
   return String(str ?? "").replace(/[&<>"']/g, (ch) => ({
     "&": "&amp;",
@@ -494,13 +504,17 @@ function renderFuelView(bounds, zoom) {
     return;
   }
 
-  const lo = inView[0].price;
+  const toPlot = inView.length > 500 ? inView.slice(0, 500) : inView;
+  let cheapestIdx = toPlot.findIndex((item) => isFullyInView(item.s.lat, item.s.lon));
+  if (cheapestIdx < 0) cheapestIdx = 0;
+
+  const lo = toPlot[cheapestIdx].price;
   const mid = inView[Math.floor(inView.length / 2)].price;
   const hiMax = inView[inView.length - 1].price;
   const p90 = inView[Math.min(inView.length - 1, Math.floor((inView.length - 1) * 0.9))].price;
-  const hi = p90 > lo ? p90 : hiMax;
-  const hasViewRange = inView.length >= 2 && hi > lo;
-  const colorStats = hasViewRange ? { min: lo, median: mid, p90: hi, max: hiMax } : stStats;
+  const hi = p90 > inView[0].price ? p90 : hiMax;
+  const hasViewRange = inView.length >= 2 && hi > inView[0].price;
+  const colorStats = hasViewRange ? { min: inView[0].price, median: mid, p90: hi, max: hiMax } : stStats;
   renderLegend(hasViewRange ? colorStats : null);
 
   kpiEl.innerHTML = `
@@ -510,12 +524,11 @@ function renderFuelView(bounds, zoom) {
   `;
 
   const usePills = zoom >= 12 && inView.length <= 180;
-  const toPlot = inView.length > 500 ? inView.slice(0, 500) : inView;
   for (let i = toPlot.length - 1; i >= 0; i--) {
     const item = toPlot[i];
     const col = fuelColor(item.price, colorStats);
     const active = item.s.code === state.selectedId;
-    const isCheapest = i === 0;
+    const isCheapest = i === cheapestIdx;
     let marker;
     if (usePills || active || isCheapest) {
       const label = `${isCheapest ? "★ " : ""}${item.price.toFixed(1)}¢`;
@@ -624,10 +637,13 @@ function renderEvView(bounds, zoom) {
     renderLegend(null);
   }
 
+  let bestIdx = inView.findIndex((item) => isFullyInView(item.s.lat, item.s.lon));
+  if (bestIdx < 0) bestIdx = 0;
+
   const topKw = Math.max(...inView.map((x) => x.s.max_kw));
   const ultra = inView.filter((x) => x.s.max_kw >= 150).length;
   const priced = inView.filter((x) => x.s.price_kwh != null).map((x) => x.s.price_kwh).sort((a, b) => a - b);
-  const cheapest = priced.length ? evFormatPrice(priced[0]) : "N/A";
+  const cheapest = state.evTab === "ev_price" ? evFormatPrice(inView[bestIdx].val) : (priced.length ? evFormatPrice(priced[0]) : "N/A");
   kpiEl.innerHTML = `
     <div class="kpi-box"><div class="k">Top Power</div><div class="v mono" style="color:#10b981">${topKw} kW</div></div>
     <div class="kpi-box"><div class="k">150+ kW</div><div class="v mono">${ultra}</div></div>
@@ -642,7 +658,7 @@ function renderEvView(bounds, zoom) {
         ? fuelColor(item.val, evColorStats)
         : evPowerColor(item.val);
     const active = String(item.s.id) === String(state.selectedId);
-    const isBest = i === 0;
+    const isBest = i === bestIdx;
     const pillTxt =
       state.evTab === "ev_price"
         ? (item.val === 0 ? "Free" : `$${item.val.toFixed(2)}`)
