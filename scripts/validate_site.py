@@ -186,6 +186,12 @@ def main() -> int:
     fuel_stats = fuel_data.get("stats", {})
     if len(fuel_stations) < 1500:
         errors.append(f"nsw_fuel_prices.json only has {len(fuel_stations)} stations (< 1500)")
+    tas_count = sum(1 for st in fuel_stations if st.get("lat", 0) < -39.0)
+    wa_count = sum(1 for st in fuel_stations if st.get("lon", 0) < 130.0)
+    if tas_count < 100:
+        errors.append(f"nsw_fuel_prices.json only has {tas_count} TAS stations (< 100)")
+    if wa_count < 500:
+        errors.append(f"nsw_fuel_prices.json only has {wa_count} WA stations (< 500)")
     if "E10" not in fuel_stats or "U91" not in fuel_stats:
         errors.append("nsw_fuel_prices.json stats missing E10 or U91")
     for st in fuel_stations:

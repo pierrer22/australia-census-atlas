@@ -23,7 +23,7 @@ OUT_PATH = WEB_DATA / "nsw_fuel_prices.json"
 ENV_PATH = BASE / ".env"
 
 TOKEN_URL = "https://api.onegov.nsw.gov.au/oauth/client_credential/accesstoken?grant_type=client_credentials"
-PRICES_URL = "https://api.onegov.nsw.gov.au/FuelPriceCheck/v2/fuel/prices"
+PRICES_URL = "https://api.onegov.nsw.gov.au/FuelPriceCheck/v2/fuel/prices?states=NSW%7CTAS"
 WA_RSS_URL = "https://www.fuelwatch.wa.gov.au/fuelwatch/fuelWatchRSS?Product={prod}&Day=today"
 WA_PRODUCTS = [(1, "U91"), (2, "P95"), (4, "DL"), (5, "LPG"), (6, "P98"), (10, "E85"), (11, "PDL")]
 FUEL_ORDER = ["E10", "U91", "P95", "P98", "DL", "PDL", "LPG", "E85", "B20"]
@@ -67,7 +67,6 @@ def fetch_prices_payload(key: str, token: str) -> dict:
             "apikey": key,
             "transactionid": str(uuid.uuid4()),
             "requesttimestamp": ts,
-            "states": "NSW|TAS",
             "User-Agent": UA,
         },
     )
