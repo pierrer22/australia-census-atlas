@@ -401,13 +401,26 @@ function renderLegend(customStats = null) {
   }
 }
 
+function buildDirectionsLink(s) {
+  const dest = `${s.lat},${s.lon}`;
+  const webUrl = `https://www.google.com/maps/dir/?api=1&destination=${dest}`;
+  const ua = navigator.userAgent || "";
+  if (/Android/i.test(ua)) {
+    const intentUrl = `intent://maps.google.com/maps?daddr=${dest}&directionsmode=driving#Intent;scheme=https;package=com.google.android.apps.maps;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+    return `<a class="dir-link" href="${escapeHtml(intentUrl)}">Directions ↗</a>`;
+  }
+  if (/iPhone|iPad|iPod/i.test(ua)) {
+    return `<a class="dir-link" href="${webUrl}" data-ios-maps="1" data-lat="${s.lat}" data-lon="${s.lon}">Directions ↗</a>`;
+  }
+  return `<a class="dir-link" href="${webUrl}" target="_blank" rel="noopener noreferrer">Directions ↗</a>`;
+}
+
 function fuelPopupHtml(s) {
   const rows = Object.entries(s.p || {})
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([k, v]) => `<tr><td>${escapeHtml(FUEL_LABELS[k] || k)}</td><td>${v.toFixed(1)}¢</td></tr>`)
     .join("");
   const distStr = s.distKm != null ? ` · ${s.distKm.toFixed(1)} km` : "";
-  const dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}`;
   return `
     <div class="popup-box">
       <div class="popup-title">${escapeHtml(s.name)}</div>
@@ -416,7 +429,7 @@ function fuelPopupHtml(s) {
       ${rows ? `<table class="popup-table"><thead><tr><th>Fuel</th><th>Price</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
       <div class="popup-actions">
         <span class="mono" style="opacity:0.7">${s.upd ? `Upd ${escapeHtml(s.upd)}` : ""}</span>
-        <a class="dir-link" href="${dirUrl}" target="_blank" rel="noopener noreferrer">Directions ↗</a>
+        ${buildDirectionsLink(s)}
       </div>
     </div>
   `;
@@ -427,7 +440,6 @@ function evPopupHtml(s) {
     .map(([tech, kw, qty]) => `<tr><td>${escapeHtml(tech)}</td><td>${kw} kW</td><td>${qty}×</td></tr>`)
     .join("");
   const distStr = s.distKm != null ? ` · ${s.distKm.toFixed(1)} km` : "";
-  const dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}`;
   const priceStr = evFormatPrice(s.price_kwh);
   return `
     <div class="popup-box">
@@ -439,7 +451,7 @@ function evPopupHtml(s) {
       ${s.cost ? `<div style="font-size:0.68rem;opacity:0.78;margin-bottom:6px">${escapeHtml(s.cost)}</div>` : ""}
       <div class="popup-actions">
         <span class="mono" style="opacity:0.7">${s.upd ? `Verified ${escapeHtml(s.upd)}` : ""}</span>
-        <a class="dir-link" href="${dirUrl}" target="_blank" rel="noopener noreferrer">Directions ↗</a>
+        ${buildDirectionsLink(s)}
       </div>
     </div>
   `;
@@ -887,6 +899,18 @@ async function init() {
   });
 
   map.on("moveend zoomend", scheduleRender);
+
+  document.addEventListener("click", (e) => {
+    const link = e.target.closest('.dir-link[data-ios-maps="1"]');
+    if (!link) return;
+    e.preventDefault();
+    const { lat, lon } = link.dataset;
+    const webUrl = link.getAttribute("href");
+    window.location.href = `comgooglemaps://?daddr=${lat},${lon}&directionsmode=driving`;
+    setTimeout(() => {
+      if (!document.hidden) window.location.href = webUrl;
+    }, 700);
+  });
 
   await loadFuelData();
   if (state.mode === "ev") await loadEvData();
