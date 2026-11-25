@@ -1117,13 +1117,14 @@ function renderLabels() {
       // Require label to fit inside the polygon's screen bounding box (prevents spilling over boundaries)
       if (!isSel && (screenW < c.estW * 0.95 || screenH < c.estH * 1.25)) return false;
 
-      const halfW = hasPrice ? Math.max(c.estW / 2, 22) : c.estW / 2;
+      const halfW = hasPrice ? Math.max(c.estW / 2, 18) : c.estW / 2;
+      const effPadX = hasPrice ? 3 : padX;
       const box = hasPrice
         ? {
-            x0: sx - halfW - padX,
-            y0: sy - 13 - padY,
-            x1: sx + halfW + padX,
-            y1: sy + 14 + padY,
+            x0: sx - halfW - effPadX,
+            y0: sy - 12,
+            x1: sx + halfW + effPadX,
+            y1: sy + 12.5,
           }
         : {
             x0: sx - halfW - padX,
@@ -1167,20 +1168,20 @@ function renderLabels() {
     .text((d) => d.label);
 
   if (showFuelPrices && fuelLabelLayer) {
-    if (atMaxZoom || k >= 3 || state.selectedCode) {
+    if (atMaxZoom || k >= 1.8 || state.selectedCode) {
       for (const c of labelCandidates) {
-        if (!atMaxZoom && priceLabels.length >= 85) break;
+        if (!atMaxZoom && priceLabels.length >= 180) break;
         if (placedPriceCodes.has(c.code)) continue;
         const price = priceByCode.get(c.code);
         if (price == null) continue;
         const isSel = c.code === state.selectedCode;
-        if (!atMaxZoom && k < 3 && !isSel) continue;
+        if (!atMaxZoom && k < 1.8 && !isSel) continue;
         const sx = c.cx * k + tx;
         const sy = c.cy * k + ty;
         if (sx < 18 || sx > width - 18 || sy < 56 || sy > height - 48) continue;
-        if (!atMaxZoom && !isSel && (c.bw * k < 12 || c.bh * k < 9)) continue;
+        if (!atMaxZoom && !isSel && (c.bw * k < 5 || c.bh * k < 4)) continue;
         if (!atMaxZoom) {
-          const box = { x0: sx - 25, y0: sy - 8.5, x1: sx + 25, y1: sy + 8.5 };
+          const box = { x0: sx - 17, y0: sy - 5, x1: sx + 17, y1: sy + 5 };
           if (placed.some((p) => box.x0 < p.x1 && box.x1 > p.x0 && box.y0 < p.y1 && box.y1 > p.y0)) continue;
           placed.push(box);
         }
