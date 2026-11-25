@@ -248,7 +248,7 @@ const FUEL_METRICS = [
   label,
   unit: "¢/L (cheapest)",
   format: (v) => `${v.toFixed(1)}¢/L`,
-  colors: ["#16a34a", "#eab308", "#dc2626"],
+  colors: ["#15803d", "#4ade80", "#eab308", "#dc2626"],
   scale: "fuel",
   allowedLayers: ["sa2", "lga"],
   invertRank: true,
@@ -1470,11 +1470,34 @@ function getColorScale() {
     };
   }
 
-  if (m.scale === "fuel" || m.scale === "ev_price") {
-    const isZeroOk = m.scale === "ev_price";
+  if (m.scale === "fuel") {
     const vals = features
       .map((f) => f.properties[m.key])
-      .filter((v) => v != null && (isZeroOk ? v >= 0 : v > 0))
+      .filter((v) => v != null && v > 0)
+      .sort((a, b) => a - b);
+    if (!vals.length) {
+      return { color: () => "#94a3b8", min: 0, mid: 0, max: 0 };
+    }
+    const min = vals[0];
+    const hi = d3.quantile(vals, 0.9) ?? vals[vals.length - 1];
+    const interp = d3.interpolateRgbBasis(m.colors);
+    if (!(hi > min)) {
+      return { color: (v) => (v == null || v <= 0 ? "#94a3b8" : interp(0.5)), min, mid: min, max: hi };
+    }
+    const span = hi - min;
+    const mid = min + span * 0.15 * (Math.sqrt(1 + 1 / 0.15) - 1);
+    return {
+      color: (v) => (v == null || v <= 0 ? "#94a3b8" : interp(fuelLogNorm(v, min, hi))),
+      min,
+      mid,
+      max: hi,
+    };
+  }
+
+  if (m.scale === "ev_price") {
+    const vals = features
+      .map((f) => f.properties[m.key])
+      .filter((v) => v != null && v >= 0)
       .sort((a, b) => a - b);
     if (!vals.length) {
       return { color: () => "#94a3b8", min: 0, mid: 0, max: 0 };
@@ -1486,11 +1509,11 @@ function getColorScale() {
     const p90 = d3.quantile(vals, 0.9) ?? max;
     const interp = d3.interpolateRgbBasis(m.colors);
     if (!(p90 > p10)) {
-      return { color: (v) => (v == null || (isZeroOk ? v < 0 : v <= 0) ? "#94a3b8" : interp(0.5)), min, mid: med, max };
+      return { color: (v) => (v == null || v < 0 ? "#94a3b8" : interp(0.5)), min, mid: med, max };
     }
     const s = d3.scaleLinear().domain([p10, med, p90]).range([0, 0.5, 1]).clamp(true);
     return {
-      color: (v) => (v == null || (isZeroOk ? v < 0 : v <= 0) ? "#94a3b8" : interp(s(v))),
+      color: (v) => (v == null || v < 0 ? "#94a3b8" : interp(s(v))),
       min,
       mid: med,
       max,
@@ -3085,16 +3108,22 @@ function computeCompositeFuelStats(data) {
   }
 }
 
-const FUEL_INTERP = d3.interpolateRgbBasis(["#16a34a", "#eab308", "#dc2626"]);
+const FUEL_INTERP = d3.interpolateRgbBasis(["#15803d", "#4ade80", "#eab308", "#dc2626"]);
+
+function fuelLogNorm(v, lo, hi) {
+  if (v == null || !(hi > lo)) return 0.5;
+  const span = hi - lo;
+  const offset = span * 0.15;
+  const clamped = Math.max(0, Math.min(span, v - lo));
+  return Math.log1p(clamped / offset) / Math.log1p(span / offset);
+}
 
 function fuelColor(price, st) {
   if (!st || price == null) return "#64748b";
-  const lo = st.p10 ?? st.min;
-  const mid = st.median ?? (lo + (st.p90 ?? st.max)) / 2;
+  const lo = st.min ?? st.p10;
   const hi = st.p90 ?? st.max;
-  if (!(hi > lo)) return "#16a34a";
-  const scale = d3.scaleLinear().domain([lo, mid, hi]).range([0, 0.5, 1]).clamp(true);
-  return FUEL_INTERP(scale(price));
+  if (!(hi > lo)) return "#15803d";
+  return FUEL_INTERP(fuelLogNorm(price, lo, hi));
 }
 
 function attachFuelToLayer(layerKey) {
