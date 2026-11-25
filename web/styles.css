@@ -1047,19 +1047,23 @@ body {
   gap: 6px;
 }
 
-.fuel-dot {
+.fuel-dot,
+.ev-dot {
   cursor: pointer;
   stroke: #ffffff;
   stroke-width: 1.2px;
   fill-opacity: 0.9;
 }
 
-[data-theme="dark"] .fuel-dot {
+[data-theme="dark"] .fuel-dot,
+[data-theme="dark"] .ev-dot {
   stroke: #0c1311;
 }
 
 .fuel-dot:hover,
-.fuel-dot.active-pin {
+.fuel-dot.active-pin,
+.ev-dot:hover,
+.ev-dot.active-pin {
   stroke: var(--ink);
   stroke-width: 2.2px;
   fill-opacity: 1;

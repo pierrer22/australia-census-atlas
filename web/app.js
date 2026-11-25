@@ -38,6 +38,7 @@ const METRIC_GROUPS = [
   { key: "people", label: "Demographics" },
   { key: "politics", label: "Elections & Crime" },
   { key: "fuel", label: "NSW Fuel" },
+  { key: "ev", label: "EV Fast Charging" },
 ];
 
 const CENSUS_METRICS = [
@@ -258,6 +259,86 @@ function isFuelMetric(m = state.metric) {
   return Boolean(m && m.group === "fuel");
 }
 
+const EV_METRICS = [
+  {
+    key: "ev_all",
+    evFilter: "all",
+    group: "ev",
+    label: "All Fast (50+ kW)",
+    unit: "kW (max)",
+    format: (v) => `${Math.round(v)} kW`,
+    colors: ["#eab308", "#0ea5e9", "#10b981"],
+    scale: "ev_power",
+    allowedLayers: ["sa2", "lga"],
+    note: "Shaded by max DC fast charger rating (50+ kW) in each Suburb (SA2) or LGA; pins show individual stations with power, connectors, and price (Open Charge Map).",
+  },
+  {
+    key: "ev_ultra",
+    evFilter: "ultra",
+    group: "ev",
+    label: "Ultra-Fast (150+ kW)",
+    unit: "kW (max)",
+    format: (v) => `${Math.round(v)} kW`,
+    colors: ["#0ea5e9", "#10b981", "#059669"],
+    scale: "ev_power",
+    allowedLayers: ["sa2", "lga"],
+    note: "Ultra-fast DC chargers rated 150 kW and above across Australia.",
+  },
+  {
+    key: "ev_ccs2",
+    evFilter: "CCS2",
+    group: "ev",
+    label: "CCS2",
+    unit: "kW (max)",
+    format: (v) => `${Math.round(v)} kW`,
+    colors: ["#eab308", "#0ea5e9", "#10b981"],
+    scale: "ev_power",
+    allowedLayers: ["sa2", "lga"],
+    note: "Fast DC stations with CCS2 connectors (50+ kW).",
+  },
+  {
+    key: "ev_chademo",
+    evFilter: "CHAdeMO",
+    group: "ev",
+    label: "CHAdeMO",
+    unit: "kW (max)",
+    format: (v) => `${Math.round(v)} kW`,
+    colors: ["#eab308", "#0ea5e9", "#10b981"],
+    scale: "ev_power",
+    allowedLayers: ["sa2", "lga"],
+    note: "Fast DC stations with CHAdeMO connectors (50+ kW).",
+  },
+  {
+    key: "ev_tesla",
+    evFilter: "Tesla",
+    group: "ev",
+    label: "Tesla",
+    unit: "kW (max)",
+    format: (v) => `${Math.round(v)} kW`,
+    colors: ["#eab308", "#0ea5e9", "#10b981"],
+    scale: "ev_power",
+    allowedLayers: ["sa2", "lga"],
+    note: "Tesla Supercharger fast DC locations across Australia.",
+  },
+  {
+    key: "ev_price",
+    evFilter: "price",
+    group: "ev",
+    label: "By Price ($/kWh)",
+    unit: "$/kWh (cheapest)",
+    format: (v) => (v === 0 ? "Free" : `$${v.toFixed(2)}/kWh`),
+    colors: ["#16a34a", "#eab308", "#dc2626"],
+    scale: "ev_price",
+    allowedLayers: ["sa2", "lga"],
+    invertRank: true,
+    note: "Shaded by cheapest listed fast-charging price ($/kWh or Free) in each Suburb (SA2) or LGA.",
+  },
+];
+
+function isEvMetric(m = state.metric) {
+  return Boolean(m && m.group === "ev");
+}
+
 function metricSupportsLayer(m, layerKey) {
   if (!m) return true;
   if (m.allowedLayers) return m.allowedLayers.includes(layerKey);
@@ -276,6 +357,7 @@ const ALL_METRICS = [
   ...STATE_ELECTION_METRICS,
   ...CRIME_METRICS,
   ...FUEL_METRICS,
+  ...EV_METRICS,
 ];
 
 const CITIES = [
@@ -355,15 +437,19 @@ const state = {
   fuelType: "E10_U91",
   fuelData: null,
   selectedFuelCode: null,
+  showEv: false,
+  evData: null,
+  selectedEvId: null,
   raiData: null,
 };
 
-let svg, mapGroup, regionLayer, nhwLayer, fuelLayer, fuelLabelLayer, pinLayer, labelLayer, pathGen, projection, zoomBehavior;
+let svg, mapGroup, regionLayer, nhwLayer, fuelLayer, evLayer, fuelLabelLayer, pinLayer, labelLayer, pathGen, projection, zoomBehavior;
 let currentTransform = d3.zoomIdentity;
 let labelCandidates = [];
 let labelRaf = null;
 let pinRaf = null;
 let fuelRaf = null;
+let evRaf = null;
 let layerLoadSeq = 0;
 let qldFetchSeq = 0;
 const rankCache = new Map();
@@ -435,6 +521,7 @@ async function loadLayer(key) {
   const data = await d3.json(`${cfg.file}?v=${DATA_VERSION}`);
   state.cache[key] = data;
   if ((key === "lga" || key === "sa2") && state.fuelData) attachFuelToLayer(key);
+  if ((key === "lga" || key === "sa2") && state.evData) attachEvToLayer(key);
   if (state.raiData) attachRaiToLayer(key);
   return data;
 }
@@ -505,6 +592,10 @@ async function init() {
     state.fuelType = state.metric.fuelType;
     await loadFuelData();
     attachFuelToLayer(state.layerKey);
+  } else if (isEvMetric(state.metric)) {
+    state.showEv = true;
+    await loadEvData();
+    attachEvToLayer(state.layerKey);
   } else if (state.metric.key === "rai") {
     await loadRaiData();
     attachRaiToLayer(state.layerKey);
@@ -528,11 +619,14 @@ async function init() {
     if (steFeat) focusFeature(steFeat, true);
   }
 
-  if (!isFuelMetric(state.metric) && (initial.pins || state.metric.key === "crime_rate_100k")) {
+  if (!isFuelMetric(state.metric) && !isEvMetric(state.metric) && (initial.pins || state.metric.key === "crime_rate_100k")) {
     await setIncidentsEnabled(true, { skipSync: true });
   }
   if (state.showFuel) {
     renderFuelPins();
+  }
+  if (state.showEv) {
+    renderEvPins();
   }
 
   renderDossier();
@@ -543,11 +637,13 @@ async function init() {
     state.activeState = null;
     clearActiveQld();
     state.selectedFuelCode = null;
+    state.selectedEvId = null;
     document.querySelectorAll(".city-btn").forEach((b) => b.classList.toggle("active", b.textContent === "Australia"));
     updateSelectionHighlight();
     zoomToCity(CITIES[0]);
     renderPins();
     renderFuelPins();
+    renderEvPins();
     renderDossier();
     syncHash();
   });
@@ -597,6 +693,8 @@ async function switchLayer(targetKey, opts = {}) {
     state.activeGroup = state.metric.group;
     state.showFuel = false;
     state.selectedFuelCode = null;
+    state.showEv = false;
+    state.selectedEvId = null;
   }
   buildMetricGroups();
   buildMetricTabs();
@@ -604,6 +702,7 @@ async function switchLayer(targetKey, opts = {}) {
   renderChoropleth();
   renderPins();
   renderFuelPins();
+  renderEvPins();
   renderDossier();
   syncHash();
 }
@@ -635,6 +734,11 @@ async function selectMetric(m) {
     state.showFuel = true;
     state.fuelType = m.fuelType;
     state.selectedFuelCode = null;
+    if (state.showEv) {
+      state.showEv = false;
+      state.selectedEvId = null;
+      renderEvPins();
+    }
     if (state.showIncidents) {
       await setIncidentsEnabled(false, { skipSync: true });
     }
@@ -690,6 +794,40 @@ async function selectMetric(m) {
     renderFuelPins();
   }
 
+  if (isEvMetric(m)) {
+    state.showEv = true;
+    state.selectedEvId = null;
+    if (state.showIncidents) {
+      await setIncidentsEnabled(false, { skipSync: true });
+    }
+    if (!state.evData) {
+      showLoading("Loading EV Fast Chargers…");
+      try {
+        await loadEvData();
+      } finally {
+        hideLoading();
+      }
+    }
+    if (!metricSupportsLayer(m, state.layerKey)) {
+      await switchLayer(defaultLayerForMetric(m) || "sa2");
+    } else {
+      attachEvToLayer(state.layerKey);
+      buildMetricGroups();
+      buildMetricTabs();
+      renderChoropleth();
+      renderEvPins();
+      renderDossier();
+      syncHash();
+    }
+    return;
+  }
+
+  if (state.showEv) {
+    state.showEv = false;
+    state.selectedEvId = null;
+    renderEvPins();
+  }
+
   if (m.key === "rai" && !state.raiData) {
     showLoading("Loading Rental Affordability Index…");
     try {
@@ -731,6 +869,10 @@ function buildMetricGroups() {
     btn.addEventListener("click", async () => {
       if (g.key === "fuel" && !isFuelMetric()) {
         await selectMetric(FUEL_METRICS[0]);
+        return;
+      }
+      if (g.key === "ev" && !isEvMetric()) {
+        await selectMetric(EV_METRICS[0]);
         return;
       }
       if (state.activeGroup === g.key) return;
@@ -877,11 +1019,13 @@ function initMap(initialGeo) {
       scheduleLabels();
       schedulePins();
       scheduleFuel();
+      scheduleEv();
     })
     .on("end", () => {
       scheduleLabels();
       schedulePins();
       scheduleFuel();
+      scheduleEv();
       clearTimeout(repaintTimer);
       repaintTimer = setTimeout(() => {
         svg.style("shape-rendering", "crispEdges");
@@ -893,18 +1037,20 @@ function initMap(initialGeo) {
   svg.call(zoomBehavior);
   svg.on("click", (event) => {
     if (event.defaultPrevented || event.target !== svg.node()) return;
-    if (!state.selectedCode && !state.activeState && state.activeCity === "Australia" && !state.selectedPinId && !state.selectedFuelCode) return;
+    if (!state.selectedCode && !state.activeState && state.activeCity === "Australia" && !state.selectedPinId && !state.selectedFuelCode && !state.selectedEvId) return;
     state.selectedCode = null;
     state.activeState = null;
     state.activeCity = "Australia";
     clearActiveQld();
     state.selectedFuelCode = null;
+    state.selectedEvId = null;
     document.querySelectorAll(".quick-bars .city-btn").forEach((b) => {
       b.classList.toggle("active", b.textContent === "Australia");
     });
     updateSelectionHighlight();
     renderPins();
     renderFuelPins();
+    renderEvPins();
     renderDossier();
     syncHash();
   });
@@ -927,6 +1073,7 @@ function initMap(initialGeo) {
 
   nhwLayer = mapGroup.append("g").attr("class", "nhw-layer");
   fuelLayer = svg.append("g").attr("class", "fuel-layer");
+  evLayer = svg.append("g").attr("class", "ev-layer");
   pinLayer = svg.append("g").attr("class", "pin-layer");
   labelLayer = svg.append("g").attr("class", "label-layer");
   fuelLabelLayer = svg.append("g").attr("class", "fuel-label-layer");
@@ -998,6 +1145,7 @@ function handleResize() {
   buildLabelCandidates();
   reprojectPins();
   reprojectFuel();
+  reprojectEv();
 
   if (centerLonLat && Number.isFinite(centerLonLat[0]) && Number.isFinite(centerLonLat[1])) {
     const [nx, ny] = projection(centerLonLat);
@@ -1012,6 +1160,7 @@ function handleResize() {
   renderLabels();
   renderPins();
   renderFuelPins();
+  renderEvPins();
 }
 
 function showToast(msg) {
@@ -1094,11 +1243,21 @@ function renderLabels() {
   const padX = 5;
   const padY = 3;
   const showFuelPrices = state.showFuel && isFuelMetric();
-  const priceByCode = new Map();
-  if (showFuelPrices) {
+  const showEvBadges = state.showEv && isEvMetric();
+  const showZoneBadges = showFuelPrices || showEvBadges;
+  const zoneBadgeByCode = new Map();
+  if (showZoneBadges) {
     for (const f of currentGeo().features) {
       const val = f.properties[state.metric.key];
-      if (val != null && val > 0) priceByCode.set(f.properties.code, val);
+      if (showFuelPrices) {
+        if (val != null && val > 0) zoneBadgeByCode.set(f.properties.code, `${val.toFixed(1)}¢`);
+      } else if (state.metric.key === "ev_price") {
+        if (val != null && val >= 0) {
+          zoneBadgeByCode.set(f.properties.code, val === 0 ? "Free" : `$${val.toFixed(2)}`);
+        }
+      } else if (val != null && val > 0) {
+        zoneBadgeByCode.set(f.properties.code, `${Math.round(val)}kW`);
+      }
     }
   }
 
@@ -1110,16 +1269,16 @@ function renderLabels() {
     const screenW = c.bw * k;
     const screenH = c.bh * k;
     const isSel = c.code === state.selectedCode;
-    const price = showFuelPrices ? priceByCode.get(c.code) : null;
-    const hasPrice = price != null;
+    const badge = showZoneBadges ? zoneBadgeByCode.get(c.code) : null;
+    const hasBadge = badge != null;
 
     if (!atMaxZoom) {
       // Require label to fit inside the polygon's screen bounding box (prevents spilling over boundaries)
       if (!isSel && (screenW < c.estW * 0.95 || screenH < c.estH * 1.25)) return false;
 
-      const halfW = hasPrice ? Math.max(c.estW / 2, 18) : c.estW / 2;
-      const effPadX = hasPrice ? 3 : padX;
-      const box = hasPrice
+      const halfW = hasBadge ? Math.max(c.estW / 2, 18) : c.estW / 2;
+      const effPadX = hasBadge ? 3 : padX;
+      const box = hasBadge
         ? {
             x0: sx - halfW - effPadX,
             y0: sy - 12,
@@ -1139,10 +1298,10 @@ function renderLabels() {
       placed.push(box);
     }
 
-    visible.push({ code: c.code, label: c.label, sx, sy: hasPrice ? sy - 6 : sy, isSel });
-    if (hasPrice) {
+    visible.push({ code: c.code, label: c.label, sx, sy: hasBadge ? sy - 6 : sy, isSel });
+    if (hasBadge) {
       placedPriceCodes.add(c.code);
-      priceLabels.push({ code: c.code, sx, sy: sy + 7, price });
+      priceLabels.push({ code: c.code, sx, sy: sy + 7, txt: badge });
     }
     return true;
   };
@@ -1167,13 +1326,13 @@ function renderLabels() {
     .attr("y", (d) => d.sy)
     .text((d) => d.label);
 
-  if (showFuelPrices && fuelLabelLayer) {
+  if (showZoneBadges && fuelLabelLayer) {
     if (atMaxZoom || k >= 1.8 || state.selectedCode) {
       for (const c of labelCandidates) {
         if (!atMaxZoom && priceLabels.length >= 180) break;
         if (placedPriceCodes.has(c.code)) continue;
-        const price = priceByCode.get(c.code);
-        if (price == null) continue;
+        const badge = zoneBadgeByCode.get(c.code);
+        if (badge == null) continue;
         const isSel = c.code === state.selectedCode;
         if (!atMaxZoom && k < 1.8 && !isSel) continue;
         const sx = c.cx * k + tx;
@@ -1186,7 +1345,7 @@ function renderLabels() {
           placed.push(box);
         }
         placedPriceCodes.add(c.code);
-        priceLabels.push({ code: c.code, sx, sy, price });
+        priceLabels.push({ code: c.code, sx, sy, txt: badge });
       }
     }
     fuelLabelLayer
@@ -1196,7 +1355,7 @@ function renderLabels() {
       .attr("class", "fuel-price-lbl")
       .attr("x", (d) => d.sx)
       .attr("y", (d) => d.sy)
-      .text((d) => `${d.price.toFixed(1)}¢`);
+      .text((d) => d.txt);
   } else if (fuelLabelLayer) {
     fuelLabelLayer.selectAll("text").remove();
   }
@@ -1208,6 +1367,7 @@ function selectRegion(code) {
   state.activeState = null;
   clearActiveQld();
   state.selectedFuelCode = null;
+  state.selectedEvId = null;
   document.querySelectorAll(".quick-bars .city-btn").forEach((b) => b.classList.remove("active"));
   updateSelectionHighlight();
   const feat = currentGeo().features.find((f) => f.properties.code === code);
@@ -1216,6 +1376,7 @@ function selectRegion(code) {
   }
   renderPins();
   renderFuelPins();
+  renderEvPins();
   renderDossier();
   syncHash();
 }
@@ -1309,10 +1470,11 @@ function getColorScale() {
     };
   }
 
-  if (m.scale === "fuel") {
+  if (m.scale === "fuel" || m.scale === "ev_price") {
+    const isZeroOk = m.scale === "ev_price";
     const vals = features
       .map((f) => f.properties[m.key])
-      .filter((v) => v != null && v > 0)
+      .filter((v) => v != null && (isZeroOk ? v >= 0 : v > 0))
       .sort((a, b) => a - b);
     if (!vals.length) {
       return { color: () => "#94a3b8", min: 0, mid: 0, max: 0 };
@@ -1324,14 +1486,25 @@ function getColorScale() {
     const p90 = d3.quantile(vals, 0.9) ?? max;
     const interp = d3.interpolateRgbBasis(m.colors);
     if (!(p90 > p10)) {
-      return { color: (v) => (v == null ? "#94a3b8" : interp(0.5)), min, mid: med, max };
+      return { color: (v) => (v == null || (isZeroOk ? v < 0 : v <= 0) ? "#94a3b8" : interp(0.5)), min, mid: med, max };
     }
     const s = d3.scaleLinear().domain([p10, med, p90]).range([0, 0.5, 1]).clamp(true);
     return {
-      color: (v) => (v == null || v <= 0 ? "#94a3b8" : interp(s(v))),
+      color: (v) => (v == null || (isZeroOk ? v < 0 : v <= 0) ? "#94a3b8" : interp(s(v))),
       min,
       mid: med,
       max,
+    };
+  }
+
+  if (m.scale === "ev_power") {
+    const interp = d3.interpolateRgbBasis(m.colors);
+    const s = d3.scaleLinear().domain([50, 150, 350]).range([0, 0.5, 1]).clamp(true);
+    return {
+      color: (v) => (v == null || v <= 0 ? "#94a3b8" : interp(s(v))),
+      min: 50,
+      mid: 150,
+      max: 350,
     };
   }
 
@@ -1402,7 +1575,7 @@ function renderChoropleth() {
     partiesEl.hidden = true;
     barEl.style.background = `linear-gradient(90deg, ${m.colors.join(", ")})`;
     const mid = scaleMid ?? (m.scale === "log" ? Math.sqrt(min * max) : (min + max) / 2);
-    const midVal = (m.scale === "fuel" || m.scale === "rai" || m.scale === "sqrt")
+    const midVal = (m.scale === "fuel" || m.scale === "ev_price" || m.scale === "ev_power" || m.scale === "rai" || m.scale === "sqrt")
       ? (m.scale === "sqrt" ? Math.round(mid * 10) / 10 : mid)
       : (max <= 20 ? mid : Math.round(mid));
     ticksEl.innerHTML =
@@ -1659,6 +1832,26 @@ function buildTooltipDetails(p, metricKey) {
         ]);
         break;
       }
+      if (metricKey.startsWith("ev_")) {
+        const meta = p._evMeta?.[metricKey];
+        if (!meta) return "";
+        const rows = [];
+        if (metricKey === "ev_price") {
+          const pStr = meta.minPrice === 0 ? "Free" : `$${meta.minPrice.toFixed(2)}/kWh`;
+          rows.push(["Cheapest Charger", `${escapeHtml(meta.bestName)} (${pStr})`]);
+        } else {
+          rows.push(["Fastest Charger", `${escapeHtml(meta.bestName)} (${Math.round(meta.maxKw)} kW)`]);
+        }
+        if (meta.techs?.length) rows.push(["Technologies", escapeHtml(meta.techs.join(", "))]);
+        if (meta.minPrice != null && metricKey !== "ev_price") {
+          const lo = meta.minPrice === 0 ? "Free" : `$${meta.minPrice.toFixed(2)}`;
+          const hi = meta.maxPrice === 0 ? "Free" : `$${meta.maxPrice.toFixed(2)}`;
+          rows.push(["Price Range", lo === hi ? (lo === "Free" ? "Free" : `${lo}/kWh`) : `${lo}–${hi}/kWh`]);
+        }
+        rows.push(["Fast Stations", String(meta.count)]);
+        inner = tooltipRows(rows);
+        break;
+      }
       return "";
   }
   return inner ? `<div class="tooltip-details">${inner}</div>` : "";
@@ -1740,6 +1933,17 @@ function renderDossier() {
   } else if (isFuelMetric(m)) {
     const fStats = state.fuelData?.stats?.[m.fuelType];
     document.getElementById("hero-kpi-value").textContent = fStats ? `med ${m.format(fStats.median)}` : "NSW FuelCheck";
+  } else if (isEvMetric(m)) {
+    const eStats = state.evData?.stats;
+    if (!eStats) {
+      document.getElementById("hero-kpi-value").textContent = "Open Charge Map";
+    } else if (m.key === "ev_price" && eStats.median_price != null) {
+      document.getElementById("hero-kpi-value").textContent = `med ${m.format(eStats.median_price)}`;
+    } else if (m.key === "ev_ultra") {
+      document.getElementById("hero-kpi-value").textContent = `${eStats.ultrafast_count} hubs`;
+    } else {
+      document.getElementById("hero-kpi-value").textContent = `med ${eStats.median_kw} kW`;
+    }
   } else if (quickProfile) {
     document.getElementById("hero-kpi-value").textContent = p[m.key] != null ? m.format(p[m.key]) : "N/A";
   } else if (m.key === "st_party") {
@@ -1820,6 +2024,7 @@ function renderDossier() {
 
   renderIncidentsPanel(feat, p);
   renderFuelPanel(feat, p);
+  renderEvPanel(feat, p);
 
   const comparisons = [
     { label: "Household Income", val: p.median_hhd_inc_wk, aus: aus.median_hhd_inc_wk, fmt: (v) => `$${v.toLocaleString()}/wk` },
@@ -3226,6 +3431,374 @@ function renderFuelPanel(feat, p) {
     closeBtn.addEventListener("click", () => {
       state.selectedFuelCode = null;
       renderFuelPins();
+      renderDossier();
+    });
+  }
+}
+
+const EV_POWER_INTERP = d3.interpolateRgbBasis(["#eab308", "#0ea5e9", "#10b981"]);
+const EV_POWER_SCALE = d3.scaleLinear().domain([50, 150, 350]).range([0, 0.5, 1]).clamp(true);
+
+function evStationValue(station, metricKey) {
+  if (!station) return null;
+  switch (metricKey) {
+    case "ev_all":
+      return station.max_kw ?? null;
+    case "ev_ultra":
+      return station.max_kw >= 150 ? station.max_kw : null;
+    case "ev_ccs2":
+    case "ev_chademo": {
+      const target = metricKey === "ev_ccs2" ? "CCS2" : "CHAdeMO";
+      let best = 0;
+      for (const [tech, kw] of station.conns || []) {
+        if (tech === target && kw >= 50 && kw > best) best = kw;
+      }
+      return best > 0 ? best : null;
+    }
+    case "ev_tesla":
+      return (station.techs?.includes("Tesla") || /^tesla/i.test(station.op || "")) ? station.max_kw : null;
+    case "ev_price":
+      return station.price_kwh != null ? station.price_kwh : null;
+    default:
+      return null;
+  }
+}
+
+function evFormatPrice(priceKwh) {
+  if (priceKwh === 0) return "Free";
+  if (priceKwh != null) return `$${priceKwh.toFixed(2)}/kWh`;
+  return "Price N/A";
+}
+
+function evPinColor(val, metricKey, evStats) {
+  if (val == null) return "#64748b";
+  if (metricKey === "ev_price") {
+    return fuelColor(val, {
+      p10: evStats?.p10_price ?? 0,
+      median: evStats?.median_price ?? 0.45,
+      p90: evStats?.p90_price ?? 0.66,
+      min: evStats?.min_price ?? 0,
+      max: evStats?.max_price ?? 1,
+    });
+  }
+  return EV_POWER_INTERP(EV_POWER_SCALE(val));
+}
+
+function attachEvToLayer(layerKey) {
+  const geo = state.cache[layerKey];
+  if (!geo || !state.evData?.stations) return;
+  const codeField = layerKey === "sa2" ? "sa2_code" : "lga_code";
+  const byAreaMetric = new Map();
+
+  for (const s of state.evData.stations) {
+    const areaCode = s[codeField];
+    if (!areaCode) continue;
+    for (const em of EV_METRICS) {
+      const val = evStationValue(s, em.key);
+      if (val == null) continue;
+      const key = `${areaCode}:${em.key}`;
+      let list = byAreaMetric.get(key);
+      if (!list) {
+        list = [];
+        byAreaMetric.set(key, list);
+      }
+      list.push({ val, station: s });
+    }
+  }
+
+  for (const f of geo.features) {
+    const props = f.properties;
+    const code = String(props.code);
+    const metaMap = {};
+    for (const em of EV_METRICS) {
+      const entries = byAreaMetric.get(`${code}:${em.key}`);
+      if (entries && entries.length) {
+        if (em.key === "ev_price") {
+          entries.sort((a, b) => a.val - b.val);
+        } else {
+          entries.sort((a, b) => b.val - a.val);
+        }
+        const best = entries[0];
+        props[em.key] = best.val;
+        const techsSet = new Set();
+        let minPrice = null;
+        let maxPrice = null;
+        for (const e of entries) {
+          for (const t of e.station.techs || []) techsSet.add(t);
+          const pk = e.station.price_kwh;
+          if (pk != null) {
+            if (minPrice == null || pk < minPrice) minPrice = pk;
+            if (maxPrice == null || pk > maxPrice) maxPrice = pk;
+          }
+        }
+        metaMap[em.key] = {
+          bestName: best.station.name,
+          maxKw: best.station.max_kw,
+          minPrice,
+          maxPrice,
+          techs: Array.from(techsSet),
+          count: entries.length,
+        };
+      } else {
+        delete props[em.key];
+      }
+    }
+    props._evMeta = metaMap;
+  }
+
+  for (const em of EV_METRICS) {
+    rankCache.delete(`${layerKey}:${em.key}`);
+  }
+}
+
+async function loadEvData() {
+  if (state.evData) return state.evData;
+  try {
+    const data = await d3.json(`data/au_ev_chargers.json?v=${DATA_VERSION}`);
+    state.evData = data;
+    reprojectEv();
+    attachEvToLayer("lga");
+    attachEvToLayer("sa2");
+  } catch (err) {
+    console.warn("Failed to load au_ev_chargers.json:", err);
+  }
+  return state.evData;
+}
+
+function reprojectEv() {
+  if (!projection || !state.evData?.stations) return;
+  for (const s of state.evData.stations) {
+    const pt = projection([s.lon, s.lat]);
+    if (pt) {
+      s.px = pt[0];
+      s.py = pt[1];
+    }
+  }
+}
+
+function scheduleEv() {
+  if (!state.showEv || evRaf) return;
+  evRaf = requestAnimationFrame(() => {
+    evRaf = null;
+    renderEvPins();
+    if (currentTransform.k >= 4 && !state.selectedCode && state.evData) {
+      renderEvPanel(null, state.national);
+    }
+  });
+}
+
+function visibleEvStations() {
+  if (!state.showEv || !state.evData?.stations) return [];
+  const mk = state.metric.key;
+  const { x: tx, y: ty, k } = currentTransform;
+  const inView = [];
+
+  for (const s of state.evData.stations) {
+    const val = evStationValue(s, mk);
+    if (val == null || !Number.isFinite(s.px) || !Number.isFinite(s.py)) continue;
+    const sx = s.px * k + tx;
+    const sy = s.py * k + ty;
+    if (sx >= -18 && sx <= width + 18 && sy >= -18 && sy <= height + 18) {
+      inView.push(s);
+    }
+  }
+  return inView;
+}
+
+function renderEvPins() {
+  if (!evLayer) return;
+  if (!state.showEv || !state.evData) {
+    evLayer.selectAll("circle").remove();
+    return;
+  }
+  const mk = state.metric.key;
+  const eStats = state.evData.stats;
+  const { x: tx, y: ty, k } = currentTransform;
+  const stations = visibleEvStations();
+
+  evLayer
+    .selectAll("circle")
+    .data(stations, (d) => d.id)
+    .join("circle")
+    .attr("class", (d) => `ev-dot${d.id === state.selectedEvId ? " active-pin" : ""}`)
+    .attr("cx", (d) => d.px * k + tx)
+    .attr("cy", (d) => d.py * k + ty)
+    .attr("r", (d) => (d.id === state.selectedEvId ? 7.5 : d.max_kw >= 150 ? 5.5 : 4.2))
+    .attr("fill", (d) => evPinColor(evStationValue(d, mk), mk, eStats))
+    .on("mousemove", handleEvHover)
+    .on("mouseleave", () => {
+      document.getElementById("tooltip").hidden = true;
+    })
+    .on("click", handleEvClick);
+}
+
+function handleEvHover(event, d) {
+  const tip = document.getElementById("tooltip");
+  const mk = state.metric.key;
+  const val = evStationValue(d, mk);
+  const col = evPinColor(val, mk, state.evData?.stats);
+  const connRows = (d.conns || [])
+    .map(([tech, kw, qty]) => `<tr><td>${escapeHtml(tech)}</td><td>${kw} kW</td><td>${qty}×</td></tr>`)
+    .join("");
+  const priceLine = evFormatPrice(d.price_kwh);
+  const costExtra = d.cost && d.cost.toLowerCase() !== priceLine.toLowerCase() ? ` · ${d.cost}` : "";
+
+  tip.innerHTML = `
+    <div class="tooltip-title">${escapeHtml(d.name)}</div>
+    <div class="tooltip-meta">${escapeHtml(d.op || "Public Charger")} · ${escapeHtml(d.lga_name || "AU")}</div>
+    <div class="tooltip-val" style="color:${col}">${d.max_kw} kW max <span style="opacity:0.85;font-weight:500">· ${escapeHtml(priceLine)}</span></div>
+    <div class="tooltip-details">
+      ${d.addr ? `<div style="opacity:0.8;margin-bottom:3px">${escapeHtml(d.addr)}</div>` : ""}
+      ${connRows ? `<table class="tooltip-table"><thead><tr><th>Tech</th><th>Power</th><th>Bays</th></tr></thead><tbody>${connRows}</tbody></table>` : ""}
+      ${costExtra ? `<div style="opacity:0.75;margin-top:3px">${escapeHtml(costExtra.replace(/^\s*·\s*/, ""))}</div>` : ""}
+      ${d.upd ? `<div style="opacity:0.6;margin-top:2px">Verified ${escapeHtml(d.upd)}</div>` : ""}
+    </div>
+  `;
+  tip.hidden = false;
+  positionTooltip(event, tip);
+}
+
+function handleEvClick(event, d) {
+  event.stopPropagation();
+  state.selectedEvId = d.id;
+  zoomToCoords(d.lon, d.lat, 40);
+  renderEvPins();
+  renderDossier();
+}
+
+function renderEvDetailCard(station) {
+  if (!station) return "";
+  const conns = (station.conns || [])
+    .map(([tech, kw, qty]) => `<span class="inc-chip">${escapeHtml(tech)}: <strong class="mono">${kw} kW</strong> (${qty}×)</span>`)
+    .join("");
+  const priceText = evFormatPrice(station.price_kwh);
+  return `
+    <div class="inc-detail-card">
+      <div class="inc-detail-top">
+        <strong>${escapeHtml(station.name)}</strong>
+        <button id="clear-ev-detail" class="inc-detail-close" type="button" aria-label="Close charger detail">×</button>
+      </div>
+      <div class="inc-item-top">
+        <span>${escapeHtml(station.op || "Public Charger")} · ${escapeHtml(station.lga_name || "AU")}</span>
+        <span class="mono"><strong>${station.max_kw} kW</strong> · ${escapeHtml(priceText)}</span>
+      </div>
+      ${station.addr ? `<p class="inc-detail-summary">${escapeHtml(station.addr)}</p>` : ""}
+      ${station.cost ? `<p class="inc-detail-summary" style="opacity:0.78">Tariff: ${escapeHtml(station.cost)}</p>` : ""}
+      <div class="inc-cat-chips">${conns}</div>
+    </div>
+  `;
+}
+
+function renderEvPanel(feat, p) {
+  const panel = document.getElementById("ev-panel");
+  if (!panel) return;
+  if (!state.showEv) {
+    panel.hidden = true;
+    return;
+  }
+  panel.hidden = false;
+
+  const titleEl = document.getElementById("ev-panel-title");
+  const badgeEl = document.getElementById("ev-panel-badge");
+  const summaryEl = document.getElementById("ev-summary");
+  const listEl = document.getElementById("ev-list");
+  const m = state.metric;
+  titleEl.textContent = `EV Fast Charging · ${m.label}`;
+
+  if (!state.evData?.stations) {
+    badgeEl.textContent = "Loading…";
+    summaryEl.innerHTML = `<div class="inc-note">Loading Australia EV fast chargers…</div>`;
+    listEl.innerHTML = "";
+    return;
+  }
+
+  const allMatching = state.evData.stations.filter((s) => evStationValue(s, m.key) != null);
+  const selectedSt = state.selectedEvId
+    ? state.evData.stations.find((s) => s.id === state.selectedEvId)
+    : null;
+  const detailHtml = renderEvDetailCard(selectedSt);
+  const eStats = state.evData.stats;
+
+  let scoped = allMatching;
+  const isAreaScoped = (state.layerKey === "lga" || state.layerKey === "sa2") && feat;
+  const scopeLabel = state.layerKey === "sa2" ? "suburb" : "LGA";
+
+  if (isAreaScoped) {
+    const field = state.layerKey === "sa2" ? "sa2_code" : "lga_code";
+    scoped = allMatching.filter((s) => s[field] === p.code);
+    badgeEl.textContent = `${scoped.length} stations in ${scopeLabel}`;
+  } else if (currentTransform.k >= 4) {
+    const inView = visibleEvStations();
+    if (inView.length >= 2) {
+      scoped = inView;
+      badgeEl.textContent = `${scoped.length} in view`;
+    } else {
+      badgeEl.textContent = `${allMatching.length.toLocaleString()} AU`;
+    }
+  } else {
+    badgeEl.textContent = `${allMatching.length.toLocaleString()} AU`;
+  }
+
+  const sorted = [...scoped].sort((a, b) => {
+    const va = evStationValue(a, m.key);
+    const vb = evStationValue(b, m.key);
+    return m.key === "ev_price" ? va - vb : vb - va;
+  });
+
+  if (!sorted.length) {
+    summaryEl.innerHTML = detailHtml + `<div class="inc-note">No matching fast chargers in this area.</div>`;
+    listEl.innerHTML = "";
+  } else {
+    const maxKw = Math.max(...sorted.map((s) => s.max_kw));
+    const priced = sorted.filter((s) => s.price_kwh != null).map((s) => s.price_kwh).sort((a, b) => a - b);
+    const bestPrice = priced.length ? evFormatPrice(priced[0]) : "N/A";
+    const ultraCount = sorted.filter((s) => s.max_kw >= 150).length;
+    summaryEl.innerHTML =
+      detailHtml +
+      `<div class="fuel-stats-row">
+        <div class="fuel-stat-box"><div class="k">Top Power</div><div class="v mono" style="color:#10b981">${maxKw} kW</div></div>
+        <div class="fuel-stat-box"><div class="k">150+ kW Hubs</div><div class="v mono">${ultraCount}</div></div>
+        <div class="fuel-stat-box"><div class="k">Cheapest</div><div class="v mono" style="color:#16a34a">${escapeHtml(bestPrice)}</div></div>
+      </div>`;
+
+    const byId = new Map();
+    listEl.innerHTML = sorted
+      .slice(0, 15)
+      .map((s) => {
+        byId.set(String(s.id), s);
+        const val = evStationValue(s, m.key);
+        const col = evPinColor(val, m.key, eStats);
+        const techSummary = (s.conns || []).map(([t, kw, q]) => `${t} ${kw}kW×${q}`).join(" · ");
+        const priceTag = evFormatPrice(s.price_kwh);
+        return `
+          <button type="button" class="inc-item${s.id === state.selectedEvId ? " active" : ""}" data-ev-id="${s.id}">
+            <div class="inc-item-top">
+              <span class="inc-item-left"><span class="inc-chip-dot" style="background:${col}"></span>${escapeHtml(s.op || "Charger")} · ${escapeHtml(s.lga_name || "AU")}</span>
+              <span class="mono" style="color:${col}"><strong>${s.max_kw} kW</strong> · ${escapeHtml(priceTag)}</span>
+            </div>
+            <div class="inc-item-title">${escapeHtml(s.name)}</div>
+            <div class="inc-item-sub"><span>${escapeHtml(techSummary || s.addr)}</span></div>
+          </button>`;
+      })
+      .join("");
+
+    listEl.querySelectorAll(".inc-item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const st = byId.get(btn.dataset.evId);
+        if (!st) return;
+        state.selectedEvId = st.id;
+        zoomToCoords(st.lon, st.lat, 40);
+        renderEvPins();
+        renderDossier();
+      });
+    });
+  }
+
+  const closeBtn = summaryEl.querySelector("#clear-ev-detail");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      state.selectedEvId = null;
+      renderEvPins();
       renderDossier();
     });
   }

@@ -31,6 +31,9 @@ jobs:
           NSW_FUEL_API_KEY: ${{ secrets.NSW_FUEL_API_KEY }}
           NSW_FUEL_API_SECRET: ${{ secrets.NSW_FUEL_API_SECRET }}
         run: python3 scripts/fetch_nsw_fuel.py
+      - name: Refresh Australia EV fast chargers
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: python3 scripts/fetch_ev_chargers.py
       - name: Validate JS & datasets
         run: |
           node --check web/app.js

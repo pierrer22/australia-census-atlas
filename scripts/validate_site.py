@@ -204,6 +204,23 @@ def main() -> int:
             errors.append(f"nsw_fuel_prices.json invalid prices on {st.get('code')}: {prices}")
             break
 
+    # Regression guard: Australia EV fast chargers
+    ev_data = load_json(WEB_DATA / "au_ev_chargers.json")
+    ev_stations = ev_data.get("stations", [])
+    if len(ev_stations) < 300:
+        errors.append(f"au_ev_chargers.json only has {len(ev_stations)} stations (< 300)")
+    for st in ev_stations:
+        lon, lat = st.get("lon", 0), st.get("lat", 0)
+        if not (112.0 <= lon <= 155.0 and -44.0 <= lat <= -9.0):
+            errors.append(f"au_ev_chargers.json out-of-bounds coord on {st.get('id')}: ({lon}, {lat})")
+            break
+        if (st.get("max_kw") or 0) < 50:
+            errors.append(f"au_ev_chargers.json station {st.get('id')} max_kw < 50: {st.get('max_kw')}")
+            break
+        if not st.get("lga_code") or not st.get("sa2_code"):
+            errors.append(f"au_ev_chargers.json missing lga_code/sa2_code on {st.get('id')}")
+            break
+
     # Regression guard: SGS Rental Affordability Index (RAI)
     rai_data = load_json(WEB_DATA / "rai_2025.json")
     rai_sa2 = rai_data.get("sa2", {})
@@ -235,7 +252,7 @@ def main() -> int:
         f"OK: 6 layers validated | national pct_affiliated={aff}% | "
         f"SED pop={sed_pop_count}/{len(sed_feats)} | crime LGAs={crime_count} | "
         f"QLD MBs={len(mb_data):,} | NHW={nhw_count} | pins=({len(rss_pins)} RSS, {len(sa_pins)} SA) | "
-        f"fuel={len(fuel_stations):,} | RAI=({len(rai_sa2):,} SA2, {len(rai_lga)} LGA) | "
+        f"fuel={len(fuel_stations):,} | ev={len(ev_stations):,} | RAI=({len(rai_sa2):,} SA2, {len(rai_lga)} LGA) | "
         f"DOM IDs={len(js_ids)}"
     )
     return 0
