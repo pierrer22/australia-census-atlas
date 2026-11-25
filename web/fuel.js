@@ -73,8 +73,17 @@ let map;
 let tileLayer;
 let markersLayer;
 let userLayer;
+let activePopup = null;
 let markerById = new Map();
 let renderRaf = null;
+
+function openStationPopup(station, html) {
+  if (!map || !station) return;
+  activePopup = L.popup({ maxWidth: 290, autoPanPadding: [20, 20] })
+    .setLatLng([station.lat, station.lon])
+    .setContent(html)
+    .openOn(map);
+}
 
 function escapeHtml(str) {
   return String(str ?? "").replace(/[&<>"']/g, (ch) => ({
@@ -527,10 +536,10 @@ function renderFuelView(bounds, zoom) {
         fillOpacity: 0.92,
       });
     }
-    marker.bindPopup(() => fuelPopupHtml(item.s));
     marker.on("click", () => {
       state.selectedId = item.s.code;
       highlightListSelection();
+      openStationPopup(item.s, fuelPopupHtml(item.s));
     });
     marker.addTo(markersLayer);
     markerById.set(item.s.code, { marker, item });
@@ -658,10 +667,10 @@ function renderEvView(bounds, zoom) {
         fillOpacity: 0.92,
       });
     }
-    marker.bindPopup(() => evPopupHtml(item.s));
     marker.on("click", () => {
       state.selectedId = String(item.s.id);
       highlightListSelection();
+      openStationPopup(item.s, evPopupHtml(item.s));
     });
     marker.addTo(markersLayer);
     markerById.set(String(item.s.id), { marker, item });
@@ -703,10 +712,14 @@ function attachListHandlers(listEl) {
       const id = btn.dataset.id;
       const hit = markerById.get(id);
       if (!hit) return;
+      const st = hit.item.s;
       state.selectedId = id;
       highlightListSelection();
-      map.panTo([hit.item.s.lat, hit.item.s.lon], { animate: true });
-      hit.marker.openPopup();
+      map.panTo([st.lat, st.lon], { animate: true });
+      openStationPopup(st, state.mode === "fuel" ? fuelPopupHtml(st) : evPopupHtml(st));
+      if (window.innerWidth <= 820) {
+        document.getElementById("map")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     });
   });
 }
@@ -766,10 +779,7 @@ function initSearch() {
         input.value = st.name;
         state.selectedId = String(st.code || st.id);
         map.setView([st.lat, st.lon], 14);
-        setTimeout(() => {
-          const hit = markerById.get(state.selectedId);
-          if (hit) hit.marker.openPopup();
-        }, 120);
+        openStationPopup(st, state.mode === "fuel" ? fuelPopupHtml(st) : evPopupHtml(st));
       });
     });
   });
