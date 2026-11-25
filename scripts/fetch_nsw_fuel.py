@@ -5,10 +5,12 @@ from __future__ import annotations
 
 import base64
 import datetime as dt
+import hashlib
 import json
 import os
 import urllib.request
 import uuid
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from fetch_recent_incidents import build_lga_spatial_index, find_lga
@@ -22,6 +24,8 @@ ENV_PATH = BASE / ".env"
 
 TOKEN_URL = "https://api.onegov.nsw.gov.au/oauth/client_credential/accesstoken?grant_type=client_credentials"
 PRICES_URL = "https://api.onegov.nsw.gov.au/FuelPriceCheck/v2/fuel/prices"
+WA_RSS_URL = "https://www.fuelwatch.wa.gov.au/fuelwatch/fuelWatchRSS?Product={prod}&Day=today"
+WA_PRODUCTS = [(1, "U91"), (2, "P95"), (4, "DL"), (5, "LPG"), (6, "P98"), (10, "E85"), (11, "PDL")]
 FUEL_ORDER = ["E10", "U91", "P95", "P98", "DL", "PDL", "LPG", "E85", "B20"]
 UA = "AustraliaCensusAtlas/1.0 (+https://github.com/pierrer22/australia-census-atlas)"
 
@@ -83,6 +87,78 @@ def percentile(sorted_vals: list[float], q: float) -> float:
     return round(sorted_vals[lo] * (1.0 - frac) + sorted_vals[hi] * frac, 1)
 
 
+def fetch_wa_fuelwatch(wa_lga_idx: list[dict], wa_sa2_idx: list[dict]) -> list[dict]:
+    """Fetch daily FuelWatch WA stations from public RSS feeds (no API key required)."""
+    grouped: dict[tuple[float, float, str], dict] = {}
+    for prod_id, ftype in WA_PRODUCTS:
+        url = WA_RSS_URL.format(prod=prod_id)
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                root = ET.fromstring(r.read())
+        except Exception as exc:
+            print(f"[WARN] WA FuelWatch Product={prod_id} ({ftype}) failed: {exc}")
+            continue
+
+        for item in root.findall("./channel/item"):
+            try:
+                lon = float((item.findtext("longitude") or "").strip())
+                lat = float((item.findtext("latitude") or "").strip())
+                pval = float((item.findtext("price") or "").strip())
+            except (TypeError, ValueError):
+                continue
+            if not (112.0 <= lon <= 129.5 and -35.5 <= lat <= -13.0) or not (50.0 <= pval <= 600.0):
+                continue
+
+            name = (item.findtext("trading-name") or "").strip()
+            if not name:
+                continue
+            lon_r = round(lon, 4)
+            lat_r = round(lat, 4)
+            key = (lon_r, lat_r, name)
+            entry = grouped.get(key)
+            if entry is None:
+                brand = (item.findtext("brand") or "").strip()
+                address = (item.findtext("address") or "").strip()
+                loc = (item.findtext("location") or "").strip()
+                upd = (item.findtext("date") or "").strip()[:10]
+                addr_parts = [p for p in (address, loc.title() if loc else "", "WA") if p]
+                entry = {
+                    "name": name,
+                    "brand": brand,
+                    "addr": ", ".join(addr_parts),
+                    "lon": lon_r,
+                    "lat": lat_r,
+                    "p": {},
+                    "upd": upd,
+                }
+                grouped[key] = entry
+            entry["p"][ftype] = round(pval, 1)
+
+    wa_stations: list[dict] = []
+    for (lon_r, lat_r, name), st in grouped.items():
+        lga_code, lga_name = find_lga(lon_r, lat_r, wa_lga_idx, ste_name="Western Australia")
+        if not lga_code:
+            continue
+        sa2_code, sa2_name = find_lga(lon_r, lat_r, wa_sa2_idx, ste_name="Western Australia")
+        digest = hashlib.md5(f"{lon_r}:{lat_r}:{name}".encode("utf-8")).hexdigest()[:8]
+        wa_stations.append({
+            "code": f"WA-{digest}",
+            "brand": st["brand"],
+            "name": st["name"],
+            "addr": st["addr"],
+            "lon": lon_r,
+            "lat": lat_r,
+            "lga_code": lga_code,
+            "lga_name": lga_name,
+            "sa2_code": sa2_code or "",
+            "sa2_name": sa2_name or "",
+            "p": st["p"],
+            "upd": st["upd"],
+        })
+    return wa_stations
+
+
 def main() -> int:
     key, secret = load_creds()
     if not key or not secret:
@@ -117,11 +193,13 @@ def main() -> int:
         x for x in full_idx
         if x["ste_name"] in {"New South Wales", "Tasmania", "Australian Capital Territory"}
     ]
+    wa_lga_idx = [x for x in full_idx if x["ste_name"] == "Western Australia"]
     full_sa2_idx = build_lga_spatial_index(SA2_GEO)
     nsw_tas_act_sa2_idx = [
         x for x in full_sa2_idx
         if x["ste_name"] in {"New South Wales", "Tasmania", "Australian Capital Territory"}
     ]
+    wa_sa2_idx = [x for x in full_sa2_idx if x["ste_name"] == "Western Australia"]
 
     stations_out: list[dict] = []
     vals_by_fuel: dict[str, list[float]] = {}
@@ -171,6 +249,12 @@ def main() -> int:
             "p": pmap,
             "upd": latest_by_station.get(scode, ""),
         })
+
+    wa_stations = fetch_wa_fuelwatch(wa_lga_idx, wa_sa2_idx)
+    for st in wa_stations:
+        for ft, pv in st["p"].items():
+            vals_by_fuel.setdefault(ft, []).append(pv)
+        stations_out.append(st)
 
     stats: dict[str, dict] = {}
     fuel_types: list[str] = []

@@ -36,10 +36,11 @@ const CITIES = [
   { name: "Sydney", lat: -33.8688, lon: 151.12, zoom: 12 },
   { name: "Newcastle", lat: -32.9283, lon: 151.7817, zoom: 12 },
   { name: "Wollongong", lat: -34.4278, lon: 150.8931, zoom: 12 },
+  { name: "Hobart", lat: -42.8821, lon: 147.3272, zoom: 12 },
+  { name: "Perth", lat: -31.9505, lon: 115.8605, zoom: 12 },
   { name: "Canberra", lat: -35.2809, lon: 149.13, zoom: 12 },
   { name: "Melbourne", lat: -37.8136, lon: 144.9631, zoom: 12, evDefault: true },
   { name: "Brisbane", lat: -27.4698, lon: 153.0251, zoom: 12, evDefault: true },
-  { name: "Perth", lat: -31.9505, lon: 115.8605, zoom: 12, evDefault: true },
   { name: "Adelaide", lat: -34.9285, lon: 138.6007, zoom: 12, evDefault: true },
 ];
 
@@ -334,8 +335,8 @@ function updateSubtitle() {
   if (state.mode === "fuel") {
     const d = state.fuelData;
     el.textContent = d
-      ? `NSW FuelCheck · ${d.station_count.toLocaleString()} stations · Updated ${d.generated_at.slice(0, 10)}`
-      : "Loading NSW FuelCheck…";
+      ? `FuelCheck (NSW/TAS) + FuelWatch (WA) · ${d.station_count.toLocaleString()} stations · Updated ${d.generated_at.slice(0, 10)}`
+      : "Loading FuelCheck & WA FuelWatch…";
   } else {
     const d = state.evData;
     el.textContent = d
@@ -454,7 +455,7 @@ function renderFuelView(bounds, zoom) {
   const badgeEl = document.getElementById("list-badge");
   const cfg = getFuelTabCfg();
   const isComposite = cfg.types.length > 1;
-  titleEl.textContent = `NSW Fuel · ${cfg.label}`;
+  titleEl.textContent = `Fuel · ${cfg.label}`;
 
   if (!state.fuelData?.stations) {
     badgeEl.textContent = "Loading…";
@@ -478,7 +479,7 @@ function renderFuelView(bounds, zoom) {
 
   if (!inView.length) {
     kpiEl.innerHTML = "";
-    listEl.innerHTML = `<div style="font-size:0.76rem;color:var(--muted);padding:8px">Pan to NSW or click Sydney / Newcastle / Wollongong above.</div>`;
+    listEl.innerHTML = `<div style="font-size:0.76rem;color:var(--muted);padding:8px">Pan to NSW, TAS, or WA (Sydney / Perth / Hobart) above.</div>`;
     return;
   }
 

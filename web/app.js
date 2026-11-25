@@ -3382,26 +3382,27 @@ function renderFuelPanel(feat, p) {
 
   let scoped = allWithFuel;
   let noteHtml = "";
-  const isNswScoped = (state.layerKey === "lga" || state.layerKey === "sa2") && feat && p.ste_name === "New South Wales";
+  const fuelStates = ["New South Wales", "Tasmania", "Western Australia"];
+  const isFuelScoped = (state.layerKey === "lga" || state.layerKey === "sa2") && feat && fuelStates.includes(p.ste_name);
   const scopeLabel = state.layerKey === "sa2" ? "suburb" : "LGA";
 
-  if (isNswScoped) {
+  if (isFuelScoped) {
     const field = state.layerKey === "sa2" ? "sa2_code" : "lga_code";
     scoped = allWithFuel.filter((s) => s[field] === p.code);
     badgeEl.textContent = `${scoped.length} stations in ${scopeLabel}`;
-  } else if (feat && p.ste_name !== "New South Wales") {
-    noteHtml = `<div class="inc-note">NSW FuelCheck covers NSW stations — select Sydney or any NSW LGA/suburb to filter locally. Cheapest across NSW:</div>`;
-    badgeEl.textContent = `${allWithFuel.length.toLocaleString()} NSW stations`;
+  } else if (feat && !fuelStates.includes(p.ste_name)) {
+    noteHtml = `<div class="inc-note">Live fuel prices cover NSW, TAS &amp; WA — select any NSW/TAS/WA suburb or LGA to filter locally. Cheapest overall:</div>`;
+    badgeEl.textContent = `${allWithFuel.length.toLocaleString()} stations`;
   } else if (currentTransform.k >= 4) {
     const inView = visibleFuelStations();
     if (inView.length >= 3) {
       scoped = inView;
       badgeEl.textContent = `${scoped.length} in view`;
     } else {
-      badgeEl.textContent = `${allWithFuel.length.toLocaleString()} NSW`;
+      badgeEl.textContent = `${allWithFuel.length.toLocaleString()} stations`;
     }
   } else {
-    badgeEl.textContent = `${allWithFuel.length.toLocaleString()} NSW`;
+    badgeEl.textContent = `${allWithFuel.length.toLocaleString()} stations`;
   }
 
   const sorted = scoped

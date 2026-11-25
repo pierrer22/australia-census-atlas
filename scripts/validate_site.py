@@ -190,7 +190,7 @@ def main() -> int:
         errors.append("nsw_fuel_prices.json stats missing E10 or U91")
     for st in fuel_stations:
         lon, lat = st.get("lon", 0), st.get("lat", 0)
-        if not (140.0 <= lon <= 154.5 and -44.0 <= lat <= -28.0):
+        if not (112.0 <= lon <= 155.0 and -44.0 <= lat <= -10.0):
             errors.append(f"nsw_fuel_prices.json out-of-bounds coord on {st.get('code')}: ({lon}, {lat})")
             break
         if not st.get("lga_code"):

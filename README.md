@@ -68,7 +68,7 @@ python3 scripts/validate_site.py
 - State/Territory Legislative Assembly & House of Assembly election results (NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
 - State/Territory Crime Data: NSW BOCSAR, Crime Statistics Agency Victoria (CSA), Queensland Police Service (QPS), NT Police, and South Australia Police (SAPOL via Data.SA)
 - Live & Recent Incident Feeds: QPS Online Crime Map Open Data API (LGAs & Neighbourhood Watch areas), myPolice QLD RSS, Tasmania Police Media Releases RSS, NT Police (PFES) Newsroom RSS, and OpenStreetMap Nominatim geocoding
-- Fuel Prices: NSW Government FuelCheck v2 API (`api.nsw.gov.au`)
+- Fuel Prices: NSW Government FuelCheck v2 API (`api.nsw.gov.au`, NSW/TAS) & WA FuelWatch (`fuelwatch.wa.gov.au`)
 - EV Fast Charging: Open Charge Map (`ocm-export`, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/))
 - Rental Affordability Index (RAI, 2025 Q2): SGS Economics & Planning via National Housing Data Exchange (AHDAP)
 
