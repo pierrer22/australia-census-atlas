@@ -78,16 +78,43 @@ let currentStyleUrl = "";
 let pillMarkers = [];
 let userMarker = null;
 let activePopup = null;
+let hoverPopup = null;
 let stationById = new Map();
 let renderRaf = null;
 
-function openStationPopup(station, html) {
+function closeHoverPopup() {
+  if (!hoverPopup) return;
+  hoverPopup.remove();
+  hoverPopup = null;
+}
+
+function openHoverPopup(station, html) {
   if (!map || !station) return;
-  if (activePopup) activePopup.remove();
-  activePopup = new maplibregl.Popup({ maxWidth: "290px", offset: 14 })
+  closeHoverPopup();
+  hoverPopup = new maplibregl.Popup({
+    maxWidth: "290px",
+    offset: 14,
+    closeButton: false,
+    closeOnClick: false,
+    className: "pill-hover-popup",
+  })
     .setLngLat([station.lon, station.lat])
     .setHTML(html)
     .addTo(map);
+}
+
+function openStationPopup(station, html) {
+  if (!map || !station) return;
+  closeHoverPopup();
+  if (activePopup) activePopup.remove();
+  const popup = new maplibregl.Popup({ maxWidth: "290px", offset: 14 })
+    .setLngLat([station.lon, station.lat])
+    .setHTML(html)
+    .addTo(map);
+  popup.on("close", () => {
+    if (activePopup === popup) activePopup = null;
+  });
+  activePopup = popup;
 }
 
 function fuelBrandBadgeSvg(brand) {
@@ -185,6 +212,14 @@ function addPillMarker(station, idStr, label, col, zIndex, isBest, active, popup
   } else {
     el.textContent = label;
   }
+  el.addEventListener("mouseenter", () => {
+    if (!window.matchMedia("(hover: hover)").matches) return;
+    if (activePopup && state.selectedId === idStr) return;
+    openHoverPopup(station, popupHtml);
+  });
+  el.addEventListener("mouseleave", () => {
+    closeHoverPopup();
+  });
   el.addEventListener("click", (ev) => {
     ev.stopPropagation();
     state.selectedId = idStr;
@@ -634,6 +669,7 @@ function scheduleRender() {
 }
 
 function clearMarkers() {
+  closeHoverPopup();
   for (const m of pillMarkers) m.remove();
   pillMarkers = [];
   stationById.clear();

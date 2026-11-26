@@ -384,6 +384,23 @@ body {
   transform: scale(1.12);
 }
 
+.price-pill:hover {
+  z-index: 3000 !important;
+}
+
+.maplibregl-popup {
+  z-index: 5000 !important;
+}
+
+.pill-hover-popup {
+  z-index: 6000 !important;
+  pointer-events: none;
+}
+
+.pill-hover-popup .dir-link {
+  display: none;
+}
+
 .user-gps-dot {
   width: 16px;
   height: 16px;
