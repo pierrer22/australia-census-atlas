@@ -90,13 +90,74 @@ function openStationPopup(station, html) {
     .addTo(map);
 }
 
+function fuelBrandBadgeSvg(brand) {
+  const raw = String(brand || "").trim();
+  const b = raw.toLowerCase();
+  let inner = "";
+
+  if (!b || b === "independent") {
+    inner = `<circle cx="8" cy="8" r="8" fill="#334155"/><path d="M8 3.2C8 3.2 4.8 7.1 4.8 9.4a3.2 3.2 0 0 0 6.4 0C11.2 7.1 8 3.2 8 3.2z" fill="#f8fafc"/>`;
+  } else if (b === "bp" || b.includes("bp")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#007f3b"/><polygon points="8,2.2 9.4,5.4 12.8,4.6 10.6,7.4 13.4,9.6 10,10.2 10.2,13.6 8,11.1 5.8,13.6 6,10.2 2.6,9.6 5.4,7.4 3.2,4.6 6.6,5.4" fill="#ffd200"/><circle cx="8" cy="8" r="2.2" fill="#fff"/>`;
+  } else if (b.includes("ampol")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#fff"/><path d="M8 2.4L3 13h2.6l2.4-5.4L10.4 13H13L8 2.4z" fill="#e31837"/><path d="M5.1 10.6h5.8l-.8 1.9H5.9l-.8-1.9z" fill="#0033a0"/>`;
+  } else if (b.includes("7-eleven") || b.includes("7 eleven")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#fff"/><path d="M3.4 3.2h8.6v2.1c-2.6 2.2-3.9 4.8-4.2 7.7H5.1c.4-3.1 1.7-5.6 4.1-7.6H3.4V3.2z" fill="#f37021"/><rect x="3.4" y="6.9" width="9.2" height="1.8" rx="0.6" fill="#008061"/><rect x="3.4" y="11.6" width="8.6" height="1.5" rx="0.5" fill="#ee2526"/>`;
+  } else if (b.includes("shell")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#fff"/><path d="M8 2.4c-3.2 0-5.4 2.1-5.4 5.1 0 2.1 1.2 3.9 2.9 4.8l.7 1.3h3.6l.7-1.3c1.7-.9 2.9-2.7 2.9-4.8 0-3-2.2-5.1-5.4-5.1z" fill="#fbce07" stroke="#dd1d21" stroke-width="1.2"/>`;
+  } else if (b.includes("reddy") || b.includes("coles express")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#d81e05"/><text x="8" y="11.6" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="10.5" fill="#ffd100">R</text>`;
+  } else if (b.includes("metro")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#00529b"/><text x="8" y="11.5" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="9.8" fill="#ffd100">M</text>`;
+  } else if (b.includes("caltex")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#fff"/><polygon points="8,2.2 9.5,6.1 13.7,6.2 10.3,8.7 11.5,12.8 8,10.3 4.5,12.8 5.7,8.7 2.3,6.2 6.5,6.1" fill="#e31837"/><circle cx="8" cy="8.2" r="2.1" fill="#007a87"/>`;
+  } else if (b.includes("united")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#003b7a"/><path d="M2.2 12.2h11.6v1.6H2.2z" fill="#e31837"/><text x="8" y="11" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="9.5" fill="#fff">U</text>`;
+  } else if (b.includes("liberty")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#0c2340"/><path d="M2 11.8h12v1.8H2z" fill="#e4002b"/><text x="8" y="10.8" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="9.5" fill="#facc15">L</text>`;
+  } else if (b.includes("mobil")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#fff"/><circle cx="12.2" cy="4.2" r="1.6" fill="#ee1c25"/><text x="7.6" y="11.5" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="9.8" fill="#0055a5">M</text>`;
+  } else if (b.includes("pearl")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#0d9488"/><circle cx="8" cy="8" r="3.8" fill="#fff"/><circle cx="7" cy="7" r="1.2" fill="#99f6e4"/>`;
+  } else if (b.includes("vibe")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#f97316"/><text x="8" y="11.6" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="10" fill="#fff">V</text>`;
+  } else if (b.includes("speedway")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#dc2626"/><text x="8" y="11.6" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="10" fill="#fff">S</text>`;
+  } else if (b.includes("enhance")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#6d28d9"/><text x="8" y="11.6" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="10" fill="#4ade80">E</text>`;
+  } else if (b.includes("budget")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#1d4ed8"/><text x="8" y="11.6" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="10" fill="#facc15">B</text>`;
+  } else if (b.includes("lowes")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#166534"/><text x="8" y="11.6" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="10" fill="#eab308">L</text>`;
+  } else if (b.includes("astron")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#1e3a8a"/><text x="8" y="11.6" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="10" fill="#fbbf24">A</text>`;
+  } else if (b.includes("tas petroleum")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#0f766e"/><text x="8" y="10.8" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="7.4" fill="#fff">TP</text>`;
+  } else if (b.includes("ior")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#ea580c"/><text x="8" y="11.6" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="10" fill="#0f172a">I</text>`;
+  } else if (b.includes("atlas")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#1d4ed8"/><text x="8" y="11.6" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="10" fill="#fbbf24">A</text>`;
+  } else if (b.includes("u-go") || b === "ugo") {
+    inner = `<circle cx="8" cy="8" r="8" fill="#16a34a"/><text x="8" y="11.5" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="9.8" fill="#fff">U</text>`;
+  } else if (b.includes("costco")) {
+    inner = `<circle cx="8" cy="8" r="8" fill="#fff"/><path d="M2.5 11.8h11v1.4h-11z" fill="#005daa"/><text x="8" y="10.9" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="9.6" fill="#e31837">C</text>`;
+  } else {
+    const words = raw.split(/[\s/-]+/).filter(Boolean);
+    const mono = (words.length >= 2 ? words[0][0] + words[1][0] : raw.slice(0, 2)).toUpperCase();
+    const fs = mono.length > 1 ? "7.4" : "9.8";
+    inner = `<circle cx="8" cy="8" r="8" fill="#475569"/><text x="8" y="11" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="${fs}" fill="#f8fafc">${escapeHtml(mono)}</text>`;
+  }
+
+  return `<span class="pill-brand" title="${escapeHtml(raw || "Independent")}"><svg viewBox="0 0 16 16" aria-hidden="true">${inner}</svg></span>`;
+}
+
 function isFullyInView(lat, lon) {
   if (!map) return true;
   const cont = map.getContainer();
   const w = cont.clientWidth;
   const h = cont.clientHeight;
   const pt = map.project([lon, lat]);
-  const padX = Math.min(46, Math.floor(w * 0.15));
+  const padX = Math.min(54, Math.floor(w * 0.16));
   const padTop = Math.min(50, Math.floor(h * 0.16));
   const padBottom = Math.min(26, Math.floor(h * 0.1));
   return pt.x >= padX && pt.x <= w - padX && pt.y >= padTop && pt.y <= h - padBottom;
@@ -114,12 +175,16 @@ function tryPlacePillBox(pt, placed, halfW, halfH) {
   return true;
 }
 
-function addPillMarker(station, idStr, label, col, zIndex, isBest, active, popupHtml) {
+function addPillMarker(station, idStr, label, col, zIndex, isBest, active, popupHtml, brandHtml = "") {
   const el = document.createElement("div");
   el.className = `price-pill${isBest ? " cheapest" : ""}${active ? " active" : ""}`;
   el.style.background = col;
   el.style.zIndex = String(zIndex);
-  el.textContent = label;
+  if (brandHtml) {
+    el.innerHTML = `${brandHtml}<span class="pill-txt">${escapeHtml(label)}</span>`;
+  } else {
+    el.textContent = label;
+  }
   el.addEventListener("click", (ev) => {
     ev.stopPropagation();
     state.selectedId = idStr;
@@ -527,7 +592,7 @@ function fuelPopupHtml(s) {
   return `
     <div class="popup-box">
       <div class="popup-title">${escapeHtml(s.name)}</div>
-      <div class="popup-meta">${escapeHtml(s.brand || "Fuel")} · ${escapeHtml(s.sa2_name || s.lga_name || "NSW")}${escapeHtml(distStr)}</div>
+      <div class="popup-meta"><span class="brand-inline">${fuelBrandBadgeSvg(s.brand)}<span>${escapeHtml(s.brand || "Fuel")} · ${escapeHtml(s.sa2_name || s.lga_name || "NSW")}${escapeHtml(distStr)}</span></span></div>
       <div class="popup-addr">${escapeHtml(s.addr)}</div>
       ${rows ? `<table class="popup-table"><thead><tr><th>Fuel</th><th>Price</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
       <div class="popup-actions">
@@ -646,8 +711,8 @@ function renderFuelView(bounds, zoom) {
   `;
 
   const maxPills = zoom >= 12.5 ? 160 : 75;
-  const halfW = zoom >= 12.5 ? 24 : 28;
-  const halfH = zoom >= 12.5 ? 9 : 11;
+  const halfW = zoom >= 12.5 ? 32 : 36;
+  const halfH = zoom >= 12.5 ? 11 : 13;
   const placed = [];
   const dotFeatures = [];
   const activeIdx = toPlot.findIndex((item) => item.s.code === state.selectedId);
@@ -669,7 +734,8 @@ function renderFuelView(bounds, zoom) {
       isCheapest ? 2500 : 2000,
       isCheapest,
       active,
-      fuelPopupHtml(item.s)
+      fuelPopupHtml(item.s),
+      fuelBrandBadgeSvg(item.s.brand)
     );
   }
 
@@ -688,7 +754,8 @@ function renderFuelView(bounds, zoom) {
         1000 - i,
         false,
         false,
-        fuelPopupHtml(item.s)
+        fuelPopupHtml(item.s),
+        fuelBrandBadgeSvg(item.s.brand)
       );
     } else {
       dotFeatures.push({
@@ -716,7 +783,7 @@ function renderFuelView(bounds, zoom) {
       return `
         <button type="button" class="station-card${item.s.code === state.selectedId ? " active" : ""}" data-id="${escapeHtml(item.s.code)}">
           <div class="card-top">
-            <span>${escapeHtml(item.s.brand || "Fuel")} · ${escapeHtml(item.s.lga_name || "NSW")}</span>
+            <span class="brand-inline">${fuelBrandBadgeSvg(item.s.brand)}<span>${escapeHtml(item.s.brand || "Fuel")} · ${escapeHtml(item.s.lga_name || "NSW")}</span></span>
             <span class="card-price" style="color:${col}">${item.price.toFixed(1)}¢${escapeHtml(tag)}</span>
           </div>
           <div class="card-title">${escapeHtml(item.s.name)}</div>
