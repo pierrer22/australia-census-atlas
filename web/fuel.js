@@ -142,7 +142,7 @@ const BRAND_ICON_RULES = [
   ["enhance", "icons/enhance.png"],
   ["budget", "icons/budget.png"],
   ["lowes", "icons/lowes.png"],
-  ["astron", "icons/astron.png"],
+  ["astron", "icons/astron.png?v=2"],
   ["tas petroleum", "icons/tas-pet.png"],
   ["ior", "icons/ior.png"],
   ["atlas", "icons/atlas.png"],
@@ -157,6 +157,7 @@ const INDEPENDENT_NAME_RULES = [
   [/\bmedco\b/i, "Medco", "icons/medco.png"],
   [/\btemco\b/i, "TEMCO Petroleum", "icons/temco.png"],
   [/\bap\b/i, "AP", "icons/ap.png"],
+  [/jack\s*&\s*co\s+lane\s+cove/i, "Caltex", "icons/caltex.png"],
 ];
 
 function fuelBrandBadgeSvg(brand, name = "") {
