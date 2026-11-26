@@ -751,4 +751,33 @@ body {
   .map-legend {
     display: none;
   }
+
+  .maplibregl-popup-content {
+    padding: 7px 9px;
+  }
+
+  .popup-box {
+    min-width: 170px;
+    max-width: 215px;
+  }
+
+  .popup-title {
+    font-size: 0.78rem;
+  }
+
+  .popup-meta,
+  .popup-addr {
+    font-size: 0.66rem;
+    margin-bottom: 4px;
+  }
+
+  .popup-table {
+    font-size: 0.67rem;
+    margin-bottom: 5px;
+  }
+
+  .dir-link {
+    padding: 3px 7px;
+    font-size: 0.68rem;
+  }
 }

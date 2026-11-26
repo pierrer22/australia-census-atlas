@@ -107,7 +107,11 @@ function openStationPopup(station, html) {
   if (!map || !station) return;
   closeHoverPopup();
   if (activePopup) activePopup.remove();
-  const popup = new maplibregl.Popup({ maxWidth: "290px", offset: 14 })
+  const isMobile = window.innerWidth <= 820;
+  const popup = new maplibregl.Popup({
+    maxWidth: isMobile ? "220px" : "290px",
+    offset: isMobile ? 10 : 14,
+  })
     .setLngLat([station.lon, station.lat])
     .setHTML(html)
     .addTo(map);
@@ -115,6 +119,24 @@ function openStationPopup(station, html) {
     if (activePopup === popup) activePopup = null;
   });
   activePopup = popup;
+
+  requestAnimationFrame(() => {
+    const el = popup.getElement();
+    const cont = map?.getContainer();
+    if (!el || !cont) return;
+    const pr = el.getBoundingClientRect();
+    const mr = cont.getBoundingClientRect();
+    const pad = 10;
+    let dx = 0;
+    let dy = 0;
+    if (pr.left < mr.left + pad) dx = pr.left - (mr.left + pad);
+    else if (pr.right > mr.right - pad) dx = pr.right - (mr.right - pad);
+    if (pr.top < mr.top + pad) dy = pr.top - (mr.top + pad);
+    else if (pr.bottom > mr.bottom - pad) dy = pr.bottom - (mr.bottom - pad);
+    if (dx !== 0 || dy !== 0) {
+      map.panBy([dx, dy], { duration: 200 });
+    }
+  });
 }
 
 const BRAND_ICON_RULES = [
