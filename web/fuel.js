@@ -131,6 +131,27 @@ function addPillMarker(station, idStr, label, col, zIndex, isBest, active, popup
   pillMarkers.push(marker);
 }
 
+function orderPillCandidates(items, skipSet) {
+  const cont = map.getContainer();
+  const w = Math.max(1, cont.clientWidth);
+  const h = Math.max(1, cont.clientHeight);
+  const cx = w / 2;
+  const cy = h / 2;
+  const desktop = window.innerWidth > 820;
+  const total = Math.max(1, items.length);
+  const candidates = [];
+  for (let i = 0; i < items.length; i++) {
+    if (skipSet.has(i)) continue;
+    const pt = map.project([items[i].s.lon, items[i].s.lat]);
+    const score = desktop
+      ? Math.hypot((pt.x - cx) / (w * 0.5), (pt.y - cy) / (h * 0.5)) + 0.2 * (i / total)
+      : i;
+    candidates.push({ idx: i, pt, score });
+  }
+  if (desktop) candidates.sort((a, b) => a.score - b.score);
+  return candidates;
+}
+
 function escapeHtml(str) {
   return String(str ?? "").replace(/[&<>"']/g, (ch) => ({
     "&": "&amp;",
@@ -635,19 +656,17 @@ function renderFuelView(bounds, zoom) {
     );
   }
 
-  for (let i = 0; i < toPlot.length; i++) {
-    const item = toPlot[i];
+  for (const { idx, pt } of orderPillCandidates(toPlot, new Set(priorityIdxs))) {
+    const item = toPlot[idx];
     const col = fuelColor(item.price, colorStats);
     stationById.set(item.s.code, item.s);
-    if (i === cheapestIdx || i === activeIdx) continue;
-    const pt = map.project([item.s.lon, item.s.lat]);
     if (pillMarkers.length < maxPills && tryPlacePillBox(pt, placed, halfW, halfH)) {
       addPillMarker(
         item.s,
         item.s.code,
         `${item.price.toFixed(1)}¢`,
         col,
-        1000 - i,
+        1000 - idx,
         false,
         false,
         fuelPopupHtml(item.s)
@@ -792,15 +811,13 @@ function renderEvView(bounds, zoom) {
     );
   }
 
-  for (let i = 0; i < inView.length; i++) {
-    const item = inView[i];
+  for (const { idx, pt } of orderPillCandidates(inView, new Set(priorityIdxs))) {
+    const item = inView[idx];
     const idStr = String(item.s.id);
     const col = evColorFor(item);
     stationById.set(idStr, item.s);
-    if (i === bestIdx || i === activeIdx) continue;
-    const pt = map.project([item.s.lon, item.s.lat]);
     if (pillMarkers.length < maxPills && tryPlacePillBox(pt, placed, halfW, halfH)) {
-      addPillMarker(item.s, idStr, evLabelFor(item), col, 1000 - i, false, false, evPopupHtml(item.s));
+      addPillMarker(item.s, idStr, evLabelFor(item), col, 1000 - idx, false, false, evPopupHtml(item.s));
     } else {
       dotFeatures.push({
         type: "Feature",
