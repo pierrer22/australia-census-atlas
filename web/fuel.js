@@ -136,6 +136,8 @@ const BRAND_ICON_RULES = [
   ["vibe", "icons/vibe.png"],
   ["speedway", "icons/speedway.png"],
   ["apex", "icons/apex.png"],
+  ["medco", "icons/medco.png"],
+  ["temco", "icons/temco.png"],
   ["powerfuel", "icons/powerfuel.png"],
   ["enhance", "icons/enhance.png"],
   ["budget", "icons/budget.png"],
@@ -150,6 +152,13 @@ const BRAND_ICON_RULES = [
   ["costco", "icons/costco.png"],
 ];
 
+const INDEPENDENT_NAME_RULES = [
+  [/\bapex\b/i, "Apex Petroleum", "icons/apex.png"],
+  [/\bmedco\b/i, "Medco", "icons/medco.png"],
+  [/\btemco\b/i, "TEMCO Petroleum", "icons/temco.png"],
+  [/\bap\b/i, "AP", "icons/ap.png"],
+];
+
 function fuelBrandBadgeSvg(brand, name = "") {
   const raw = String(brand || "").trim();
   const b = raw.toLowerCase();
@@ -159,9 +168,17 @@ function fuelBrandBadgeSvg(brand, name = "") {
       return `<span class="pill-brand" title="${escapeHtml(raw)}"><img src="${src}" alt="" loading="lazy" /></span>`;
     }
   }
+  if (b === "ap" || b === "ap petroleum") {
+    return `<span class="pill-brand" title="${escapeHtml(raw)}"><img src="icons/ap.png" alt="" loading="lazy" /></span>`;
+  }
 
-  if ((!b || b === "independent") && /\bapex\b/i.test(String(name || ""))) {
-    return `<span class="pill-brand" title="Apex Petroleum"><img src="icons/apex.png" alt="" loading="lazy" /></span>`;
+  if (!b || b === "independent") {
+    const stName = String(name || "");
+    for (const [re, label, src] of INDEPENDENT_NAME_RULES) {
+      if (re.test(stName)) {
+        return `<span class="pill-brand" title="${label}"><img src="${src}" alt="" loading="lazy" /></span>`;
+      }
+    }
   }
 
   let inner = "";
