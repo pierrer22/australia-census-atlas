@@ -125,8 +125,8 @@ const BRAND_ICON_RULES = [
   ["bp", "icons/bp.png"],
   ["7-eleven", "icons/7eleven.png"],
   ["7 eleven", "icons/7eleven.png"],
-  ["reddy", "icons/reddy.png"],
-  ["coles express", "icons/reddy.png"],
+  ["reddy", "icons/shell.png"],
+  ["coles express", "icons/shell.png"],
   ["metro", "icons/metro.png"],
   ["shell", "icons/shell.png"],
   ["caltex", "icons/caltex.png"],
@@ -135,7 +135,8 @@ const BRAND_ICON_RULES = [
   ["mobil", "icons/mobil.png"],
   ["pearl", "icons/pearl.png"],
   ["vibe", "icons/vibe.png"],
-  ["speedway", "icons/speedway.jpg"],
+  ["speedway", "icons/speedway.png"],
+  ["apex", "icons/apex.png"],
   ["enhance", "icons/enhance.png"],
   ["budget", "icons/budget.png"],
   ["lowes", "icons/lowes.png"],
@@ -149,7 +150,7 @@ const BRAND_ICON_RULES = [
   ["costco", "icons/costco.png"],
 ];
 
-function fuelBrandBadgeSvg(brand) {
+function fuelBrandBadgeSvg(brand, name = "") {
   const raw = String(brand || "").trim();
   const b = raw.toLowerCase();
 
@@ -159,9 +160,13 @@ function fuelBrandBadgeSvg(brand) {
     }
   }
 
+  if ((!b || b === "independent") && /\bapex\b/i.test(String(name || ""))) {
+    return `<span class="pill-brand" title="Apex Petroleum"><img src="icons/apex.png" alt="" loading="lazy" /></span>`;
+  }
+
   let inner = "";
   if (!b || b === "independent") {
-    inner = `<circle cx="8" cy="8" r="8" fill="#334155"/><path d="M8 3.2C8 3.2 4.8 7.1 4.8 9.4a3.2 3.2 0 0 0 6.4 0C11.2 7.1 8 3.2 8 3.2z" fill="#f8fafc"/>`;
+    inner = `<circle cx="8" cy="8" r="8" fill="#334155"/><path d="M4.5 13V4.5A1.2 1.2 0 0 1 5.7 3.3h3.6a1.2 1.2 0 0 1 1.2 1.2V13H4.5zm1.2-8.2v2.7h3.6V4.8H5.7zm5.4 1.2l1.3 1.3v3.9a.8.8 0 0 1-1.6 0V9.1h-.5V8.1h.8a.5.5 0 0 1 .5.5v2.6a.2.2 0 0 0 .4 0V7.7l-1-.9V6z" fill="#f8fafc"/>`;
   } else {
     const words = raw.split(/[\s/-]+/).filter(Boolean);
     const mono = (words.length >= 2 ? words[0][0] + words[1][0] : raw.slice(0, 2)).toUpperCase();
@@ -621,7 +626,7 @@ function fuelPopupHtml(s) {
   return `
     <div class="popup-box">
       <div class="popup-title">${escapeHtml(s.name)}</div>
-      <div class="popup-meta"><span class="brand-inline">${fuelBrandBadgeSvg(s.brand)}<span>${escapeHtml(s.brand || "Fuel")} · ${escapeHtml(s.sa2_name || s.lga_name || "NSW")}${escapeHtml(distStr)}</span></span></div>
+      <div class="popup-meta"><span class="brand-inline">${fuelBrandBadgeSvg(s.brand, s.name)}<span>${escapeHtml(s.brand || "Fuel")} · ${escapeHtml(s.sa2_name || s.lga_name || "NSW")}${escapeHtml(distStr)}</span></span></div>
       <div class="popup-addr">${escapeHtml(s.addr)}</div>
       ${rows ? `<table class="popup-table"><thead><tr><th>Fuel</th><th>Price</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
       <div class="popup-actions">
@@ -765,7 +770,7 @@ function renderFuelView(bounds, zoom) {
       isCheapest,
       active,
       fuelPopupHtml(item.s),
-      fuelBrandBadgeSvg(item.s.brand)
+      fuelBrandBadgeSvg(item.s.brand, item.s.name)
     );
   }
 
@@ -785,7 +790,7 @@ function renderFuelView(bounds, zoom) {
         false,
         false,
         fuelPopupHtml(item.s),
-        fuelBrandBadgeSvg(item.s.brand)
+        fuelBrandBadgeSvg(item.s.brand, item.s.name)
       );
     } else {
       dotFeatures.push({
@@ -813,7 +818,7 @@ function renderFuelView(bounds, zoom) {
       return `
         <button type="button" class="station-card${item.s.code === state.selectedId ? " active" : ""}" data-id="${escapeHtml(item.s.code)}">
           <div class="card-top">
-            <span class="brand-inline">${fuelBrandBadgeSvg(item.s.brand)}<span>${escapeHtml(item.s.brand || "Fuel")} · ${escapeHtml(item.s.lga_name || "NSW")}</span></span>
+            <span class="brand-inline">${fuelBrandBadgeSvg(item.s.brand, item.s.name)}<span>${escapeHtml(item.s.brand || "Fuel")} · ${escapeHtml(item.s.lga_name || "NSW")}</span></span>
             <span class="card-price" style="color:${col}">${item.price.toFixed(1)}¢${escapeHtml(tag)}</span>
           </div>
           <div class="card-title">${escapeHtml(item.s.name)}</div>
