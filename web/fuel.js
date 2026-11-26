@@ -1257,6 +1257,11 @@ async function init() {
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
 
+  map.on("load", () => map.resize());
+  if (typeof ResizeObserver !== "undefined") {
+    new ResizeObserver(() => map.resize()).observe(map.getContainer());
+  }
+
   map.on("style.load", () => {
     enhanceDarkReadability();
     ensureDotLayer();
