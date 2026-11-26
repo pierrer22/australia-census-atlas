@@ -771,16 +771,25 @@ function renderFuelView(bounds, zoom) {
   const placed = [];
   const dotFeatures = [];
   const activeIdx = toPlot.findIndex((item) => item.s.code === state.selectedId);
+  const tiedCheapest = [];
+  for (let i = 0; i < toPlot.length; i++) {
+    if (i === cheapestIdx || (Math.abs(toPlot[i].price - lo) < 0.05 && isFullyInView(toPlot[i].s.lat, toPlot[i].s.lon))) {
+      tiedCheapest.push(i);
+    }
+  }
+  const tiedSet = new Set(tiedCheapest);
   const priorityIdxs = activeIdx >= 0 && activeIdx !== cheapestIdx ? [cheapestIdx, activeIdx] : [cheapestIdx];
+  const priorityPlaced = new Set();
 
   for (const idx of priorityIdxs) {
     const item = toPlot[idx];
-    const isCheapest = idx === cheapestIdx;
+    const isCheapest = tiedSet.has(idx);
     const active = idx === activeIdx;
     const col = fuelColor(item.price, colorStats);
     stationById.set(item.s.code, item.s);
     const pt = map.project([item.s.lon, item.s.lat]);
     placed.push([pt.x - halfW, pt.y - halfH, pt.x + halfW, pt.y + halfH]);
+    priorityPlaced.add(idx);
     addPillMarker(
       item.s,
       item.s.code,
@@ -794,9 +803,32 @@ function renderFuelView(bounds, zoom) {
     );
   }
 
+  for (const idx of tiedCheapest) {
+    if (priorityPlaced.has(idx)) continue;
+    const item = toPlot[idx];
+    const col = fuelColor(item.price, colorStats);
+    stationById.set(item.s.code, item.s);
+    const pt = map.project([item.s.lon, item.s.lat]);
+    if (tryPlacePillBox(pt, placed, halfW, halfH)) {
+      priorityPlaced.add(idx);
+      priorityIdxs.push(idx);
+      addPillMarker(
+        item.s,
+        item.s.code,
+        `★ ${item.price.toFixed(1)}¢`,
+        col,
+        2500,
+        true,
+        false,
+        fuelPopupHtml(item.s),
+        fuelBrandBadgeSvg(item.s.brand, item.s.name)
+      );
+    }
+  }
+
   const pillIdxs = selectPillIndices(toPlot, priorityIdxs, placed, halfW, halfH, maxPills);
   for (let i = 0; i < toPlot.length; i++) {
-    if (i === cheapestIdx || i === activeIdx) continue;
+    if (priorityPlaced.has(i)) continue;
     const item = toPlot[i];
     const col = fuelColor(item.price, colorStats);
     stationById.set(item.s.code, item.s);
@@ -929,17 +961,31 @@ function renderEvView(bounds, zoom) {
       : `${Math.round(item.val)}kW`;
 
   const activeIdx = inView.findIndex((item) => String(item.s.id) === String(state.selectedId));
+  const bestVal = inView[bestIdx].val;
+  const tiedBest = [];
+  if (state.evTab === "ev_price") {
+    for (let i = 0; i < inView.length; i++) {
+      if (i === bestIdx || (Math.abs(inView[i].val - bestVal) < 0.005 && isFullyInView(inView[i].s.lat, inView[i].s.lon))) {
+        tiedBest.push(i);
+      }
+    }
+  } else {
+    tiedBest.push(bestIdx);
+  }
+  const tiedBestSet = new Set(tiedBest);
   const priorityIdxs = activeIdx >= 0 && activeIdx !== bestIdx ? [bestIdx, activeIdx] : [bestIdx];
+  const priorityPlaced = new Set();
 
   for (const idx of priorityIdxs) {
     const item = inView[idx];
     const idStr = String(item.s.id);
-    const isBest = idx === bestIdx;
+    const isBest = tiedBestSet.has(idx);
     const active = idx === activeIdx;
     const col = evColorFor(item);
     stationById.set(idStr, item.s);
     const pt = map.project([item.s.lon, item.s.lat]);
     placed.push([pt.x - halfW, pt.y - halfH, pt.x + halfW, pt.y + halfH]);
+    priorityPlaced.add(idx);
     addPillMarker(
       item.s,
       idStr,
@@ -952,9 +998,23 @@ function renderEvView(bounds, zoom) {
     );
   }
 
+  for (const idx of tiedBest) {
+    if (priorityPlaced.has(idx)) continue;
+    const item = inView[idx];
+    const idStr = String(item.s.id);
+    const col = evColorFor(item);
+    stationById.set(idStr, item.s);
+    const pt = map.project([item.s.lon, item.s.lat]);
+    if (tryPlacePillBox(pt, placed, halfW, halfH)) {
+      priorityPlaced.add(idx);
+      priorityIdxs.push(idx);
+      addPillMarker(item.s, idStr, `★ ${evLabelFor(item)}`, col, 2500, true, false, evPopupHtml(item.s));
+    }
+  }
+
   const pillIdxs = selectPillIndices(inView, priorityIdxs, placed, halfW, halfH, maxPills);
   for (let i = 0; i < inView.length; i++) {
-    if (i === bestIdx || i === activeIdx) continue;
+    if (priorityPlaced.has(i)) continue;
     const item = inView[i];
     const idStr = String(item.s.id);
     const col = evColorFor(item);
