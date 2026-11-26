@@ -137,6 +137,7 @@ const BRAND_ICON_RULES = [
   ["vibe", "icons/vibe.png"],
   ["speedway", "icons/speedway.png"],
   ["apex", "icons/apex.png"],
+  ["powerfuel", "icons/powerfuel.png"],
   ["enhance", "icons/enhance.png"],
   ["budget", "icons/budget.png"],
   ["lowes", "icons/lowes.png"],
