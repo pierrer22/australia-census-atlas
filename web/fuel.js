@@ -793,7 +793,7 @@ function renderFuelView(bounds, zoom) {
     addPillMarker(
       item.s,
       item.s.code,
-      `${isCheapest ? "★ " : ""}${item.price.toFixed(1)}¢`,
+      `${isCheapest ? "★ " : ""}${item.price.toFixed(1)}`,
       col,
       isCheapest ? 2500 : 2000,
       isCheapest,
@@ -815,7 +815,7 @@ function renderFuelView(bounds, zoom) {
       addPillMarker(
         item.s,
         item.s.code,
-        `★ ${item.price.toFixed(1)}¢`,
+        `★ ${item.price.toFixed(1)}`,
         col,
         2500,
         true,
@@ -836,7 +836,7 @@ function renderFuelView(bounds, zoom) {
       addPillMarker(
         item.s,
         item.s.code,
-        `${item.price.toFixed(1)}¢`,
+        `${item.price.toFixed(1)}`,
         col,
         1000 - i,
         false,
