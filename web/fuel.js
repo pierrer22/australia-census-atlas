@@ -494,7 +494,7 @@ function setTileTheme(theme) {
   const nextStyle = theme === "dark" ? STYLE_DARK : STYLE_LIGHT;
   if (nextStyle !== currentStyleUrl) {
     currentStyleUrl = nextStyle;
-    map.setStyle(nextStyle);
+    map.setStyle(nextStyle, { diff: false });
   }
 }
 
