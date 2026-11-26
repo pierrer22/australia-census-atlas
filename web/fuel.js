@@ -136,6 +136,7 @@ const BRAND_ICON_RULES = [
   ["pearl", "icons/pearl.png"],
   ["vibe", "icons/vibe.png"],
   ["speedway", "icons/speedway.jpg"],
+  ["enhance", "icons/enhance.png"],
   ["budget", "icons/budget.png"],
   ["lowes", "icons/lowes.png"],
   ["astron", "icons/astron.png"],
@@ -161,8 +162,6 @@ function fuelBrandBadgeSvg(brand) {
   let inner = "";
   if (!b || b === "independent") {
     inner = `<circle cx="8" cy="8" r="8" fill="#334155"/><path d="M8 3.2C8 3.2 4.8 7.1 4.8 9.4a3.2 3.2 0 0 0 6.4 0C11.2 7.1 8 3.2 8 3.2z" fill="#f8fafc"/>`;
-  } else if (b.includes("enhance")) {
-    inner = `<circle cx="8" cy="8" r="8" fill="#6d28d9"/><text x="8" y="11.6" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="10" fill="#4ade80">E</text>`;
   } else {
     const words = raw.split(/[\s/-]+/).filter(Boolean);
     const mono = (words.length >= 2 ? words[0][0] + words[1][0] : raw.slice(0, 2)).toUpperCase();
