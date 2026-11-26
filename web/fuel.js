@@ -101,6 +101,36 @@ function isFullyInView(lat, lon) {
   return pt.x >= padX && pt.x <= w - padX && pt.y >= padTop && pt.y <= h - padBottom;
 }
 
+function tryPlacePillBox(pt, placed, halfW, halfH) {
+  const x0 = pt.x - halfW;
+  const y0 = pt.y - halfH;
+  const x1 = pt.x + halfW;
+  const y1 = pt.y + halfH;
+  for (const b of placed) {
+    if (x0 < b[2] && x1 > b[0] && y0 < b[3] && y1 > b[1]) return false;
+  }
+  placed.push([x0, y0, x1, y1]);
+  return true;
+}
+
+function addPillMarker(station, idStr, label, col, zIndex, isBest, active, popupHtml) {
+  const el = document.createElement("div");
+  el.className = `price-pill${isBest ? " cheapest" : ""}${active ? " active" : ""}`;
+  el.style.background = col;
+  el.style.zIndex = String(zIndex);
+  el.textContent = label;
+  el.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    state.selectedId = idStr;
+    highlightListSelection();
+    openStationPopup(station, popupHtml);
+  });
+  const marker = new maplibregl.Marker({ element: el, anchor: "center" })
+    .setLngLat([station.lon, station.lat])
+    .addTo(map);
+  pillMarkers.push(marker);
+}
+
 function escapeHtml(str) {
   return String(str ?? "").replace(/[&<>"']/g, (ch) => ({
     "&": "&amp;",
@@ -577,31 +607,51 @@ function renderFuelView(bounds, zoom) {
     <div class="kpi-box"><div class="k">Highest</div><div class="v mono" style="color:#dc2626">${hiMax.toFixed(1)}¢</div></div>
   `;
 
-  const usePills = zoom >= 11 && inView.length <= 180;
+  const maxPills = zoom >= 12.5 ? 160 : 75;
+  const halfW = zoom >= 12.5 ? 24 : 28;
+  const halfH = zoom >= 12.5 ? 9 : 11;
+  const placed = [];
   const dotFeatures = [];
-  for (let i = toPlot.length - 1; i >= 0; i--) {
+  const activeIdx = toPlot.findIndex((item) => item.s.code === state.selectedId);
+  const priorityIdxs = activeIdx >= 0 && activeIdx !== cheapestIdx ? [cheapestIdx, activeIdx] : [cheapestIdx];
+
+  for (const idx of priorityIdxs) {
+    const item = toPlot[idx];
+    const isCheapest = idx === cheapestIdx;
+    const active = idx === activeIdx;
+    const col = fuelColor(item.price, colorStats);
+    stationById.set(item.s.code, item.s);
+    const pt = map.project([item.s.lon, item.s.lat]);
+    placed.push([pt.x - halfW, pt.y - halfH, pt.x + halfW, pt.y + halfH]);
+    addPillMarker(
+      item.s,
+      item.s.code,
+      `${isCheapest ? "★ " : ""}${item.price.toFixed(1)}¢`,
+      col,
+      isCheapest ? 2500 : 2000,
+      isCheapest,
+      active,
+      fuelPopupHtml(item.s)
+    );
+  }
+
+  for (let i = 0; i < toPlot.length; i++) {
     const item = toPlot[i];
     const col = fuelColor(item.price, colorStats);
-    const active = item.s.code === state.selectedId;
-    const isCheapest = i === cheapestIdx;
     stationById.set(item.s.code, item.s);
-
-    if (usePills || active || isCheapest) {
-      const el = document.createElement("div");
-      el.className = `price-pill${isCheapest ? " cheapest" : ""}${active ? " active" : ""}`;
-      el.style.background = col;
-      el.style.zIndex = String(isCheapest ? 2500 : active ? 2000 : 1000 - i);
-      el.textContent = `${isCheapest ? "★ " : ""}${item.price.toFixed(1)}¢`;
-      el.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        state.selectedId = item.s.code;
-        highlightListSelection();
-        openStationPopup(item.s, fuelPopupHtml(item.s));
-      });
-      const marker = new maplibregl.Marker({ element: el, anchor: "center" })
-        .setLngLat([item.s.lon, item.s.lat])
-        .addTo(map);
-      pillMarkers.push(marker);
+    if (i === cheapestIdx || i === activeIdx) continue;
+    const pt = map.project([item.s.lon, item.s.lat]);
+    if (pillMarkers.length < maxPills && tryPlacePillBox(pt, placed, halfW, halfH)) {
+      addPillMarker(
+        item.s,
+        item.s.code,
+        `${item.price.toFixed(1)}¢`,
+        col,
+        1000 - i,
+        false,
+        false,
+        fuelPopupHtml(item.s)
+      );
     } else {
       dotFeatures.push({
         type: "Feature",
@@ -706,40 +756,51 @@ function renderEvView(bounds, zoom) {
     <div class="kpi-box"><div class="k">Cheapest</div><div class="v mono" style="color:#15803d">${escapeHtml(cheapest)}</div></div>
   `;
 
-  const usePills = zoom >= 9 && inView.length <= 150;
+  const maxPills = zoom >= 12.5 ? 160 : 75;
+  const halfW = zoom >= 12.5 ? 24 : 28;
+  const halfH = zoom >= 12.5 ? 9 : 11;
+  const placed = [];
   const dotFeatures = [];
-  for (let i = inView.length - 1; i >= 0; i--) {
-    const item = inView[i];
-    const col =
-      state.evTab === "ev_price"
-        ? fuelColor(item.val, evColorStats)
-        : evPowerColor(item.val);
+  const evColorFor = (item) =>
+    state.evTab === "ev_price" ? fuelColor(item.val, evColorStats) : evPowerColor(item.val);
+  const evLabelFor = (item) =>
+    state.evTab === "ev_price"
+      ? (item.val === 0 ? "Free" : `$${item.val.toFixed(2)}`)
+      : `${Math.round(item.val)}kW`;
+
+  const activeIdx = inView.findIndex((item) => String(item.s.id) === String(state.selectedId));
+  const priorityIdxs = activeIdx >= 0 && activeIdx !== bestIdx ? [bestIdx, activeIdx] : [bestIdx];
+
+  for (const idx of priorityIdxs) {
+    const item = inView[idx];
     const idStr = String(item.s.id);
-    const active = idStr === String(state.selectedId);
-    const isBest = i === bestIdx;
+    const isBest = idx === bestIdx;
+    const active = idx === activeIdx;
+    const col = evColorFor(item);
     stationById.set(idStr, item.s);
+    const pt = map.project([item.s.lon, item.s.lat]);
+    placed.push([pt.x - halfW, pt.y - halfH, pt.x + halfW, pt.y + halfH]);
+    addPillMarker(
+      item.s,
+      idStr,
+      `${isBest ? "★ " : ""}${evLabelFor(item)}`,
+      col,
+      isBest ? 2500 : 2000,
+      isBest,
+      active,
+      evPopupHtml(item.s)
+    );
+  }
 
-    const pillTxt =
-      state.evTab === "ev_price"
-        ? (item.val === 0 ? "Free" : `$${item.val.toFixed(2)}`)
-        : `${Math.round(item.val)}kW`;
-
-    if (usePills || active || isBest) {
-      const el = document.createElement("div");
-      el.className = `price-pill${isBest ? " cheapest" : ""}${active ? " active" : ""}`;
-      el.style.background = col;
-      el.style.zIndex = String(isBest ? 2500 : active ? 2000 : 1000 - i);
-      el.textContent = `${isBest ? "★ " : ""}${pillTxt}`;
-      el.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        state.selectedId = idStr;
-        highlightListSelection();
-        openStationPopup(item.s, evPopupHtml(item.s));
-      });
-      const marker = new maplibregl.Marker({ element: el, anchor: "center" })
-        .setLngLat([item.s.lon, item.s.lat])
-        .addTo(map);
-      pillMarkers.push(marker);
+  for (let i = 0; i < inView.length; i++) {
+    const item = inView[i];
+    const idStr = String(item.s.id);
+    const col = evColorFor(item);
+    stationById.set(idStr, item.s);
+    if (i === bestIdx || i === activeIdx) continue;
+    const pt = map.project([item.s.lon, item.s.lat]);
+    if (pillMarkers.length < maxPills && tryPlacePillBox(pt, placed, halfW, halfH)) {
+      addPillMarker(item.s, idStr, evLabelFor(item), col, 1000 - i, false, false, evPopupHtml(item.s));
     } else {
       dotFeatures.push({
         type: "Feature",
