@@ -373,10 +373,12 @@ body {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.14);
 }
 
-.pill-brand svg {
+.pill-brand svg,
+.pill-brand img {
   width: 15px;
   height: 15px;
   display: block;
+  object-fit: contain;
 }
 
 .brand-inline {
