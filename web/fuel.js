@@ -118,9 +118,8 @@ function openStationPopup(station, html) {
 }
 
 const BRAND_ICON_RULES = [
-  ["eg ampol", "icons/eg-ampol.png"],
-  ["u-go", "icons/u-go.png"],
-  ["ugo", "icons/u-go.png"],
+  ["u-go", "icons/u-go.png?v=2"],
+  ["ugo", "icons/u-go.png?v=2"],
   ["ampol", "icons/ampol.png"],
   ["bp", "icons/bp.png"],
   ["7-eleven", "icons/7eleven.png"],
