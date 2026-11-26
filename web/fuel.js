@@ -225,6 +225,7 @@ function addPillMarker(station, idStr, label, col, zIndex, isBest, active, popup
   const el = document.createElement("div");
   el.className = `price-pill${isBest ? " cheapest" : ""}${active ? " active" : ""}`;
   el.style.background = col;
+  el.style.setProperty("--pill-c", col);
   el.style.zIndex = String(zIndex);
   if (brandHtml) {
     el.innerHTML = `${brandHtml}<span class="pill-txt">${escapeHtml(label)}</span>`;
