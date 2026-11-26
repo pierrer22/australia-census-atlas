@@ -45,7 +45,7 @@ const CITIES = [
 ];
 
 const STYLE_LIGHT = "https://tiles.openfreemap.org/styles/liberty";
-const STYLE_DARK = "https://tiles.openfreemap.org/styles/dark";
+const STYLE_DARK = "https://tiles.openfreemap.org/styles/fiord";
 
 const FUEL_STOPS = [
   [21, 128, 61],
@@ -975,6 +975,32 @@ async function loadEvData() {
   return data;
 }
 
+function enhanceDarkReadability() {
+  if (!map || currentStyleUrl !== STYLE_DARK) return;
+  const layers = map.getStyle()?.layers || [];
+  for (const layer of layers) {
+    const id = layer.id || "";
+    try {
+      if (id === "background") {
+        map.setPaintProperty(id, "background-color", "#1e2736");
+      } else if (id === "water") {
+        map.setPaintProperty(id, "fill-color", "#131b26");
+      } else if (id.includes("highway_motorway_inner") || id.includes("highway_major_inner")) {
+        map.setPaintProperty(id, "line-color", "#475569");
+      } else if (id.includes("highway_motorway_casing") || id.includes("highway_major_casing")) {
+        map.setPaintProperty(id, "line-color", "#64748b");
+      } else if (id === "highway_minor") {
+        map.setPaintProperty(id, "line-color", "#3b475a");
+      } else if (layer.type === "symbol" && (id.startsWith("place_") || id.startsWith("highway_name"))) {
+        const isCity = id.startsWith("place_city") || id.startsWith("place_town") || id.startsWith("place_village");
+        map.setPaintProperty(id, "text-color", isCity ? "#e2e8f0" : "#cbd5e1");
+        map.setPaintProperty(id, "text-halo-color", "rgba(15, 23, 42, 0.9)");
+        map.setPaintProperty(id, "text-halo-width", 1.4);
+      }
+    } catch (_) {}
+  }
+}
+
 async function init() {
   parseHash();
   const initialTheme = localStorage.getItem("atlas-theme") || "light";
@@ -989,6 +1015,7 @@ async function init() {
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
 
   map.on("style.load", () => {
+    enhanceDarkReadability();
     ensureDotLayer();
     if (state.fuelData || state.evData) renderView();
   });
