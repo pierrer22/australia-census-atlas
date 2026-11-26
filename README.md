@@ -19,7 +19,7 @@ Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G
   - `Housing & Income`: Household Income, Personal Income, Weekly Rent, Rental Affordability (SGS RAI 2025 Q2 across all 6 layers), Monthly Mortgage, Household Size, Owner-Occupiers (%), Renters (%), and Social Housing (%).
   - `Demographics`: Median Age, Born Overseas (%), Religion (% Affiliated, excluding Not Stated), Education (% Uni Degree + hover qualification breakdown table), Citizenship (% Aus Citizen), and Population Density.
   - `Elections & Crime`: `2025 Winner` & `2025 ALP 2PP` (`Federal`), `State Winner` (`State Seats`), and `Crime Rate` (`LGA` layer — 12-month rate across 278 LGAs in NSW, VIC, QLD, and NT, ranked within state due to differing police offence definitions and population bases).
-  - `NSW Fuel`: `E10 / U91` (cheapest of either), `E10`, `Unleaded 91`, `Premium 95`, `Premium 98`, `All Diesel` (cheapest of Diesel or Prem Diesel), `Diesel`, `Prem Diesel`, and `LPG` (auto-zooms to Sydney on `Suburbs (SA2)` with `LGA` also supported — NSW zones shaded by cheapest FuelCheck station with per-zone cheapest price labels, overlaid with **2,390** station pins and cheapest-station dossier rankings, refreshed twice daily via GitHub Actions).
+  - `NSW Fuel`: `E10 / U91` (cheapest of either), `E10`, `Unleaded 91`, `Premium 95`, `Premium 98`, `All Diesel` (cheapest of Diesel or Prem Diesel), `Diesel`, `Prem Diesel`, and `LPG` (auto-zooms to Sydney on `Suburbs (SA2)` with `LGA` also supported — NSW/ACT/TAS/WA zones shaded by cheapest station with per-zone cheapest price labels, overlaid with **3,689+** station pins and cheapest-station dossier rankings, refreshed twice daily via GitHub Actions; QLD, VIC, and SA activate automatically when API tokens are configured).
   - `EV Fast Charging`: `All Fast (50+ kW)`, `Ultra-Fast (150+ kW)`, `CCS2`, `CHAdeMO`, `Tesla`, and `By Price ($/kWh)` (`Suburbs (SA2)` & `LGA` layers — Australia-wide DC fast chargers rated 50 kW+ from Open Charge Map with power rating, connector breakdown, listed $/kWh/Free tariffs, zone badges, and top-station dossier rankings).
 - **Standalone Street-Level Fuel & EV Finder ([`web/fuel.html`](web/fuel.html)):** Dedicated mobile-friendly MapLibre GL + OpenFreeMap vector map sharing `nsw_fuel_prices.json` and `au_ev_chargers.json` with `Near Me` GPS sorting, station search, viewport-scaled price/power map pills, and one-tap native Google Maps directions.
 - **Recent Crime & Neighbourhood Watch Incident Pins:** Toggleable map pins (`Incident Pins` or auto-enabled on `Crime Rate`) combining:
@@ -51,7 +51,7 @@ python3 scripts/build_census_data.py
 python3 scripts/build_geo_centroids.py
 python3 scripts/build_rai_data.py
 python3 scripts/fetch_recent_incidents.py
-python3 scripts/fetch_nsw_fuel.py   # requires NSW_FUEL_API_KEY & NSW_FUEL_API_SECRET
+python3 scripts/fetch_nsw_fuel.py   # requires NSW_FUEL_API_KEY & NSW_FUEL_API_SECRET; optional QLD_FUEL_TOKEN, VIC_FUEL_CONSUMER_ID, SA_FUEL_TOKEN
 python3 scripts/fetch_ev_chargers.py
 python3 scripts/validate_site.py
 ```
@@ -68,7 +68,7 @@ python3 scripts/validate_site.py
 - State/Territory Legislative Assembly & House of Assembly election results (NSW 2023, VIC 2022, QLD 2024, WA 2025, SA 2026, NT 2024, TAS 2025)
 - State/Territory Crime Data: NSW BOCSAR, Crime Statistics Agency Victoria (CSA), Queensland Police Service (QPS), NT Police, and South Australia Police (SAPOL via Data.SA)
 - Live & Recent Incident Feeds: QPS Online Crime Map Open Data API (LGAs & Neighbourhood Watch areas), myPolice QLD RSS, Tasmania Police Media Releases RSS, NT Police (PFES) Newsroom RSS, and OpenStreetMap Nominatim geocoding
-- Fuel Prices: NSW Government FuelCheck v2 API (`api.nsw.gov.au`, NSW/TAS) & WA FuelWatch (`fuelwatch.wa.gov.au`)
+- Fuel Prices: NSW Government FuelCheck v2 API (`api.nsw.gov.au`, NSW/ACT/TAS), WA FuelWatch (`fuelwatch.wa.gov.au`), plus optional official fetchers for QLD Fuel Prices (`fuelpricesqld.com.au`), Service Victoria Servo Saver (`api.fuel.service.vic.gov.au`, 24h delayed), and SA Fuel Pricing Information Scheme (NT MyFuel has no public developer REST API)
 - EV Fast Charging: Open Charge Map (`ocm-export`, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/))
 - Rental Affordability Index (RAI, 2025 Q2): SGS Economics & Planning via National Housing Data Exchange (AHDAP)
 

@@ -25,11 +25,14 @@ jobs:
       - name: Refresh recent police & SA crime pins
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: python3 scripts/fetch_recent_incidents.py
-      - name: Refresh NSW FuelCheck prices
+      - name: Refresh Australian fuel prices
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         env:
           NSW_FUEL_API_KEY: ${{ secrets.NSW_FUEL_API_KEY }}
           NSW_FUEL_API_SECRET: ${{ secrets.NSW_FUEL_API_SECRET }}
+          QLD_FUEL_TOKEN: ${{ secrets.QLD_FUEL_TOKEN }}
+          VIC_FUEL_CONSUMER_ID: ${{ secrets.VIC_FUEL_CONSUMER_ID }}
+          SA_FUEL_TOKEN: ${{ secrets.SA_FUEL_TOKEN }}
         run: python3 scripts/fetch_nsw_fuel.py
       - name: Refresh Australia EV fast chargers
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -37,6 +40,7 @@ jobs:
       - name: Validate JS & datasets
         run: |
           node --check web/app.js
+          node --check web/fuel.js
           python3 scripts/validate_site.py
       - name: Setup Pages
         uses: actions/configure-pages@v5

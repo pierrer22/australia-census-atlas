@@ -3382,7 +3382,22 @@ function renderFuelPanel(feat, p) {
 
   let scoped = allWithFuel;
   let noteHtml = "";
-  const fuelStates = ["New South Wales", "Tasmania", "Western Australia"];
+  const STATE_CODE_NAMES = {
+    NSW: "New South Wales",
+    ACT: "Australian Capital Territory",
+    VIC: "Victoria",
+    QLD: "Queensland",
+    SA: "South Australia",
+    WA: "Western Australia",
+    TAS: "Tasmania",
+    NT: "Northern Territory",
+  };
+  const activeStateCodes = state.fuelData?.states?.length ? state.fuelData.states : ["NSW", "ACT", "TAS", "WA"];
+  const fuelStates = activeStateCodes.map((s) => STATE_CODE_NAMES[s]).filter(Boolean);
+  const formattedStates =
+    activeStateCodes.length > 1
+      ? `${activeStateCodes.slice(0, -1).join(", ")} &amp; ${activeStateCodes[activeStateCodes.length - 1]}`
+      : activeStateCodes[0] || "NSW";
   const isFuelScoped = (state.layerKey === "lga" || state.layerKey === "sa2") && feat && fuelStates.includes(p.ste_name);
   const scopeLabel = state.layerKey === "sa2" ? "suburb" : "LGA";
 
@@ -3391,7 +3406,7 @@ function renderFuelPanel(feat, p) {
     scoped = allWithFuel.filter((s) => s[field] === p.code);
     badgeEl.textContent = `${scoped.length} stations in ${scopeLabel}`;
   } else if (feat && !fuelStates.includes(p.ste_name)) {
-    noteHtml = `<div class="inc-note">Live fuel prices cover NSW, TAS &amp; WA — select any NSW/TAS/WA suburb or LGA to filter locally. Cheapest overall:</div>`;
+    noteHtml = `<div class="inc-note">Live fuel prices cover ${formattedStates} — select any ${activeStateCodes.join("/")} suburb or LGA to filter locally. Cheapest overall:</div>`;
     badgeEl.textContent = `${allWithFuel.length.toLocaleString()} stations`;
   } else if (currentTransform.k >= 4) {
     const inView = visibleFuelStations();

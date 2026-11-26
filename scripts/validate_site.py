@@ -180,14 +180,20 @@ def main() -> int:
             errors.append(f"recent_incidents.json invalid category on {pin.get('id')}: {pin.get('cat')}")
             break
 
-    # Regression guard: NSW FuelCheck prices
+    # Regression guard: Fuel prices (NSW/ACT/TAS/WA + optional QLD/VIC/SA)
     fuel_data = load_json(WEB_DATA / "nsw_fuel_prices.json")
     fuel_stations = fuel_data.get("stations", [])
     fuel_stats = fuel_data.get("stats", {})
+    fuel_states = fuel_data.get("states")
+    if not isinstance(fuel_states, list) or not {"NSW", "ACT", "TAS", "WA"}.issubset(set(fuel_states)):
+        errors.append(f"nsw_fuel_prices.json missing required states list (got {fuel_states})")
     if len(fuel_stations) < 1500:
         errors.append(f"nsw_fuel_prices.json only has {len(fuel_stations)} stations (< 1500)")
+    act_count = sum(1 for st in fuel_stations if str(st.get("lga_code", "")).startswith("8"))
     tas_count = sum(1 for st in fuel_stations if st.get("lat", 0) < -39.0)
     wa_count = sum(1 for st in fuel_stations if st.get("lon", 0) < 130.0)
+    if act_count < 40:
+        errors.append(f"nsw_fuel_prices.json only has {act_count} ACT stations (< 40)")
     if tas_count < 100:
         errors.append(f"nsw_fuel_prices.json only has {tas_count} TAS stations (< 100)")
     if wa_count < 500:

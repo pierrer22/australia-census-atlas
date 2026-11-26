@@ -33,15 +33,16 @@ const EV_TABS = [
 ];
 
 const CITIES = [
-  { name: "Sydney", lat: -33.8688, lon: 151.12, zoom: 11 },
-  { name: "Newcastle", lat: -32.9283, lon: 151.7817, zoom: 11 },
-  { name: "Wollongong", lat: -34.4278, lon: 150.8931, zoom: 11 },
-  { name: "Hobart", lat: -42.8821, lon: 147.3272, zoom: 11 },
-  { name: "Perth", lat: -31.9505, lon: 115.8605, zoom: 11 },
-  { name: "Canberra", lat: -35.2809, lon: 149.13, zoom: 11 },
-  { name: "Melbourne", lat: -37.8136, lon: 144.9631, zoom: 11, evDefault: true },
-  { name: "Brisbane", lat: -27.4698, lon: 153.0251, zoom: 11, evDefault: true },
-  { name: "Adelaide", lat: -34.9285, lon: 138.6007, zoom: 11, evDefault: true },
+  { name: "Sydney", state: "NSW", lat: -33.8688, lon: 151.12, zoom: 11 },
+  { name: "Newcastle", state: "NSW", lat: -32.9283, lon: 151.7817, zoom: 11 },
+  { name: "Wollongong", state: "NSW", lat: -34.4278, lon: 150.8931, zoom: 11 },
+  { name: "Hobart", state: "TAS", lat: -42.8821, lon: 147.3272, zoom: 11 },
+  { name: "Perth", state: "WA", lat: -31.9505, lon: 115.8605, zoom: 11 },
+  { name: "Canberra", state: "ACT", lat: -35.2809, lon: 149.13, zoom: 11 },
+  { name: "Melbourne", state: "VIC", lat: -37.8136, lon: 144.9631, zoom: 11 },
+  { name: "Brisbane", state: "QLD", lat: -27.4698, lon: 153.0251, zoom: 11 },
+  { name: "Adelaide", state: "SA", lat: -34.9285, lon: 138.6007, zoom: 11 },
+  { name: "Darwin", state: "NT", lat: -12.4634, lon: 130.8456, zoom: 11 },
 ];
 
 const STYLE_LIGHT = "https://tiles.openfreemap.org/styles/liberty";
@@ -382,7 +383,8 @@ function buildCityJumps() {
     btn.addEventListener("click", async () => {
       state.activeCity = c.name;
       wrap.querySelectorAll(".city-btn").forEach((b) => b.classList.toggle("active", b.textContent === c.name));
-      if (c.evDefault && state.mode === "fuel") {
+      const activeFuelStates = state.fuelData?.states?.length ? state.fuelData.states : ["NSW", "ACT", "TAS", "WA"];
+      if (state.mode === "fuel" && !activeFuelStates.includes(c.state)) {
         await setMode("ev");
       }
       map.flyTo({ center: [c.lon, c.lat], zoom: c.zoom, duration: 600 });
@@ -443,11 +445,14 @@ async function setMode(nextMode) {
 
 function updateSubtitle() {
   const el = document.getElementById("fuel-subtitle");
+  const states = state.fuelData?.states?.length ? state.fuelData.states : ["NSW", "ACT", "TAS", "WA"];
+  const fuelBtn = document.querySelector('#mode-switch .mode-btn[data-mode="fuel"]');
+  if (fuelBtn) fuelBtn.textContent = `Fuel (${states.join("/")})`;
   if (state.mode === "fuel") {
     const d = state.fuelData;
     el.textContent = d
-      ? `FuelCheck (NSW/TAS) + FuelWatch (WA) · ${d.station_count.toLocaleString()} stations · Updated ${d.generated_at.slice(0, 10)}`
-      : "Loading FuelCheck & WA FuelWatch…";
+      ? `Live Fuel (${states.join("/")}) · ${d.station_count.toLocaleString()} stations · Updated ${d.generated_at.slice(0, 10)}`
+      : "Loading live Australian fuel prices…";
   } else {
     const d = state.evData;
     el.textContent = d
