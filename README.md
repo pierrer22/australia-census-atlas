@@ -7,6 +7,7 @@
 Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G01`, `G02`, `G09`, `G14`, `G37`, `G49`) with **2025 AEC Federal** and **410 State/Territory** election results across six geographic layers.
 
 ![Australia Census & Election Atlas](docs/preview.png)
+![Fuel & EV Fast Charger Finder](docs/preview2.png)
 
 ## Features
 
