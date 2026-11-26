@@ -1,6 +1,7 @@
 # Australia Census & Election Atlas
 
-**Live Demo:** https://pierrer22.github.io/australia-census-atlas/ · **Street-Level Fuel & EV Finder:** https://pierrer22.github.io/australia-census-atlas/fuel.html
+**Live Demo:** https://pierrer22.github.io/australia-census-atlas/ · 
+**Street-Level Fuel & EV Finder:** https://pierrer22.github.io/australia-census-atlas/fuel.html
 
 Interactive choropleth atlas of Australia combining **ABS 2021 Census** data (`G01`, `G02`, `G09`, `G14`, `G37`, `G49`) with **2025 AEC Federal** and **410 State/Territory** election results across six geographic layers.
 
