@@ -138,6 +138,7 @@ const BRAND_ICON_RULES = [
   ["apex", "icons/apex.png"],
   ["medco", "icons/medco.png"],
   ["temco", "icons/temco.png"],
+  ["24xpress", "icons/24xpress.png"],
   ["powerfuel", "icons/powerfuel.png"],
   ["enhance", "icons/enhance.png"],
   ["budget", "icons/budget.png"],
@@ -157,6 +158,7 @@ const INDEPENDENT_NAME_RULES = [
   [/\bmedco\b/i, "Medco", "icons/medco.png"],
   [/\btemco\b/i, "TEMCO Petroleum", "icons/temco.png"],
   [/\bap\b/i, "AP", "icons/ap.png"],
+  [/24\s*xpress/i, "24Xpress", "icons/24xpress.png"],
   [/jack\s*&\s*co\s+lane\s+cove/i, "Caltex", "icons/caltex.png"],
 ];
 
