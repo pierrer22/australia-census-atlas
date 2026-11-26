@@ -1289,10 +1289,28 @@ async function init() {
     e.preventDefault();
     const { lat, lon } = link.dataset;
     const webUrl = link.getAttribute("href");
+    let appOpened = false;
+    const cancel = () => {
+      appOpened = true;
+      clearTimeout(fallbackTimer);
+      cleanup();
+    };
+    const onVisibility = () => {
+      if (document.hidden) cancel();
+    };
+    const cleanup = () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", cancel);
+      window.removeEventListener("blur", cancel);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", cancel);
+    window.addEventListener("blur", cancel);
+    const fallbackTimer = setTimeout(() => {
+      cleanup();
+      if (!appOpened && !document.hidden && document.hasFocus()) window.location.href = webUrl;
+    }, 2500);
     window.location.href = `comgooglemaps://?daddr=${lat},${lon}&directionsmode=driving`;
-    setTimeout(() => {
-      if (!document.hidden) window.location.href = webUrl;
-    }, 700);
   });
 
   await loadFuelData();
