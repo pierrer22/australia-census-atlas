@@ -33,16 +33,19 @@ const EV_TABS = [
 ];
 
 const CITIES = [
-  { name: "Sydney", lat: -33.8688, lon: 151.12, zoom: 12 },
-  { name: "Newcastle", lat: -32.9283, lon: 151.7817, zoom: 12 },
-  { name: "Wollongong", lat: -34.4278, lon: 150.8931, zoom: 12 },
-  { name: "Hobart", lat: -42.8821, lon: 147.3272, zoom: 12 },
-  { name: "Perth", lat: -31.9505, lon: 115.8605, zoom: 12 },
-  { name: "Canberra", lat: -35.2809, lon: 149.13, zoom: 12 },
-  { name: "Melbourne", lat: -37.8136, lon: 144.9631, zoom: 12, evDefault: true },
-  { name: "Brisbane", lat: -27.4698, lon: 153.0251, zoom: 12, evDefault: true },
-  { name: "Adelaide", lat: -34.9285, lon: 138.6007, zoom: 12, evDefault: true },
+  { name: "Sydney", lat: -33.8688, lon: 151.12, zoom: 11 },
+  { name: "Newcastle", lat: -32.9283, lon: 151.7817, zoom: 11 },
+  { name: "Wollongong", lat: -34.4278, lon: 150.8931, zoom: 11 },
+  { name: "Hobart", lat: -42.8821, lon: 147.3272, zoom: 11 },
+  { name: "Perth", lat: -31.9505, lon: 115.8605, zoom: 11 },
+  { name: "Canberra", lat: -35.2809, lon: 149.13, zoom: 11 },
+  { name: "Melbourne", lat: -37.8136, lon: 144.9631, zoom: 11, evDefault: true },
+  { name: "Brisbane", lat: -27.4698, lon: 153.0251, zoom: 11, evDefault: true },
+  { name: "Adelaide", lat: -34.9285, lon: 138.6007, zoom: 11, evDefault: true },
 ];
+
+const STYLE_LIGHT = "https://tiles.openfreemap.org/styles/liberty";
+const STYLE_DARK = "https://tiles.openfreemap.org/styles/dark";
 
 const FUEL_STOPS = [
   [21, 128, 61],
@@ -70,29 +73,32 @@ const state = {
 };
 
 let map;
-let tileLayer;
-let markersLayer;
-let userLayer;
+let currentStyleUrl = "";
+let pillMarkers = [];
+let userMarker = null;
 let activePopup = null;
-let markerById = new Map();
+let stationById = new Map();
 let renderRaf = null;
 
 function openStationPopup(station, html) {
   if (!map || !station) return;
-  activePopup = L.popup({ maxWidth: 290, autoPanPadding: [20, 20] })
-    .setLatLng([station.lat, station.lon])
-    .setContent(html)
-    .openOn(map);
+  if (activePopup) activePopup.remove();
+  activePopup = new maplibregl.Popup({ maxWidth: "290px", offset: 14 })
+    .setLngLat([station.lon, station.lat])
+    .setHTML(html)
+    .addTo(map);
 }
 
 function isFullyInView(lat, lon) {
   if (!map) return true;
-  const size = map.getSize();
-  const pt = map.latLngToContainerPoint([lat, lon]);
-  const padX = Math.min(46, Math.floor(size.x * 0.15));
-  const padTop = Math.min(50, Math.floor(size.y * 0.16));
-  const padBottom = Math.min(26, Math.floor(size.y * 0.1));
-  return pt.x >= padX && pt.x <= size.x - padX && pt.y >= padTop && pt.y <= size.y - padBottom;
+  const cont = map.getContainer();
+  const w = cont.clientWidth;
+  const h = cont.clientHeight;
+  const pt = map.project([lon, lat]);
+  const padX = Math.min(46, Math.floor(w * 0.15));
+  const padTop = Math.min(50, Math.floor(h * 0.16));
+  const padBottom = Math.min(26, Math.floor(h * 0.1));
+  return pt.x >= padX && pt.x <= w - padX && pt.y >= padTop && pt.y <= h - padBottom;
 }
 
 function escapeHtml(str) {
@@ -257,12 +263,33 @@ function syncHash() {
   }
 }
 
-function setTileTheme() {
-  if (!map || tileLayer) return;
-  tileLayer = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  }).addTo(map);
+function ensureDotLayer() {
+  if (!map || !map.isStyleLoaded() || map.getSource("stations-dots")) return;
+  map.addSource("stations-dots", {
+    type: "geojson",
+    data: { type: "FeatureCollection", features: [] },
+  });
+  map.addLayer({
+    id: "stations-dots-layer",
+    type: "circle",
+    source: "stations-dots",
+    paint: {
+      "circle-radius": ["get", "r"],
+      "circle-color": ["get", "color"],
+      "circle-stroke-color": "#ffffff",
+      "circle-stroke-width": 1.4,
+      "circle-opacity": 0.92,
+    },
+  });
+}
+
+function setTileTheme(theme) {
+  if (!map) return;
+  const nextStyle = theme === "dark" ? STYLE_DARK : STYLE_LIGHT;
+  if (nextStyle !== currentStyleUrl) {
+    currentStyleUrl = nextStyle;
+    map.setStyle(nextStyle);
+  }
 }
 
 function initTheme() {
@@ -295,7 +322,7 @@ function buildCityJumps() {
       if (c.evDefault && state.mode === "fuel") {
         await setMode("ev");
       }
-      map.flyTo([c.lat, c.lon], c.zoom, { duration: 0.6 });
+      map.flyTo({ center: [c.lon, c.lat], zoom: c.zoom, duration: 600 });
     });
     wrap.appendChild(btn);
   }
@@ -315,6 +342,10 @@ function buildSubTabs() {
       if (state.mode === "fuel") state.fuelTab = t.code;
       else state.evTab = t.code;
       state.selectedId = null;
+      if (activePopup) {
+        activePopup.remove();
+        activePopup = null;
+      }
       buildSubTabs();
       renderLegend();
       renderView();
@@ -328,6 +359,10 @@ async function setMode(nextMode) {
   if (state.mode === nextMode) return;
   state.mode = nextMode;
   state.selectedId = null;
+  if (activePopup) {
+    activePopup.remove();
+    activePopup = null;
+  }
   document.querySelectorAll("#mode-switch .mode-btn").forEach((b) => {
     const active = b.dataset.mode === nextMode;
     b.classList.toggle("active", active);
@@ -465,10 +500,17 @@ function scheduleRender() {
   });
 }
 
+function clearMarkers() {
+  for (const m of pillMarkers) m.remove();
+  pillMarkers = [];
+  stationById.clear();
+  const src = map?.getSource("stations-dots");
+  if (src) src.setData({ type: "FeatureCollection", features: [] });
+}
+
 function renderView() {
-  if (!map || !markersLayer) return;
-  markersLayer.clearLayers();
-  markerById.clear();
+  if (!map) return;
+  clearMarkers();
 
   const bounds = map.getBounds();
   const zoom = map.getZoom();
@@ -501,7 +543,7 @@ function renderFuelView(bounds, zoom) {
   for (const s of state.fuelData.stations) {
     const entry = stationFuelEntry(s, cfg.code);
     if (!entry) continue;
-    if (bounds.contains([s.lat, s.lon])) {
+    if (bounds.contains([s.lon, s.lat])) {
       inView.push({ s, price: entry.price, fuelType: entry.fuelType });
     }
   }
@@ -535,40 +577,42 @@ function renderFuelView(bounds, zoom) {
     <div class="kpi-box"><div class="k">Highest</div><div class="v mono" style="color:#dc2626">${hiMax.toFixed(1)}¢</div></div>
   `;
 
-  const usePills = zoom >= 12 && inView.length <= 180;
+  const usePills = zoom >= 11 && inView.length <= 180;
+  const dotFeatures = [];
   for (let i = toPlot.length - 1; i >= 0; i--) {
     const item = toPlot[i];
     const col = fuelColor(item.price, colorStats);
     const active = item.s.code === state.selectedId;
     const isCheapest = i === cheapestIdx;
-    let marker;
+    stationById.set(item.s.code, item.s);
+
     if (usePills || active || isCheapest) {
-      const label = `${isCheapest ? "★ " : ""}${item.price.toFixed(1)}¢`;
-      marker = L.marker([item.s.lat, item.s.lon], {
-        zIndexOffset: isCheapest ? 2500 : active ? 2000 : 1000 - i,
-        icon: L.divIcon({
-          className: "price-pill-icon",
-          html: `<span class="price-pill${isCheapest ? " cheapest" : ""}${active ? " active" : ""}" style="background:${col}">${label}</span>`,
-          iconSize: [0, 0],
-        }),
+      const el = document.createElement("div");
+      el.className = `price-pill${isCheapest ? " cheapest" : ""}${active ? " active" : ""}`;
+      el.style.background = col;
+      el.style.zIndex = String(isCheapest ? 2500 : active ? 2000 : 1000 - i);
+      el.textContent = `${isCheapest ? "★ " : ""}${item.price.toFixed(1)}¢`;
+      el.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        state.selectedId = item.s.code;
+        highlightListSelection();
+        openStationPopup(item.s, fuelPopupHtml(item.s));
       });
+      const marker = new maplibregl.Marker({ element: el, anchor: "center" })
+        .setLngLat([item.s.lon, item.s.lat])
+        .addTo(map);
+      pillMarkers.push(marker);
     } else {
-      marker = L.circleMarker([item.s.lat, item.s.lon], {
-        radius: 5.5,
-        color: "#ffffff",
-        weight: 1.2,
-        fillColor: col,
-        fillOpacity: 0.92,
+      dotFeatures.push({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [item.s.lon, item.s.lat] },
+        properties: { id: item.s.code, r: 5.5, color: col },
       });
     }
-    marker.on("click", () => {
-      state.selectedId = item.s.code;
-      highlightListSelection();
-      openStationPopup(item.s, fuelPopupHtml(item.s));
-    });
-    marker.addTo(markersLayer);
-    markerById.set(item.s.code, { marker, item });
   }
+
+  const src = map.getSource("stations-dots");
+  if (src) src.setData({ type: "FeatureCollection", features: dotFeatures });
 
   const listItems = [...inView];
   if (state.sort === "nearest" && state.userLatLon) {
@@ -616,7 +660,7 @@ function renderEvView(bounds, zoom) {
   for (const s of state.evData.stations) {
     const val = evStationValue(s, state.evTab);
     if (val == null) continue;
-    if (bounds.contains([s.lat, s.lon])) {
+    if (bounds.contains([s.lon, s.lat])) {
       inView.push({ s, val });
     }
   }
@@ -662,47 +706,51 @@ function renderEvView(bounds, zoom) {
     <div class="kpi-box"><div class="k">Cheapest</div><div class="v mono" style="color:#15803d">${escapeHtml(cheapest)}</div></div>
   `;
 
-  const usePills = zoom >= 10 && inView.length <= 150;
+  const usePills = zoom >= 9 && inView.length <= 150;
+  const dotFeatures = [];
   for (let i = inView.length - 1; i >= 0; i--) {
     const item = inView[i];
     const col =
       state.evTab === "ev_price"
         ? fuelColor(item.val, evColorStats)
         : evPowerColor(item.val);
-    const active = String(item.s.id) === String(state.selectedId);
+    const idStr = String(item.s.id);
+    const active = idStr === String(state.selectedId);
     const isBest = i === bestIdx;
+    stationById.set(idStr, item.s);
+
     const pillTxt =
       state.evTab === "ev_price"
         ? (item.val === 0 ? "Free" : `$${item.val.toFixed(2)}`)
         : `${Math.round(item.val)}kW`;
 
-    let marker;
     if (usePills || active || isBest) {
-      marker = L.marker([item.s.lat, item.s.lon], {
-        zIndexOffset: isBest ? 2500 : active ? 2000 : 1000 - i,
-        icon: L.divIcon({
-          className: "price-pill-icon",
-          html: `<span class="price-pill${isBest ? " cheapest" : ""}${active ? " active" : ""}" style="background:${col}">${isBest ? "★ " : ""}${pillTxt}</span>`,
-          iconSize: [0, 0],
-        }),
+      const el = document.createElement("div");
+      el.className = `price-pill${isBest ? " cheapest" : ""}${active ? " active" : ""}`;
+      el.style.background = col;
+      el.style.zIndex = String(isBest ? 2500 : active ? 2000 : 1000 - i);
+      el.textContent = `${isBest ? "★ " : ""}${pillTxt}`;
+      el.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        state.selectedId = idStr;
+        highlightListSelection();
+        openStationPopup(item.s, evPopupHtml(item.s));
       });
+      const marker = new maplibregl.Marker({ element: el, anchor: "center" })
+        .setLngLat([item.s.lon, item.s.lat])
+        .addTo(map);
+      pillMarkers.push(marker);
     } else {
-      marker = L.circleMarker([item.s.lat, item.s.lon], {
-        radius: item.s.max_kw >= 150 ? 6 : 4.8,
-        color: "#ffffff",
-        weight: 1.2,
-        fillColor: col,
-        fillOpacity: 0.92,
+      dotFeatures.push({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [item.s.lon, item.s.lat] },
+        properties: { id: idStr, r: item.s.max_kw >= 150 ? 6 : 4.8, color: col },
       });
     }
-    marker.on("click", () => {
-      state.selectedId = String(item.s.id);
-      highlightListSelection();
-      openStationPopup(item.s, evPopupHtml(item.s));
-    });
-    marker.addTo(markersLayer);
-    markerById.set(String(item.s.id), { marker, item });
   }
+
+  const src = map.getSource("stations-dots");
+  if (src) src.setData({ type: "FeatureCollection", features: dotFeatures });
 
   const listItems = [...inView];
   if (state.sort === "nearest" && state.userLatLon) {
@@ -738,12 +786,11 @@ function attachListHandlers(listEl) {
   listEl.querySelectorAll(".station-card").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = btn.dataset.id;
-      const hit = markerById.get(id);
-      if (!hit) return;
-      const st = hit.item.s;
+      const st = stationById.get(id);
+      if (!st) return;
       state.selectedId = id;
       highlightListSelection();
-      map.panTo([st.lat, st.lon], { animate: true });
+      map.easeTo({ center: [st.lon, st.lat], duration: 350 });
       openStationPopup(st, state.mode === "fuel" ? fuelPopupHtml(st) : evPopupHtml(st));
       if (window.innerWidth <= 820) {
         document.getElementById("map")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -806,7 +853,7 @@ function initSearch() {
         results.hidden = true;
         input.value = st.name;
         state.selectedId = String(st.code || st.id);
-        map.setView([st.lat, st.lon], 14);
+        map.jumpTo({ center: [st.lon, st.lat], zoom: 13.5 });
         openStationPopup(st, state.mode === "fuel" ? fuelPopupHtml(st) : evPopupHtml(st));
       });
     });
@@ -830,20 +877,17 @@ function locateUser() {
       state.userLatLon = [latitude, longitude];
       btn.textContent = "Near Me";
       btn.classList.add("active");
-      userLayer.clearLayers();
-      L.circleMarker([latitude, longitude], {
-        radius: 8,
-        color: "#ffffff",
-        weight: 2.5,
-        fillColor: "#2563eb",
-        fillOpacity: 1,
-      })
-        .bindPopup("Your location")
-        .addTo(userLayer);
+      if (userMarker) userMarker.remove();
+      const dotEl = document.createElement("div");
+      dotEl.className = "user-gps-dot";
+      dotEl.title = "Your location";
+      userMarker = new maplibregl.Marker({ element: dotEl, anchor: "center" })
+        .setLngLat([longitude, latitude])
+        .addTo(map);
       updateDistances();
       state.sort = "nearest";
       document.getElementById("sort-select").value = "nearest";
-      map.flyTo([latitude, longitude], 13, { duration: 0.6 });
+      map.flyTo({ center: [longitude, latitude], zoom: 12.2, duration: 600 });
     },
     () => {
       btn.textContent = "GPS Denied";
@@ -872,9 +916,39 @@ async function loadEvData() {
 
 async function init() {
   parseHash();
-  map = L.map("map", { zoomControl: true }).setView([-33.8688, 151.12], 12);
-  markersLayer = L.layerGroup().addTo(map);
-  userLayer = L.layerGroup().addTo(map);
+  const initialTheme = localStorage.getItem("atlas-theme") || "light";
+  currentStyleUrl = initialTheme === "dark" ? STYLE_DARK : STYLE_LIGHT;
+
+  map = new maplibregl.Map({
+    container: "map",
+    style: currentStyleUrl,
+    center: [151.12, -33.8688],
+    zoom: 11.2,
+  });
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+
+  map.on("style.load", () => {
+    ensureDotLayer();
+    if (state.fuelData || state.evData) renderView();
+  });
+
+  map.on("click", "stations-dots-layer", (e) => {
+    const f = e.features && e.features[0];
+    if (!f) return;
+    const id = String(f.properties.id);
+    const st = stationById.get(id);
+    if (!st) return;
+    state.selectedId = id;
+    highlightListSelection();
+    openStationPopup(st, state.mode === "fuel" ? fuelPopupHtml(st) : evPopupHtml(st));
+  });
+  map.on("mouseenter", "stations-dots-layer", () => {
+    map.getCanvas().style.cursor = "pointer";
+  });
+  map.on("mouseleave", "stations-dots-layer", () => {
+    map.getCanvas().style.cursor = "";
+  });
+
   initTheme();
   buildCityJumps();
 
@@ -898,7 +972,8 @@ async function init() {
     }
   });
 
-  map.on("moveend zoomend", scheduleRender);
+  map.on("moveend", scheduleRender);
+  map.on("zoomend", scheduleRender);
 
   document.addEventListener("click", (e) => {
     const link = e.target.closest('.dir-link[data-ios-maps="1"]');
@@ -916,6 +991,7 @@ async function init() {
   if (state.mode === "ev") await loadEvData();
   updateSubtitle();
   renderLegend();
+  ensureDotLayer();
   renderView();
   syncHash();
 }
