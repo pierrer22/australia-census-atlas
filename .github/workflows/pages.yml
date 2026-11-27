@@ -3,8 +3,6 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: ["main"]
-  schedule:
-    - cron: "0 8,20 * * *"
   workflow_dispatch:
 
 permissions:
@@ -22,21 +20,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Refresh recent police & SA crime pins
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        run: python3 scripts/fetch_recent_incidents.py
-      - name: Refresh Australian fuel prices
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        env:
-          NSW_FUEL_API_KEY: ${{ secrets.NSW_FUEL_API_KEY }}
-          NSW_FUEL_API_SECRET: ${{ secrets.NSW_FUEL_API_SECRET }}
-          QLD_FUEL_TOKEN: ${{ secrets.QLD_FUEL_TOKEN }}
-          VIC_FUEL_CONSUMER_ID: ${{ secrets.VIC_FUEL_CONSUMER_ID }}
-          SA_FUEL_TOKEN: ${{ secrets.SA_FUEL_TOKEN }}
-        run: python3 scripts/fetch_nsw_fuel.py
-      - name: Refresh Australia EV fast chargers
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        run: python3 scripts/fetch_ev_chargers.py
+      - name: Overlay latest scheduled API data (if available)
+        run: |
+          if git fetch --depth=1 origin live-data 2>/dev/null; then
+            git checkout FETCH_HEAD -- \
+              web/data/recent_incidents.json \
+              web/data/nsw_fuel_prices.json \
+              web/data/au_ev_chargers.json
+            echo "Overlaid latest live-data snapshot."
+          else
+            echo "No live-data branch yet; using committed snapshots."
+          fi
       - name: Validate JS & datasets
         run: |
           node --check web/app.js

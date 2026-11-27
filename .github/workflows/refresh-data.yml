@@ -1,0 +1,72 @@
+name: Refresh Live API Data
+
+on:
+  schedule:
+    - cron: "0 8,20 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Refresh recent police & SA crime pins
+        run: python3 scripts/fetch_recent_incidents.py
+      - name: Refresh Australian fuel prices
+        env:
+          NSW_FUEL_API_KEY: ${{ secrets.NSW_FUEL_API_KEY }}
+          NSW_FUEL_API_SECRET: ${{ secrets.NSW_FUEL_API_SECRET }}
+          QLD_FUEL_TOKEN: ${{ secrets.QLD_FUEL_TOKEN }}
+          VIC_FUEL_CONSUMER_ID: ${{ secrets.VIC_FUEL_CONSUMER_ID }}
+          SA_FUEL_TOKEN: ${{ secrets.SA_FUEL_TOKEN }}
+        run: python3 scripts/fetch_nsw_fuel.py
+      - name: Refresh Australia EV fast chargers
+        run: python3 scripts/fetch_ev_chargers.py
+      - name: Validate JS & datasets
+        run: |
+          node --check web/app.js
+          node --check web/fuel.js
+          python3 scripts/validate_site.py
+      - name: Persist snapshot to live-data branch
+        run: |
+          tmpdir=$(mktemp -d)
+          mkdir -p "$tmpdir/web/data"
+          cp web/data/recent_incidents.json \
+             web/data/nsw_fuel_prices.json \
+             web/data/au_ev_chargers.json \
+             "$tmpdir/web/data/"
+          cd "$tmpdir"
+          git init -b live-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/data/
+          git commit -m "Refresh live API data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git push --force origin live-data
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./web"
+
+  deploy:
+    needs: refresh
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
